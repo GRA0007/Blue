@@ -1,0 +1,21 @@
+Buildfile: D:\Data\Scratch 2.0 Modding\Blue\2.0\build.xml
+
+init:
+   [delete] Deleting directory D:\Data\Scratch 2.0 Modding\Blue\2.0\bin
+    [mkdir] Created dir: D:\Data\Scratch 2.0 Modding\Blue\2.0\bin
+   [delete] Deleting: D:\Data\Scratch 2.0 Modding\Blue\2.0\libs\RenderIn3D.swf
+
+3d_lib:
+    [mxmlc] Loading configuration file D:\Data\Flex\frameworks\flex-config.xml
+    [mxmlc] D:\Data\Scratch 2.0 Modding\Blue\2.0\libs\RenderIn3D.swf (21090 bytes)
+
+test_10.2:
+    [mxmlc] Loading configuration file D:\Data\Flex\frameworks\flex-config.xml
+    [mxmlc] D:\Data\Scratch 2.0 Modding\Blue\2.0\bin\ScratchFor10.2.swf (2447328 bytes)
+
+compile:
+    [mxmlc] Loading configuration file D:\Data\Flex\frameworks\flex-config.xml
+    [mxmlc] D:\Data\Scratch 2.0 Modding\Blue\2.0\bin\Scratch.swf (2447332 bytes)
+
+BUILD SUCCESSFUL
+Total time: 47 seconds
