@@ -51,7 +51,7 @@ public class PaletteBuilder {
 			'Stage selected:', 'No motion blocks',
 			'Make a Block', 'Make a List', 'Make a Variable',
 			'New List', 'List name', 'New Variable', 'Variable name',
-			'New Block', 'Add an Extension'];
+			'New Block', 'New Reporter', 'Add an Extension'];
 	}
 
 	public function showBlocksForCategory(selectedCategory:int, scrollToOrigin:Boolean, shiftKey:Boolean = false):void {
@@ -122,6 +122,7 @@ public class PaletteBuilder {
 		// show creation button, hat, and call blocks
 		var catColor:int = Specs.blockColor(Specs.procedureColor);
 		addItem(new Button(Translator.map('Make a Block'), makeNewBlock, false, '/help/studio/tips/blocks/make-a-block/'));
+		addItem(new Button(Translator.map('Make a Reporter (WIP)'), makeNewReporter, false, '/help/studio/tips/blocks/make-a-block/'));
 		var definitions:Array = app.viewedObj().procedureDefinitions();
 		if (definitions.length > 0) {
 			nextY += 5;
@@ -203,6 +204,7 @@ public class PaletteBuilder {
 		d.addTitle('New Variable');
 		d.addField('Variable name', 150);
 		d.addWidget(varSettings);
+		d.addText('Cloud data coming soon');
 		d.addAcceptCancelButtons('OK');
 		d.showOnStage(app.stage);
 	}
@@ -219,6 +221,7 @@ public class PaletteBuilder {
 		d.addTitle('New List');
 		d.addField('List name', 150);
 		d.addWidget(varSettings);
+		d.addText('Cloud data coming soon');
 		d.addAcceptCancelButtons('OK');
 		d.showOnStage(app.stage);
 	}
@@ -251,6 +254,33 @@ public class PaletteBuilder {
 		d.addAcceptCancelButtons('OK');
 		d.showOnStage(app.stage, true);
 		specEditor.setInitialFocus();
+	}
+	
+	private function makeNewReporter():void {
+/*		function addReporterHat(dialog:DialogBox):void {
+			var spec:String = specEditor.spec().replace(/^\s+|\s+$/g, '');
+			if (spec.length == 0) return;
+			var newHat:Block = new Block(spec, 'p', Specs.procedureColor, Specs.PROCEDURE_DEF);
+			newHat.parameterNames = specEditor.inputNames();
+			newHat.defaultArgValues = specEditor.defaultArgValues();
+			newHat.warpProcFlag = specEditor.warpFlag();
+			newHat.setSpec(spec);
+			newHat.x = 10 - app.scriptsPane.x + Math.random() * 100;
+			newHat.y = 10 - app.scriptsPane.y + Math.random() * 100;
+			app.scriptsPane.addChild(newHat);
+			app.scriptsPane.saveScripts();
+			app.runtime.updateCalls();
+			app.updatePalette();
+			app.setSaveNeeded();
+		}*/
+//		var specEditor:ProcedureSpecEditor = new ProcedureSpecEditor('', [], false);
+		var d:DialogBox = new DialogBox(); //addReporterHat
+		d.addTitle('New Reporter');
+//		d.addWidget(specEditor);
+		d.addText('Coming soon!');
+		d.addAcceptCancelButtons('OK');
+		d.showOnStage(app.stage, true);
+//		specEditor.setInitialFocus();
 	}
 
 	private function showAnExtension():void {
@@ -292,7 +322,7 @@ public class PaletteBuilder {
 	}
 
 	private function isSpriteSpecific(op:String):Boolean {
-		const spriteSpecific: Array = ['costumeIndex', 'xpos', 'ypos', 'heading', 'scale', 'volume', 'rotationStyle', 'visible', 'isPenDown', 'penHue', 'penShade', 'penSize'/*, ':effect'*/];
+		const spriteSpecific: Array = ['costumeIndex', 'xpos', 'ypos', 'heading', 'scale', 'volume', 'rotationStyle', 'visible', 'isPenDown', 'penHue', 'penShade', 'penSize', 'costumeName'/*, ':effect'*/];
 		return spriteSpecific.indexOf(op) > -1;
 	}
 
