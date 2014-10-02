@@ -32,8 +32,8 @@ package ui {
 public class PaletteSelector extends Sprite {
 
 	private static const categories:Array = [
-		'Motion', 'Looks', 'Sound', 'Strings', 'Pen', 'Data', 'System', // column 1
-		'Events', 'Control', 'Sensing', 'Operators', 'More Blocks', 'Program', 'Dialogs']; // column 2
+		'Motion', 'Looks', 'Sound', 'Strings', 'Pen', 'Data', 'System', 'Websockets', // column 1
+		'Events', 'Control', 'Sensing', 'Operators', 'More Blocks', 'Program', 'Dialogs', 'Color']; // column 2
 
 	public var selectedCategory:int = 0;
 	private var app:Scratch;
@@ -57,7 +57,7 @@ public class PaletteSelector extends Sprite {
 	}
 
 	private function initCategories():void {
-		const numberOfRows:int = 7;
+		const numberOfRows:int = 8;
 		const w:int = 208;
 		const startY:int = 3;
 		var itemH:int;

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Scratch Project Editor and Player
  * Copyright (C) 2014 Massachusetts Institute of Technology
  *
@@ -57,6 +57,7 @@ public class LibraryPart extends UIPart {
 	private var libraryButton:IconButton;
 	private var importButton:IconButton;
 	private var photoButton:IconButton;
+	private var moreInfoButton:IconButton;
 
 	private var newBackdropLabel:TextField;
 	private var backdropLibraryButton:IconButton;
@@ -80,6 +81,7 @@ public class LibraryPart extends UIPart {
 		addChild(paintButton = makeButton(paintSprite, 'paintbrush'));
 		addChild(importButton = makeButton(spriteFromComputer, 'import'));
 		addChild(photoButton = makeButton(spriteFromCamera, 'camera'));
+		addChild(moreInfoButton = makeButton(showMoreInfo, 'info'));
 
 		addStageArea();
 		addNewBackdropButtons();
@@ -113,6 +115,7 @@ public class LibraryPart extends UIPart {
 		SimpleTooltips.add(paintButton, {text: 'Paint new sprite', direction: 'bottom'});
 		SimpleTooltips.add(importButton, {text: 'Upload sprite from file', direction: 'bottom'});
 		SimpleTooltips.add(photoButton, {text: 'New sprite from camera', direction: 'bottom'});
+		SimpleTooltips.add(moreInfoButton, {text: 'Show more info', direction: 'bottom'});
 
 		SimpleTooltips.add(backdropLibraryButton, {text: 'Choose backdrop from library', direction: 'bottom'});
 		SimpleTooltips.add(backdropPaintButton, {text: 'Paint new backdrop', direction: 'bottom'});
@@ -153,6 +156,9 @@ public class LibraryPart extends UIPart {
 		importButton.y = buttonY + 0;
 		photoButton.x = importButton.x + importButton.width + 8;
 		photoButton.y = buttonY + 2;
+
+		moreInfoButton.x = importButton.x - 396;
+		moreInfoButton.y = buttonY - 0.5;
 
 		newSpriteLabel.x = libraryButton.x - newSpriteLabel.width - 6;
 		newSpriteLabel.y = 6;
@@ -428,6 +434,21 @@ public class LibraryPart extends UIPart {
 		app.setTab('images');
 		app.selectSprite(app.stagePane);
 		app.setSaveNeeded(true);
+	}
+	
+	// More info
+	private function showMoreInfo(param1:IconButton):* {
+		var _loc4_:SpriteThumbnail = null;
+		var _loc2_:Boolean = param1.isOn();
+		stageThumbnail.showInfo(_loc2_);
+		var _loc3_:* = 0;
+		while(_loc3_ < spritesPane.numChildren) {
+			_loc4_ = spritesPane.getChildAt(_loc3_) as SpriteThumbnail;
+			if(_loc4_) {
+				_loc4_.showInfo(_loc2_);
+			}
+			_loc3_++;
+		}
 	}
 
 	// -----------------------------

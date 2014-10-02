@@ -104,6 +104,7 @@ public class BlockMenus implements DragClient {
 		if (menuName == 'stringAlter') menuHandler.stringAlterMenu(evt);
 		if (menuName == 'customDialogOptionType') menuHandler.customDialogOptionTypeMenu(evt);
 		if (menuName == 'customDialogFieldType') menuHandler.customDialogFieldTypeMenu(evt);
+		if (menuName == 'colorType') menuHandler.colorTypeMenu(evt);
 	}
 
 	public static function strings():Array {
@@ -155,6 +156,7 @@ public class BlockMenus implements DragClient {
 			handler.stringAlterMenu(evt);
 			handler.customDialogOptionTypeMenu(evt);
 			handler.customDialogFieldTypeMenu(evt);
+			handler.colorTypeMenu(evt);
 		}
 		return [
 			'up arrow', 'down arrow', 'right arrow', 'left arrow', 'space',
@@ -822,6 +824,7 @@ public class BlockMenus implements DragClient {
 	private function cursorMenu(evt:MouseEvent):void {
 		var m:Menu = new Menu(setBlockArg, 'cursor');
 		m.addItem('normal');
+		m.addLine();
 		m.addItem('hidden');
 		m.addItem('crosshair');
 		m.addItem('eyedropper');
@@ -893,6 +896,18 @@ public class BlockMenus implements DragClient {
 		var m:Menu = new Menu(setBlockArg, 'customDialogFieldType');
 		m.addItem('string');
 		m.addItem('password');
+		showMenu(m);
+	}
+	
+	private function colorTypeMenu(evt:MouseEvent):void {
+		var m:Menu = new Menu(setBlockArg, 'colorType');
+		m.addItem('hue');
+		m.addItem('saturation');
+		m.addItem('lightness');
+		m.addLine();
+		m.addItem('red');
+		m.addItem('green');
+		m.addItem('blue');
 		showMenu(m);
 	}
 }}

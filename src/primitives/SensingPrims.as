@@ -61,7 +61,7 @@ public class SensingPrims {
 		primTable['isLoud']				= function(b:*):* { return app.runtime.isLoud() };
 		primTable['timestamp']			= primTimestamp;
 		primTable['timeAndDate']		= function(b:*):* { return app.runtime.getTimeString(interp.arg(b, 0)) };
-		primTable['getUserName']		= function(b:*):* { return '' };
+		primTable['getUserName']		= function(b:*):* { return "This might work with modshare in the future,\nbut I'm not sure yet..." };
 
 		// sensor
 		primTable['sensor:']			= function(b:*):* { return app.runtime.getSensor(interp.arg(b, 0)) };

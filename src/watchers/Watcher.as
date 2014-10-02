@@ -223,6 +223,13 @@ public class Watcher extends Sprite implements DragClient {
 				case "ypos": return ScratchSprite(target).scratchY;
 				case "heading": return ScratchSprite(target).direction;
 				case "scale": return Math.round(ScratchSprite(target).getSize());
+				case "costumeName": return "WIP";//ScratchSprite(target).costumeName();
+				case "rotationStyle": return ScratchSprite(target).rotationStyle;
+				case "visible": return ScratchSprite(target).visible;
+				case "isPenDown": return ScratchSprite(target).penIsDown;
+				case "penHue": return ScratchSprite(target).penHue;
+				case "penShade": return ScratchSprite(target).penShade;
+				case "penSize": return ScratchSprite(target).penWidth;
 			}
 		}
 		switch(cmd) {
@@ -242,12 +249,6 @@ public class Watcher extends Sprite implements DragClient {
 //			case ":effect": return ScratchObj.filterPack.getFilterSetting(param);
 			case "cloneCount": return runtime.cloneCount;
 			case "fileContents": return runtime.ba;
-			case "rotationStyle": return ScratchSprite(target).rotationStyle;
-			case "visible": return ScratchSprite(target).visible;
-			case "isPenDown": return ScratchSprite(target).penIsDown;
-			case "penHue": return ScratchSprite(target).penHue;
-			case "penShade": return ScratchSprite(target).penShade;
-			case "penSize": return ScratchSprite(target).penWidth;
 			case "maxCloneCount": return (app.MaxCloneCount + 2);
 		}
 

@@ -32,6 +32,7 @@ package primitives {
 	import flash.events.Event;
 	import flash.media.*;
 	import flash.utils.*;
+	import flash.system.fscommand;
 	import blocks.*;
 	import interpreter.*;
 	import scratch.ScratchSprite;
@@ -199,7 +200,12 @@ public class Primitives {
 			var fileRef:FileReference=new FileReference();
 			fileRef.save(ss, nm);
 		}
-		primTable["loadTextFromFile"] = function(b:*):* {
+/*		primTable["loadTextFromFile"] = function(b:*):* {
+			if (b.requestState == 2) {
+				b.requestState = 1
+				return b.response;
+			};
+			b.requestState = 1;
 			var fileR:FileReference = new FileReference();
 //			var textFilter = new FileFilter("Text files", "*.txt");
 			fileR.addEventListener(Event.CANCEL, cancelHandler); // Add event handlers
@@ -211,14 +217,20 @@ public class Primitives {
 				trace("selectHandler: "+fileR.name);
 				fileR.load(); // load it
 			}
-			function cancelHandler(e:Event):void { // file select canceled
+			function cancelHandler(e:Event):* { // file select canceled
 				trace("cancelled by user");
+//				app.runtime.ba = "ERROR";
 			}
-			function completeHandler(e:Event):void { // file loaded
+			function completeHandler(e:Event):* { // file loaded
 				trace("completeHandler: " + fileR.name);
 				app.runtime.ba = fileR.data;
 			}
-		}
+			setTimeout(function():* {
+//				return fileR.data;
+				b.requestState = 2;
+				b.response = fileR.data;
+			}, 500);
+		}*/
 		primTable["fileContents"] = function(b:*):* { return app.runtime.ba };
 
 		//Program
@@ -274,8 +286,6 @@ public class Primitives {
 			b.requestState = 1;
 			var bool:Boolean;
 			bool = app.primDialogConfirm(interp.arg(b, 0), interp.arg(b, 1));
-//			return bool;
-//			b.requestState = 2;
 			b.requestState = 1;
 			setTimeout(function():* {
 				return bool;
@@ -313,6 +323,15 @@ public class Primitives {
 			var color:* = interp.arg(b, 0);
 			Watcher.setColor(color)
 		}*/
+		
+		//Websockets
+/*		primTable["websocketConnect"] = function(b:*):* {
+			fscommand("websocketConnect", "ws://" + interp.arg(b, 0) + ":" + interp.arg(b, 1) + "/");
+		}*/
+		
+		//Color
+//		primTable["colorColorInput"] = function(b:*):* { return uint(interp.arg(b, 0)) };
+//		primTable["colorRGB"] = function(b:*):* { return interp.arg(b, 0) + "" + interp.arg(b, 1) + "" + interp.arg(b, 2) };//rgbtohex(interp.arg(b, 0), interp.arg(b, 1), interp.arg(b, 2)) };
 
 		new LooksPrims(app, interp).addPrimsTo(primTable);
 		new MotionAndPenPrims(app, interp).addPrimsTo(primTable);
@@ -523,6 +542,13 @@ public class Primitives {
 		case "a color": return string is Color;
 		}
 		return false;
+	}
+	
+	private function rgbtohex(red:Number, green:Number, blue:Number):* {
+		var intVal:int = red << 16 | green << 8 | blue;
+		var hexVal:String = intVal.toString(16);
+		hexVal = "#" + (hexVal.length < 6 ? "0" + hexVal : hexVal);
+		return hexVal;
 	}
 
 }}

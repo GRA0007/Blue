@@ -58,7 +58,7 @@ public class Specs {
 	private static const undefinedColor:int = 0xD42828;
 
 	public static const categories:Array = [
-	 // id   category name	color
+//		id   category name	color
 		[0,  "undefined",	0xD42828],
 		[1,  "Motion",		0x4a6cd4],
 		[2,  "Looks",		0x8a55d7],
@@ -77,6 +77,8 @@ public class Specs {
 		[14,  "Dialogs",	0x9ba758],
 		[15,  "Program",	0x026f2e],
 		[16,  "Strings",	0x949400],
+		[17,  "Websockets",	0x39bf93],
+		[18,  "Color",		0x2e2e2e],
 	];
 
 	public static function blockColor(categoryID:int):int {
@@ -109,6 +111,7 @@ public class Specs {
 		if (name == "stop") icon = Resources.createBmp('stopIcon');
 		if (name == "turnLeft") icon = Resources.createBmp('turnLeftIcon');
 		if (name == "turnRight") icon = Resources.createBmp('turnRightIcon');
+		if (name == "cookie") icon = Resources.createBmp('cookieIcon');
 		if (icon != null) icon.scaleX = icon.scaleY = 0.5;
 		return icon;
 	}
@@ -178,6 +181,7 @@ public class Specs {
 		["go to front",							" ", 2, "comeToFront"],
 		["go back %n layers",					" ", 2, "goBackByLayers:", 			1],
 		["-"],
+		["costume name",						"r", 2, "costumeName"],
 		["costume #",							"r", 2, "costumeIndex"],
 		["backdrop name",						"r", 2, "sceneName"],
 		["size",								"r", 2, "scale"],
@@ -402,6 +406,8 @@ public class Specs {
 		["%m.constant",							"r", 8, "constant",				"pi"],	
 
 		// variables
+		["create variable %s for all sprites %b",			" ", 9, "addVariable"],
+		["delete variable %s",								" ", 9, "removeVariable"],
 		["set %m.var to %s",								" ", 9, SET_VAR],
 		["change %m.var by %n",								" ", 9, CHANGE_VAR],
 		["show variable %m.var",							" ", 9, "showVariable:"],
@@ -409,6 +415,11 @@ public class Specs {
 		["move %m.var to x: %n y: %n",						" ", 9, "move:toX:y:"],
 		["set %m.var style to %m.varStyle",					" ", 9, "set:styleTo:"],
 		["set %m.var color to %c",							" ", 9, "varSet:colorTo:"],
+		["--"],
+		["@cookie %s",										"R", 9, "cookieGetVariable"],
+		["-"],
+		["@cookie set cookie variable %s to %s",			" ", 9, "cookieSetVariable"],
+		["@cookie change cookie variable %s by %n",			" ", 9, "cookieChangeVariable"],
 
 		// lists
 		["add %s to %m.list",								" ", 12, "append:toList:"],
@@ -428,17 +439,18 @@ public class Specs {
 		//System 13
 		["save %s to file %s",					" ", 13, "save:toFile:", "hello world", "file.txt"],
 		["-"],
-		["load text from file",					" ", 13, "loadTextFromFile"],
+		["load text from file",					"R", 13, "loadTextFromFile"],
+		["load text from line %n of file",		"R", 13, "loadTextFromLineOfFile"],
 		["file contents",						"r", 13, "fileContents"],
 		["--"],
 		["load text file to list %m.list",		" ", 13, "loadTextFileToList:"],
 		["export list %m.list to text file",	" ", 13, "exportList:toTextFile"],
 		["--"],
 		["open url %s",							" ", 13, "openUrl:", "http://www.google.com"],
-		["read url %s",							"r", 13, "readUrl:", "http://www.google.com"],
-		["read line %n of url %s",				"r", 13, "readLine:ofUrl:", "1", "http://www/google.com"],
+		["read url %s",							"R", 13, "readUrl:", "http://www.google.com"],
+		["read line %n of url %s",				"R", 13, "readLine:ofUrl:", "1", "http://www/google.com"],
 		["-"],
-		["internet connection?",				"b", 13, "internetConnection"],
+		["internet connection?",				"B", 13, "internetConnection"],
 		
 		//Program 15
 		["%m.screenMode mode",					" ", 15, ":mode", "fullscreen"],
@@ -457,10 +469,10 @@ public class Specs {
 		
 		//Dialogs 14
 		["dialog notify with title %s and message %s", " ", 14, "dialogNotify", "Well Done!", "Congratulations, you won!"],
-		["dialog confirm with title %s and message %s", "b", 14, "dialogConfirm", "Are you sure?", "Are you sure you would like to continue?"],
-		["dialog ask with title %s and message %s", "r", 14, "dialogAsk", "Info", "What's your name?"],
+		["dialog confirm with title %s and message %s", "B", 14, "dialogConfirm", "Are you sure?", "Are you sure you would like to continue?"],
+		["dialog ask with title %s and message %s", "R", 14, "dialogAsk", "Info", "What's your name?"],
 		["---"],
-		["custom dialog %s %s %s %s %s %s %s %s %s", "r", 14, "customDialog"],
+		["custom dialog %s %s %s %s %s %s %s %s %s", "R", 14, "customDialog"],
 		["last custom dialog entry",			"r", 14, "lastCustomDialogEntry"],
 		["-"],
 		["title %s",							"r", 14, "customDialogTitle"],
@@ -491,6 +503,30 @@ public class Specs {
 		["-"],
 		["ascii for %s",						"r", 16, "asciiFor:",			"A"],
 		["ascii %n as string",					"r", 16, "ascii:asString",		"65"],
+		
+		//Websockets 17
+		["connect to ip %s port %s",			" ", 17, "websocketConnect",	"127.0.0.0", "80"],
+		["disconnect",							" ", 17, "websocketDisconnect"],
+		["connection status",					"R", 17, "websocketStatus"],
+		["-"],
+		["send %s",								" ", 17, "websocketSend",		""],
+		["when I recieve %s",					"h", 17, "websocketRecieve",	""],
+		
+		//Color 18
+		["color at pixel x: %n y: %n",			"r", 18, "colorAtPixel",		10, 10],
+		["color %c",							"r", 18, "colorColorInput"],
+		["color r: %n g: %n b: %n",				"r", 18, "colorRGB",			10, 10, 10],
+		["color h: %n s: %n l: %n",				"r", 18, "colorHSL",			10, 10, 10],
+		["%c %m.colorType",						"r", 18, "colorType",			, "hue"],
+		["-"],
+		["color %c lighter by %n",				"r", 18, "colorLighter",		, 10],
+		["mix %c and %c with ratio %n : %n",	"r", 18, "colorMix",			, , 10, 10],
+		["-"],
+		["%c = %c",								"b", 18, "color="],
+		["%c negated",							"r", 18, "colorNegated"],
+		["-"],
+		["%c as hex",							"r", 18, "colorAsHex"],
+		["hex %s as color",						"r", 18, "colorHexAsColor",		"#0099ff"],
 
 		// obsolete blocks from Scratch 1.4 that may be used in older projects
 		["play drum %n for %n beats",			" ", 98, "drum:duration:elapsed:from:", 1, 0.25], // Scratch 1.4 MIDI drum
