@@ -76,6 +76,7 @@ public class Resources {
 	[Embed(source='blocks/stopIcon.png')] private static const stopIcon:Class;
 	[Embed(source='blocks/turnLeftIcon.png')] private static const turnLeftIcon:Class;
 	[Embed(source='blocks/turnRightIcon.png')] private static const turnRightIcon:Class;
+	[Embed(source='blocks/cookieIcon.png')] private static const cookieIcon:Class;
 
 	// Cursors
 	[Embed(source='cursors/copyCursor.png')] private static const copyCursor:Class;
@@ -186,6 +187,9 @@ public class Resources {
 	[Embed(source='UI/newsprite/libraryOn.png')] private static const libraryOn:Class;
 	[Embed(source='UI/newsprite/paintbrushOff.png')] private static const paintbrushOff:Class;
 	[Embed(source='UI/newsprite/paintbrushOn.png')] private static const paintbrushOn:Class;
+	// More info
+	[Embed(source='UI/misc/moreInfoOff.png')] private static const infoOff:Class;
+	[Embed(source='UI/misc/moreInfoOn.png')] private static const infoOn:Class;
 
 	// New Sound Buttons
 	[Embed(source='UI/newsound/recordOff.png')] private static const recordOff:Class;
