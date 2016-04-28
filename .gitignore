@@ -2,10 +2,8 @@
 /.idea/workspace.xml
 /.gradle/
 /.settings/
-/bin/
 /bin-debug/
 /bin-release/
-/build/
 .DS_Store
 .actionScriptProperties
 .flexLibProperties
