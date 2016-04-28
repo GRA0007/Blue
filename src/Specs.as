@@ -58,7 +58,7 @@ public class Specs {
 	private static const undefinedColor:int = 0xD42828;
 
 	public static const categories:Array = [
-//		id   category name	color
+	 // id   category name	color
 		[0,  "undefined",	0xD42828],
 		[1,  "Motion",		0x4a6cd4],
 		[2,  "Looks",		0x8a55d7],
@@ -78,7 +78,7 @@ public class Specs {
 		[15,  "Program",	0x026f2e],
 		[16,  "Strings",	0x949400],
 		[17,  "Websockets",	0x39bf93],
-		[18,  "Color",		0x2e2e2e],
+		[18,  "Color",		0x2e2e2e]
 	];
 
 	public static function blockColor(categoryID:int):int {
@@ -128,7 +128,7 @@ public class Specs {
 		["point towards x: %n y: %n",			" ", 1, "pointTowardsX:y:",			10, 10],
 		["--"],
 		["go to x:%n y:%n",						" ", 1, "gotoX:y:"],
-		["go to %m.spriteOrMouse",				" ", 1, "gotoSpriteOrMouse:",		"mouse-pointer"],
+		["go to %m.location",				" ", 1, "gotoSpriteOrMouse:",		"mouse-pointer"],
 		["glide %n secs to x:%n y:%n",			" ", 1, "glideSecs:toX:y:elapsed:from:"],
 		["--"],
 		["change x by %n",						" ", 1, "changeXposBy:",			10],
@@ -403,7 +403,7 @@ public class Specs {
 		["round %n",							"r", 8, "rounded", 				""],
 		["-"],
 		["%m.mathOp of %n",						"r", 8, "computeFunction:of:",	"sqrt", 9],
-		["%m.constant",							"r", 8, "constant",				"pi"],	
+		["%m.constant",							"r", 8, "constant",				"pi"],
 
 		// variables
 		["create variable %s for all sprites %b",			" ", 9, "addVariable"],
@@ -430,7 +430,7 @@ public class Specs {
 		["-"],
 		["item %d.listItem of %m.list",						"r", 12, "getLine:ofList:"],
 		["length of %m.list",								"r", 12, "lineCountOfList:"],
-		["%m.list contains %s",								"b", 12, "list:contains:"],
+		["%m.list contains %s?",							"b", 12, "list:contains:"],
 		["-"],
 		["show list %m.list",								" ", 12, "showList:"],
 		["hide list %m.list",								" ", 12, "hideList:"],
@@ -450,7 +450,7 @@ public class Specs {
 		["read url %s",							"R", 13, "readUrl:", "http://www.google.com"],
 		["read line %n of url %s",				"R", 13, "readLine:ofUrl:", "1", "http://www/google.com"],
 		["-"],
-		["internet connection?",				"B", 13, "internetConnection"],
+		["internet connection?",				"b", 13, "internetConnection"],
 		
 		//Program 15
 		["%m.screenMode mode",					" ", 15, ":mode", "fullscreen"],
@@ -458,8 +458,10 @@ public class Specs {
 		["-"],
 		["set cursor to %m.cursor",				" ", 15, "setCursorTo:", "normal"],
 		["-"],
-		["copy %s to clipboard",				" ", 15, "copy:toClipboard", "hello world"],
-		["clipboard",							"r", 15, "clipboard"],
+		/*["copy %s to clipboard",				" ", 15, "copy:toClipboard", "hello world"],
+		["clipboard",							"r", 15, "clipboard"],*/
+		["comment %s",							" ", 15, "inlineComment"],
+		["comment %s",							"c", 15, "blockComment"],
 		["-"],
 		["%m.turbo turbo mode",					" ", 15, "toggleTurboMode",		"activate"],
 		["turbo mode?",							"b", 15, "turboMode"],

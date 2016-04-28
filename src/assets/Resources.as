@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Scratch Project Editor and Player
  * Copyright (C) 2014 Massachusetts Institute of Technology
  *
@@ -24,6 +24,15 @@ package assets {
 public class Resources {
 
 	public static function createBmp(resourceName:String):Bitmap {
+		var resourceClass:Class = Resources[resourceName];
+		if (!resourceClass) {
+			trace('missing resource: ', resourceName);
+			return new Bitmap(new BitmapData(10, 10, false, 0x808080));
+		}
+		return new resourceClass();
+	}
+	
+	public static function createDO(resourceName:String):DisplayObject {
 		var resourceClass:Class = Resources[resourceName];
 		if (!resourceClass) {
 			trace('missing resource: ', resourceName);
@@ -65,11 +74,10 @@ public class Resources {
 	[Embed(source='fonts/MysteryQuest-Regular.ttf', fontName='Mystery', embedAsCFF = 'false', advancedAntiAliasing = 'true')] private static const Font4:Class;
 	[Embed(source='fonts/PermanentMarker.ttf', fontName='Marker', embedAsCFF = 'false', advancedAntiAliasing = 'true')] private static const Font5:Class;
 	[Embed(source='fonts/Scratch.ttf', fontName='Scratch', embedAsCFF = 'false', advancedAntiAliasing = 'true')] private static const Font6:Class;
-	[Embed(source='fonts/Roboto-Thin.ttf', fontName='Roboto', embedAsCFF = 'false', advancedAntiAliasing = 'true')] private static const Font7:Class;
-	[Embed(source='fonts/Wendy.ttf', fontName='Wendy', embedAsCFF = 'false', advancedAntiAliasing = 'true')] private static const Font8:Class;
-	[Embed(source='fonts/OCRAEXT.ttf', fontName='OCR', embedAsCFF = 'false', advancedAntiAliasing = 'true')] private static const Font9:Class;
-	[Embed(source='fonts/Bubble-Bath.ttf', fontName='Bubbles', embedAsCFF = 'false', advancedAntiAliasing = 'true')] private static const Font10:Class;
-	[Embed(source='fonts/Good-Dog.ttf', fontName='Good Dog', embedAsCFF = 'false', advancedAntiAliasing = 'true')] private static const Font11:Class;
+	[Embed(source='fonts/Wendy.ttf', fontName='Wendy', embedAsCFF = 'false', advancedAntiAliasing = 'true')] private static const Font7:Class;
+	[Embed(source='fonts/OCRAEXT.ttf', fontName='OCR', embedAsCFF = 'false', advancedAntiAliasing = 'true')] private static const Font8:Class;
+	[Embed(source='fonts/Bubble-Bath.ttf', fontName='Bubbles', embedAsCFF = 'false', advancedAntiAliasing = 'true')] private static const Font9:Class;
+	[Embed(source='fonts/Good-Dog.ttf', fontName='Good Dog', embedAsCFF = 'false', advancedAntiAliasing = 'true')] private static const Font10:Class;
 
 	// Block Icons (2x resolution to look better when scaled)
 	[Embed(source='blocks/flagIcon.png')] private static const flagIcon:Class;
@@ -85,8 +93,10 @@ public class Resources {
 	[Embed(source='cursors/growCursor.png')] private static const growCursor:Class;
 	[Embed(source='cursors/helpCursor.png')] private static const helpCursor:Class;
 	[Embed(source='cursors/shrinkCursor.png')] private static const shrinkCursor:Class;
+	[Embed(source='cursors/mouseCircle.png')] private static const mouseCircle:Class;
+	[Embed(source='cursors/segmentationBusyCursor.png')] private static const segmentationBusy:Class;
 	[Embed(source='UI/paint/zoomInCursor.png')] private static const zoomInCursor:Class;
-	
+	[Embed(source='cursors/videoCursor.svg')] private static const videoCursor:Class;
 	// Custom Cursors
 	[Embed(source='cursors/custom/eyedropper.png')] private static const eyedropperCustomCursor:Class;
 	[Embed(source='cursors/custom/crosshair.gif')] private static const crosshairCustomCursor:Class;
@@ -102,6 +112,7 @@ public class Resources {
 	// Top bar
 	[Embed(source='UI/topbar/scratchlogoOff.png')] private static const scratchlogoOff:Class;
 	[Embed(source='UI/topbar/scratchlogoOn.png')] private static const scratchlogoOn:Class;
+	[Embed(source='UI/topbar/scratchx-logo.png')] private static const scratchxlogo:Class;
 	[Embed(source='UI/topbar/copyTool.png')] private static const copyTool:Class;
 	[Embed(source='UI/topbar/cutTool.png')] private static const cutTool:Class;
 	[Embed(source='UI/topbar/growTool.png')] private static const growTool:Class;
@@ -146,16 +157,14 @@ public class Resources {
 	[Embed(source='UI/buttons/spriteInfoOn.png')] private static const spriteInfoOn:Class;
 	[Embed(source='UI/buttons/stopOff.png')] private static const stopOff:Class;
 	[Embed(source='UI/buttons/stopOn.png')] private static const stopOn:Class;
+	[Embed(source='UI/buttons/toggleOff.gif')] private static const toggleOff:Class;
+	[Embed(source='UI/buttons/toggleOn.gif')] private static const toggleOn:Class;
 	[Embed(source='UI/buttons/undoOff.png')] private static const undoOff:Class;
 	[Embed(source='UI/buttons/undoOn.png')] private static const undoOn:Class;
 	[Embed(source='UI/buttons/unlockedOff.png')] private static const unlockedOff:Class;
 	[Embed(source='UI/buttons/unlockedOn.png')] private static const unlockedOn:Class;
-	[Embed(source='UI/buttons/customNewBlockOff.png')] private static const customNewBlockOff:Class;
-	[Embed(source='UI/buttons/customNewBlockOn.png')] private static const customNewBlockOn:Class;
-	[Embed(source='UI/buttons/customNewReporterOff.png')] private static const customNewReporterOff:Class;
-	[Embed(source='UI/buttons/customNewReporterOn.png')] private static const customNewReporterOn:Class;
-	[Embed(source='UI/buttons/customNewBooleanOff.png')] private static const customNewBooleanOff:Class;
-	[Embed(source='UI/buttons/customNewBooleanOn.png')] private static const customNewBooleanOn:Class;
+	[Embed(source='UI/buttons/stopVideoOff.gif')] private static const stopVideoOff:Class;
+	[Embed(source='UI/buttons/stopVideoOn.gif')] private static const stopVideoOn:Class;
 
 	// Misc UI Elements
 	[Embed(source='UI/misc/hatshape.png')] private static const hatshape:Class;
@@ -187,9 +196,6 @@ public class Resources {
 	[Embed(source='UI/newsprite/libraryOn.png')] private static const libraryOn:Class;
 	[Embed(source='UI/newsprite/paintbrushOff.png')] private static const paintbrushOff:Class;
 	[Embed(source='UI/newsprite/paintbrushOn.png')] private static const paintbrushOn:Class;
-	// More info
-	[Embed(source='UI/misc/moreInfoOff.png')] private static const infoOff:Class;
-	[Embed(source='UI/misc/moreInfoOn.png')] private static const infoOn:Class;
 
 	// New Sound Buttons
 	[Embed(source='UI/newsound/recordOff.png')] private static const recordOff:Class;
@@ -228,6 +234,14 @@ public class Resources {
 	[Embed(source='UI/paint/hicon.png')] private static const HeightIcon:Class;
 
 	[Embed(source='UI/paint/canvasGrid.gif')] private static const canvasGrid:Class;
+	[Embed(source='UI/paint/segmentationAnimation/first.png')] private static const first:Class;
+	[Embed(source='UI/paint/segmentationAnimation/second.png')] private static const second:Class;
+	[Embed(source='UI/paint/segmentationAnimation/third.png')] private static const third:Class;
+	[Embed(source='UI/paint/segmentationAnimation/fourth.png')] private static const fourth:Class;
+	[Embed(source='UI/paint/segmentationAnimation/fifth.png')] private static const fifth:Class;
+	[Embed(source='UI/paint/segmentationAnimation/sixth.png')] private static const sixth:Class;
+	[Embed(source='UI/paint/segmentationAnimation/seventh.png')] private static const seventh:Class;
+	[Embed(source='UI/paint/segmentationAnimation/eighth.png')] private static const eighth:Class;
 	[Embed(source='UI/paint/colorWheel.png')] private static const colorWheel:Class;
 	[Embed(source='UI/paint/swatchButton.png')] private static const swatchButton:Class;
 	[Embed(source='UI/paint/rainbowButton.png')] private static const rainbowButton:Class;
@@ -235,6 +249,8 @@ public class Resources {
 	// Paint Tools
 	[Embed(source='UI/paint/ellipseOff.png')] private static const ellipseOff:Class;
 	[Embed(source='UI/paint/ellipseOn.png')] private static const ellipseOn:Class;
+	[Embed(source='UI/paint/cropOff.png')] private static const cropOff:Class;
+	[Embed(source='UI/paint/cropOn.png')] private static const cropOn:Class;
 	[Embed(source='UI/paint/flipHOff.gif')] private static const flipHOff:Class;
 	[Embed(source='UI/paint/flipHOn.gif')] private static const flipHOn:Class;
 	[Embed(source='UI/paint/flipVOff.gif')] private static const flipVOff:Class;
@@ -315,9 +331,17 @@ public class Resources {
 	[Embed(source='UI/paint/bitmapRectOn.png')] private static const bitmapRectOn:Class;
 	[Embed(source='UI/paint/bitmapSelectOff.png')] private static const bitmapSelectOff:Class;
 	[Embed(source='UI/paint/bitmapSelectOn.png')] private static const bitmapSelectOn:Class;
+	[Embed(source='UI/paint/magicEraserOn.png')] private static const magicEraserOn:Class;
+	[Embed(source='UI/paint/magicEraserOff.png')] private static const magicEraserOff:Class;
 	[Embed(source='UI/paint/bitmapStampOff.png')] private static const bitmapStampOff:Class;
 	[Embed(source='UI/paint/bitmapStampOn.png')] private static const bitmapStampOn:Class;
 	[Embed(source='UI/paint/bitmapTextOff.png')] private static const bitmapTextOff:Class;
 	[Embed(source='UI/paint/bitmapTextOn.png')] private static const bitmapTextOn:Class;
+	
+	//Recording
+	[Embed(source='StopArrow.png')] private static const stopArrow:Class;
+	[Embed(source='VideoShare.svg')] private static const videoShare:Class;
 
+	[Embed(source='UI/paint/moreInfoOff.png')] private static const moreInfoOff:Class;
+	[Embed(source='UI/paint/moreInfoOn.png')] private static const moreInfoOn:Class;
 }}

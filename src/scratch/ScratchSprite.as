@@ -24,19 +24,25 @@
 // rotation style, size, draggability, and pen state.
 
 package scratch {
-	import flash.display.*;
-	import flash.events.*;
-import flash.filters.GlowFilter;
+import filters.FilterPack;
+
+import flash.display.*;
+import flash.events.*;
 import flash.geom.*;
-import flash.geom.ColorTransform;
+import flash.net.FileReference;
 import flash.utils.*;
-	import flash.net.FileReference;
-	import filters.FilterPack;
-	import interpreter.Variable;
-	import translation.Translator;
-	import uiwidgets.Menu;
-	import util.*;
-	import watchers.ListWatcher;
+
+import interpreter.Variable;
+
+import logging.LogLevel;
+
+import translation.Translator;
+
+import uiwidgets.Menu;
+
+import util.*;
+
+import watchers.ListWatcher;
 
 public class ScratchSprite extends ScratchObj {
 
@@ -65,8 +71,8 @@ public class ScratchSprite extends ScratchObj {
 	public var spriteInfo:Object = {};
 	private var geomShape:Shape;
 
-	public function ScratchSprite(name:String = 'Sprite1') {
-		objName = name;
+	public function ScratchSprite(name:String = null) {
+		objName = Scratch.app.stagePane.unusedSpriteName(name || Translator.map('Sprite1'));
 		filterPack = new FilterPack(this);
 		initMedia();
 		img = new Sprite();
@@ -313,7 +319,7 @@ public class ScratchSprite extends ScratchObj {
 		var p:Point = parent.globalToLocal(new Point(globalX, globalY));
 		var myRect:Rectangle = bounds();
 		if (!myRect.containsPoint(p)) return false;
-		return shapeFlag ? bitmap().hitTest(myRect.topLeft, 1, p) : true;
+		return shapeFlag ? bitmap(true).hitTest(myRect.topLeft, 1, p) : true;
 	}
 
 	public override function getBounds(space:DisplayObject):Rectangle {
@@ -336,8 +342,8 @@ public class ScratchSprite extends ScratchObj {
 
 //	private var testBM:Bitmap = new Bitmap();
 //	private var testSpr:Sprite = new Sprite();
-	public function bitmap(forColorTest:Boolean = false):BitmapData {
-		if (cachedBitmap != null && (!forColorTest || !Scratch.app.isIn3D))
+	public function bitmap(forTest:Boolean = false):BitmapData {
+		if (cachedBitmap != null && (!forTest || !Scratch.app.isIn3D))
 			return cachedBitmap;
 
 		// compute cachedBitmap
@@ -347,55 +353,66 @@ public class ScratchSprite extends ScratchObj {
 		m.scale(scaleX, scaleY);
 		var b:Rectangle = (!Scratch.app.render3D || currentCostume().bitmap) ? img.getChildAt(0).getBounds(this) : getVisibleBounds(this);
 		var r:Rectangle = transformedBounds(b, m);
-		if(Scratch.app.isIn3D) {
-			var oldGhost:Number = filterPack.getFilterSetting('ghost');
-			filterPack.setFilter('ghost', 0);
-			updateEffects();
-			var bm:BitmapData = Scratch.app.render3D.getRenderedChild(this, b.width*scaleX, b.height*scaleY);
-			filterPack.setFilter('ghost', oldGhost);
-			updateEffects();
-//			if(objName == 'Tank 2 down bumper ') {
-//				if(!testSpr.parent) {
-//					testBM.filters = [new GlowFilter(0xFF00FF, 0.8)];
-//					testBM.y = 360; testBM.x = 15;
-//					testSpr.addChild(testBM);
-//					testBM.scaleX = testBM.scaleY = 4;
-//					testSpr.mouseChildren = testSpr.mouseEnabled = false;
-//					stage.addChild(testSpr);
-//				}
-//				testSpr.graphics.clear();
-//				testSpr.graphics.lineStyle(1);
-//				testSpr.graphics.drawRect(testBM.x, testBM.y, bm.width * testBM.scaleX, bm.height * testBM.scaleY);
-//				testBM.bitmapData = bm;
-//			}
 
-			if(forColorTest) return bm;
-
-			if(rotation != 0) {
-				m = new Matrix();
-				m.rotate((Math.PI * rotation) / 180);
-				b = transformedBounds(bm.rect, m);
-				cachedBitmap = new BitmapData(Math.max(int(b.width), 1), Math.max(int(b.height), 1), true, 0);
-				m.translate(-b.left, -b.top);
-				cachedBitmap.draw(bm, m);
-			}
-			else {
-				cachedBitmap = bm;
-			}
-		}
-		else {
+		// returns true if caller should immediately return cachedBitmap
+		var self:ScratchSprite = this;
+		function bitmap2d():Boolean {
 			if ((r.width == 0) || (r.height == 0)) { // empty costume: use an invisible 1x1 bitmap
 				cachedBitmap = new BitmapData(1, 1, true, 0);
 				cachedBounds = cachedBitmap.rect;
-				return cachedBitmap;
+				return true;
 			}
 
 			var oldTrans:ColorTransform = img.transform.colorTransform;
 			img.transform.colorTransform = new ColorTransform(1, 1, 1, 1, oldTrans.redOffset, oldTrans.greenOffset, oldTrans.blueOffset, 0);
 			cachedBitmap = new BitmapData(Math.max(int(r.width), 1), Math.max(int(r.height), 1), true, 0);
 			m.translate(-r.left, -r.top);
-			cachedBitmap.draw(this, m);
+			cachedBitmap.draw(self, m);
 			img.transform.colorTransform = oldTrans;
+			return false;
+		}
+
+		if (SCRATCH::allow3d) {
+			if (Scratch.app.isIn3D) {
+				var oldGhost:Number = filterPack.getFilterSetting('ghost');
+				filterPack.setFilter('ghost', 0);
+				updateEffectsFor3D();
+				var bm:BitmapData = Scratch.app.render3D.getRenderedChild(this, b.width * scaleX, b.height * scaleY);
+				filterPack.setFilter('ghost', oldGhost);
+				updateEffectsFor3D();
+//	    		if(objName == 'Tank 2 down bumper ') {
+//		    		if(!testSpr.parent) {
+//			    		testBM.filters = [new GlowFilter(0xFF00FF, 0.8)];
+//				    	testBM.y = 360; testBM.x = 15;
+//					    testSpr.addChild(testBM);
+//  					testBM.scaleX = testBM.scaleY = 4;
+//	    				testSpr.mouseChildren = testSpr.mouseEnabled = false;
+//		    			stage.addChild(testSpr);
+//			    	}
+//				    testSpr.graphics.clear();
+//  				testSpr.graphics.lineStyle(1);
+//	    			testSpr.graphics.drawRect(testBM.x, testBM.y, bm.width * testBM.scaleX, bm.height * testBM.scaleY);
+//		    		testBM.bitmapData = bm;
+//			    }
+
+				if (rotation != 0) {
+					m = new Matrix();
+					m.rotate((Math.PI * rotation) / 180);
+					b = transformedBounds(bm.rect, m);
+					cachedBitmap = new BitmapData(Math.max(int(b.width), 1), Math.max(int(b.height), 1), true, 0);
+					m.translate(-b.left, -b.top);
+					cachedBitmap.draw(bm, m);
+				}
+				else {
+					cachedBitmap = bm;
+				}
+			}
+			else {
+				if (bitmap2d()) return cachedBitmap;
+			}
+		}
+		else {
+			if (bitmap2d()) return cachedBitmap;
 		}
 
 		cachedBounds = cachedBitmap.rect;
@@ -537,7 +554,7 @@ public class ScratchSprite extends ScratchObj {
 
 	private function saveToLocalFile():void {
 		function success():void {
-			Scratch.app.log('sprite saved to file: ' + file.name);
+			Scratch.app.log(LogLevel.INFO, 'sprite saved to file', {filename: file.name});
 		}
 		var zipData:ByteArray = new ProjectIO(Scratch.app).encodeSpriteAsZipFile(copyToShare());
 		var defaultName:String = objName + '.sprite2';

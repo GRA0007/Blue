@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Scratch Project Editor and Player
  * Copyright (C) 2014 Massachusetts Institute of Technology
  *
@@ -55,7 +55,6 @@ public class TabsPart extends UIPart {
 
 	public function refresh():void {
 		var label:String = ((app.viewedObj() != null) && app.viewedObj().isStage) ? 'Backdrops' : 'Costumes';
-		label = Translator.map(label);
 		imagesTab.setImage(makeTabImg(label, true), makeTabImg(label, false));
 		fixLayout();
 	}

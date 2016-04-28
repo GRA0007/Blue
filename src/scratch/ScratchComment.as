@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Scratch Project Editor and Player
  * Copyright (C) 2014 Massachusetts Institute of Technology
  *
@@ -31,11 +31,11 @@ public class ScratchComment extends Sprite {
 	public var blockID:int;
 	public var blockRef:Block;
 
-	private const contentsFormat:TextFormat = new TextFormat(CSS.font, 12, 0xE0E0E0, false);
-	private const titleFormat:TextFormat = new TextFormat(CSS.font, 12, 0xE0E0E0, true);
-	private const arrowColor:int = 0xE0E0E0;
-	private const bodyColor:int = 0x0099FF;
-	private const titleBarColor:int = 0x006AB1;
+	private const contentsFormat:TextFormat = new TextFormat(CSS.font, 12, CSS.textColor, false);
+	private const titleFormat:TextFormat = new TextFormat(CSS.font, 12, CSS.textColor, true);
+	private const arrowColor:int = 0x808080;
+	private const bodyColor:int = 0xFFFFD2;
+	private const titleBarColor:int = 0xFFFFA5;
 
 	private var frame:ResizeableFrame;
 	private var titleBar:Shape;
@@ -80,6 +80,11 @@ public class ScratchComment extends Sprite {
 		g.drawRect(contents.x, contents.y, w, h);
 
 		drawTitleBar();
+	}
+
+	public function startEditText(): void {
+		contents.setSelection(0, contents.text.length);
+		stage.focus = contents;
 	}
 
 	private function drawTitleBar():void {

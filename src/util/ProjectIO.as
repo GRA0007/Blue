@@ -30,9 +30,10 @@ package util {
 import flash.display.*;
 import flash.events.*;
 import flash.net.URLLoader;
-import flash.net.URLLoaderDataFormat;
-import flash.net.URLRequest;
 import flash.utils.*;
+
+import logging.LogLevel;
+
 import scratch.*;
 
 import sound.WAVFile;
@@ -88,6 +89,10 @@ public class ProjectIO {
 		return zip.endWrite();
 	}
 
+	protected function getScratchStage():ScratchStage {
+		return new ScratchStage();
+	}
+
 	private function addJSONData(fileName:String, obj:*, zip:ZipIO):void {
 		var jsonData:ByteArray = new ByteArray();
 		jsonData.writeUTFBytes(util.JSON.stringify(obj));
@@ -126,14 +131,14 @@ public class ProjectIO {
 		else if (fail != null) fail();
 	}
 
-	private function decodeFromZipFile(zipData:ByteArray):ScratchObj {
+	protected function decodeFromZipFile(zipData:ByteArray):ScratchObj {
 		var jsonData:String;
 		images = [];
 		sounds = [];
 		try {
 			var files:Array = new ZipIO().read(zipData);
 		} catch (e:*) {
-			app.log('Bad zip file; attempting to recover');
+			app.log(LogLevel.WARNING, 'Bad zip file; attempting to recover');
 			try {
 				files = new ZipIO().recover(zipData);
 			} catch (e:*) {
@@ -156,7 +161,7 @@ public class ProjectIO {
 		if (jsonData == null) return null;
 		var jsonObj:Object = util.JSON.parse(jsonData);
 		if (jsonObj['children']) { // project JSON
-			var proj:ScratchStage = new ScratchStage();
+			var proj:ScratchStage = getScratchStage();
 			proj.readJSON(jsonObj);
 			if (proj.penLayerID >= 0) proj.penLayerPNG = images[proj.penLayerID]
 			else if (proj.penLayerMD5) proj.penLayerPNG = images[0];
@@ -255,6 +260,10 @@ public class ProjectIO {
 			if (fail != null) fail();
 		}
 		if (imageDict[imageData] != null) return; // already loading or loaded
+		if (!imageData || imageData.length == 0) {
+			if (fail != null) fail();
+			return;
+		}
 		imageDict[imageData] = 'loading...';
 		var loader:Loader = new Loader();
 		loader.contentLoaderInfo.addEventListener(Event.COMPLETE, loadDone);
@@ -282,7 +291,7 @@ public class ProjectIO {
 			assetDict[md5] = data;
 			assetCount++;
 			if (!data) {
-				app.log('missing asset: ' + md5);
+				app.log(LogLevel.WARNING, 'missing asset: ' + md5);
 			}
 			if (app.lp) {
 				app.lp.setProgress(assetCount / assetsToFetch.length);
@@ -298,7 +307,7 @@ public class ProjectIO {
 		}
 		projectData.position = 0;
 		var projObject:Object = util.JSON.parse(projectData.readUTFBytes(projectData.length));
-		var proj:ScratchStage = new ScratchStage();
+		var proj:ScratchStage = getScratchStage();
 		proj.readJSON(projObject);
 		var assetsToFetch:Array = collectAssetsToFetch(proj.allObjects());
 		var assetDict:Object = new Object();
@@ -310,26 +319,36 @@ public class ProjectIO {
 	// Fetch a costume or sound from the server
 	//----------------------------
 
-	public function fetchImage(id:String, costumeName:String, width:int, whenDone:Function):URLLoader {
+	public function fetchImage(id:String, costumeName:String, width:int, whenDone:Function, otherData:Object = null):URLLoader {
 		// Fetch an image asset from the server and call whenDone with the resulting ScratchCostume.
 		var c:ScratchCostume;
 		function gotCostumeData(data:ByteArray):void {
 			if (!data) {
-				app.log('Image not found on server: ' + id);
+				app.log(LogLevel.WARNING, 'Image not found on server: ' + id);
 				return;
 			}
 			if (ScratchCostume.isSVGData(data)) {
-				c = new ScratchCostume(costumeName, data);
+				if (otherData && otherData.centerX)
+					c = new ScratchCostume(costumeName, data, otherData.centerX, otherData.centerY, otherData.bitmapResolution);
+				else
+					c = new ScratchCostume(costumeName, data);
 				c.baseLayerMD5 = id;
 				whenDone(c);
 			} else {
 				var loader:Loader = new Loader();
 				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, imageLoaded);
+				loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, imageError);
 				loader.loadBytes(data);
 			}
 		}
+		function imageError(event:IOErrorEvent):void {
+			app.log(LogLevel.WARNING, 'ProjectIO failed to load image', {id: id});
+		}
 		function imageLoaded(e:Event):void {
-			c = new ScratchCostume(costumeName, e.target.content.bitmapData);
+			if (otherData && otherData.centerX)
+				c = new ScratchCostume(costumeName, e.target.content.bitmapData, otherData.centerX, otherData.centerY, otherData.bitmapResolution);
+			else
+				c = new ScratchCostume(costumeName, e.target.content.bitmapData);
 			if (width) c.bitmapResolution = c.baseLayerBitmap.width / width;
 			c.baseLayerMD5 = id;
 			whenDone(c);
@@ -341,7 +360,7 @@ public class ProjectIO {
 		// Fetch a sound asset from the server and call whenDone with the resulting ScratchSound.
 		function gotSoundData(sndData:ByteArray):void {
 			if (!sndData) {
-				app.log('Sound not found on server: ' + id);
+				app.log(LogLevel.WARNING, 'Sound not found on server', {id: id});
 				return;
 			}
 			var snd:ScratchSound;
@@ -387,7 +406,7 @@ public class ProjectIO {
 		// Download all media for the given list of ScratchObj objects.
 		function assetReceived(md5:String, data:ByteArray):void {
 			if (!data) {
-				app.log('missing sprite asset: ' + md5);
+				app.log(LogLevel.WARNING, 'missing sprite asset', {md5: md5});
 			}
 			assetDict[md5] = data;
 			assetCount++;
@@ -422,7 +441,13 @@ public class ProjectIO {
 			for each (var c:ScratchCostume in obj.costumes) {
 				data = assetDict[c.baseLayerMD5];
 				if (data) c.baseLayerData = data;
-				else c.baseLayerData = ScratchCostume.emptySVG(); // missing asset data; use empty costume
+				else {
+					// Asset failed to load so use an empty costume
+					// BUT retain the original MD5 and don't break the reference to the costume that failed to load.
+					var origMD5:String = c.baseLayerMD5;
+					c.baseLayerData = ScratchCostume.emptySVG();
+					c.baseLayerMD5 = origMD5;
+				}
 				if (c.textLayerMD5) c.textLayerData = assetDict[c.textLayerMD5];
 			}
 			for each (var snd:ScratchSound in obj.sounds) {

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Scratch Project Editor and Player
  * Copyright (C) 2014 Massachusetts Institute of Technology
  *
@@ -56,14 +56,19 @@
 // Delay times are rounded to milliseconds, and the minimum delay is a millisecond.
 
 package interpreter {
-	import flash.utils.Dictionary;
-	import flash.utils.getTimer;
-	import flash.geom.Point;
-	import flash.geom.ColorTransform;
-	import blocks.*;
-	import primitives.*;
-	import scratch.*;
-	import sound.*;
+import blocks.*;
+
+import extensions.ExtensionManager;
+
+import flash.geom.Point;
+import flash.utils.Dictionary;
+import flash.utils.getTimer;
+
+import primitives.*;
+
+import scratch.*;
+
+import sound.*;
 
 public class Interpreter {
 
@@ -94,8 +99,8 @@ public class Interpreter {
 //		checkPrims();
 	}
 
-	public function targetObj():ScratchObj { return ScratchObj(activeThread.target) }
-	public function targetSprite():ScratchSprite { return activeThread.target as ScratchSprite }
+	public function targetObj():ScratchObj { return app.runtime.currentDoObj ? app.runtime.currentDoObj : activeThread.target }
+	public function targetSprite():ScratchSprite { return (app.runtime.currentDoObj ? app.runtime.currentDoObj : activeThread.target) as ScratchSprite }
 
 	/* Threads */
 
@@ -115,7 +120,7 @@ public class Interpreter {
 
 	public function threadCount():int { return threads.length }
 
-	public function toggleThread(b:Block, targetObj:*, startupDelay:int = 0):void {
+	public function toggleThread(b:Block, targetObj:*, startupDelay:int = 0, isBackground:Boolean = false):void {
 		var i:int, newThreads:Array = [], wasRunning:Boolean = false;
 		for (i = 0; i < threads.length; i++) {
 			if ((threads[i].topBlock == b) && (threads[i].target == targetObj)) {
@@ -126,7 +131,7 @@ public class Interpreter {
 		}
 		threads = newThreads;
 		if (wasRunning) {
-			if(app.editMode) b.hideRunFeedback();
+			if (app.editMode) b.hideRunFeedback();
 			clearWarpBlock();
 		} else {
 			var topBlock:Block = b;
@@ -144,12 +149,18 @@ public class Interpreter {
 				};
 				b.args[0] = reporter;
 			}
-			topBlock.showRunFeedback();
+			if (app.editMode && ! isBackground) topBlock.showRunFeedback();
 			var t:Thread = new Thread(b, targetObj, startupDelay);
 			if (topBlock.isReporter) bubbleThread = t;
 			t.topBlock = topBlock;
 			threads.push(t);
 			app.threadStarted();
+		}
+	}
+
+	public function showAllRunFeedback():void {
+		for each (var t:Thread in threads) {
+			t.topBlock.showRunFeedback();
 		}
 	}
 
@@ -179,7 +190,8 @@ public class Interpreter {
 	}
 
 	public function restartThread(b:Block, targetObj:*):Thread {
-		// used by broadcast; stop any thread running on b, then start a new thread on b
+		// used by broadcast, click hats, and when key pressed hats
+		// stop any thread running on b, then start a new thread on b
 		var newThread:Thread = new Thread(b, targetObj);
 		var wasRunning:Boolean = false;
 		for (var i:int = 0; i < threads.length; i++) {
@@ -191,7 +203,7 @@ public class Interpreter {
 		}
 		if (!wasRunning) {
 			threads.push(newThread);
-			if(app.editMode) b.showRunFeedback();
+			if (app.editMode) b.showRunFeedback();
 			app.threadStarted();
 		}
 		return newThread;
@@ -293,7 +305,7 @@ public class Interpreter {
 		if (!b) return 0; // arg() and friends can pass null if arg index is out of range
 		var op:String = b.op;
 		if (b.opFunction == null) {
-			if (op.indexOf('.') > -1) b.opFunction = app.extensionManager.primExtensionOp;
+			if (ExtensionManager.hasExtensionPrefix(op)) b.opFunction = app.extensionManager.primExtensionOp;
 			else b.opFunction = (primTable[op] == undefined) ? primNoop : primTable[op];
 		}
 
@@ -667,8 +679,7 @@ public class Interpreter {
 
 	private function primReturn(b:Block):void {
 		// Return from the innermost procedure. If not in a procedure, stop the thread.
-		var didReturn:Boolean = activeThread.returnFromProcedure();
-		if (!didReturn) {
+		if (!activeThread.returnFromProcedure()) {
 			activeThread.stop();
 			yield = true;
 		}
@@ -679,9 +690,11 @@ public class Interpreter {
 	// a reference to the Variable object is cached in the target object.
 
 	private function primVarGet(b:Block):* {
-		var v:Variable = activeThread.target.varCache[b.spec];
+		var target:ScratchObj = app.runtime.currentDoObj ? app.runtime.currentDoObj : activeThread.target;
+
+		var v:Variable = target.varCache[b.spec];
 		if (v == null) {
-			v = activeThread.target.varCache[b.spec] = activeThread.target.lookupOrCreateVar(b.spec);
+			v = target.varCache[b.spec] = target.lookupOrCreateVar(b.spec);
 			if (v == null) return 0;
 		}
 		// XXX: Do we need a get() for persistent variables here ?

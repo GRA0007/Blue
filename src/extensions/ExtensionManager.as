@@ -24,24 +24,36 @@
 // socket-based communications with local and server-based extension helper applications.
 
 package extensions {
-	import flash.errors.IllegalOperationError;
-	import flash.events.*;
-	import flash.net.*;
-	import flash.utils.Dictionary;
-	import flash.utils.getTimer;
-	import blocks.Block;
-	import interpreter.*;
-	import uiwidgets.DialogBox;
-	import uiwidgets.IndicatorLight;
-	import util.*;
+import blocks.Block;
+
+import com.adobe.utils.StringUtil;
+
+import flash.errors.IllegalOperationError;
+import flash.events.*;
+import flash.net.*;
+import flash.utils.Dictionary;
+import flash.utils.getTimer;
+
+import interpreter.*;
+
+import mx.utils.URLUtil;
+
+import uiwidgets.DialogBox;
+import uiwidgets.IndicatorLight;
+
+import util.*;
 
 public class ExtensionManager {
 
-	private var app:Scratch;
+	protected var app:Scratch;
 	protected var extensionDict:Object = new Object(); // extension name -> extension record
 	private var justStartedWait:Boolean;
 	private var pollInProgress:Dictionary = new Dictionary(true);
+	static public const extensionSeparator:String = '\u001F';
+	static public const extensionSeparatorLegacy:String = '.';
+	static public const picoBoardExt:String = 'PicoBoard';
 	static public const wedoExt:String = 'LEGO WeDo';
+	static public const wedo2Ext:String = 'LEGO WeDo 2.0';
 
 	public function ExtensionManager(app:Scratch) {
 		this.app = app;
@@ -64,25 +76,80 @@ public class ExtensionManager {
 
 		// Clear imported extensions before loading a new project.
 		extensionDict = {};
-		extensionDict['PicoBoard'] = ScratchExtension.PicoBoard();
+		extensionDict[picoBoardExt] = ScratchExtension.PicoBoard();
 		extensionDict[wedoExt] = ScratchExtension.WeDo();
+		extensionDict[wedo2Ext] = ScratchExtension.WeDo2();
+	}
+
+	// Should the interpreter force async communication with extensions?
+	// For example, should 'r' be treated as 'R'?
+	public function shouldForceAsync(op:String):Boolean {
+		// Non-extension blocks shouldn't be forceAsync
+		var extensionName:String = unpackExtensionName(op);
+		if (!extensionName) return false;
+
+		var extension:ScratchExtension = extensionDict[extensionName];
+		if (extension && extension.port != 0) {
+			// HTTP extensions should never be forceAsync
+			return false;
+		}
+		else {
+			// JS extensions should be forceAsync in the offline editor.
+			// If the extension is not loaded, guess that it's JS. Really that shouldn't ever happen...
+			return app.isOffline;
+		}
 	}
 
 	// -----------------------------
 	// Block Specifications
 	//------------------------------
 
+	// Return a command spec array for the given operation or null.
 	public function specForCmd(op:String):Array {
-		// Return a command spec array for the given operation or null.
 		for each (var ext:ScratchExtension in extensionDict) {
-			var prefix:String = ext.useScratchPrimitives ? '' : (ext.name + '.');
 			for each (var spec:Array in ext.blockSpecs) {
-				if ((spec.length > 2) && ((prefix + spec[2]) == op)) {
-					return [spec[1], spec[0], Specs.extensionsCategory, op, spec.slice(3)];
+				if (spec.length > 2) {
+					var compareOp:String = ext.useScratchPrimitives ?
+							spec[2] : (ext.name + extensionSeparator + spec[2]);
+					var legacyOp:String = ext.useScratchPrimitives ?
+							spec[2] : (ext.name + extensionSeparatorLegacy + spec[2]);
+					if (op == compareOp || op == legacyOp) {
+						// return using compareOp to upgrade from legacy separator
+						return [spec[1], spec[0], Specs.extensionsCategory, compareOp, spec.slice(3)];
+					}
 				}
 			}
 		}
 		return null;
+	}
+
+	// Check whether `prefixedOp` is prefixed with an extension name.
+	public static function hasExtensionPrefix(prefixedOp:String):Boolean {
+		return prefixedOp.indexOf(extensionSeparator) >= 0;
+	}
+
+	// Retrieve the extension name from `prefixedOp`.
+	// If `prefixedOp` doesn't have an extension prefix, return `null`.
+	public static function unpackExtensionName(prefixedOp:String):String {
+		var separatorPosition:int = prefixedOp.indexOf(extensionSeparator);
+		if (separatorPosition < 0) {
+			return null;
+		}
+		else {
+			return prefixedOp.substr(0, separatorPosition);
+		}
+	}
+
+	// Unpack `prefixedOp` into `[extensionName, op]`
+	// If `prefixedOp` doesn't have an extension prefix, return `[null, prefixedOp]`
+	public static function unpackExtensionAndOp(prefixedOp:String):Array {
+		var separatorPosition:int = prefixedOp.indexOf(extensionSeparator);
+		if (separatorPosition < 0) {
+			return [null, prefixedOp];
+		}
+		else {
+			return [prefixedOp.substr(0, separatorPosition), prefixedOp.substr(separatorPosition+1)];
+		}
 	}
 
 	// -----------------------------
@@ -101,7 +168,8 @@ public class ExtensionManager {
 				}
 				else {
 					app.externalCall('ScratchExtensions.unregister', null, extName);
-					delete extensionDict[extName];
+					if(!ext.isInternal) delete extensionDict[extName];
+					app.updateTopBar();
 				}
 			}
 		}
@@ -162,6 +230,8 @@ public class ExtensionManager {
 		var ext:ScratchExtension = extensionDict[extensionName];
 		if (ext == null) return; // unknown extension
 
+		app.updateTopBar();
+
 		var index:int = ext.busy.indexOf(id);
 		if(index > -1) {
 			ext.busy.splice(index, 1);
@@ -193,16 +263,6 @@ public class ExtensionManager {
 			ext = new ScratchExtension(extObj.extensionName, extObj.extensionPort);
 		ext.port = extObj.extensionPort;
 		ext.blockSpecs = extObj.blockSpecs;
-		if (app.isOffline && (ext.port == 0)) {
-			// Fix up block specs to force reporters to be treated as requesters.
-			// This is because the offline JS interface doesn't support returning values directly.
-			for each(var spec:Object in ext.blockSpecs) {
-				if(spec[0] == 'r') {
-					// 'r' is reporter, 'R' is requester, and 'rR' is a reporter forced to act as a requester.
-					spec[0] = 'rR';
-				}
-			}
-		}
 		if(extObj.url) ext.url = extObj.url;
 		ext.showBlocks = true;
 		ext.menus = extObj.menus;
@@ -225,6 +285,10 @@ public class ExtensionManager {
 	}
 
 	public function loadSavedExtensions(savedExtensions:Array):void {
+		function extensionRefused(extObj:Object, reason: String):void {
+			Scratch.app.jsThrowError('Refusing to load project extension "' + extObj.extensionName + '": ' + reason);
+		}
+
 		// Reset the system extensions and load the given array of saved extensions.
 		if (!savedExtensions) return; // no saved extensions
 		for each (var extObj:Object in savedExtensions) {
@@ -233,26 +297,46 @@ public class ExtensionManager {
 				continue; // internal extension overrides one saved in project
 			}
 
-			if (!('extensionName' in extObj) ||
-				(!('extensionPort' in extObj) && !('javascriptURL' in extObj)) ||
-				!('blockSpecs' in extObj)) {
-					continue;
+			if (!('extensionName' in extObj)) {
+				Scratch.app.jsThrowError('Refusing to load project extension without a name.');
+				continue;
+			}
+
+			if (!('extensionPort' in extObj) && !('javascriptURL' in extObj)) {
+				extensionRefused(extObj, 'No location specified.');
+				continue;
+			}
+
+			if (!('blockSpecs' in extObj)) {
+				// TODO: resolve potential confusion when the project blockSpecs don't match those in the JS.
+				extensionRefused(extObj, 'No blockSpecs.');
+				continue;
 			}
 
 			var ext:ScratchExtension = new ScratchExtension(extObj.extensionName, extObj.extensionPort || 0);
-			extensionDict[extObj.extensionName] = ext;
 			ext.blockSpecs = extObj.blockSpecs;
 			ext.showBlocks = true;
-			ext.isInternal = false; // For now?
+			ext.isInternal = false;
 			ext.menus = extObj.menus;
 			if(extObj.javascriptURL) {
+				if (!Scratch.app.isExtensionDevMode) {
+					extensionRefused(extObj, 'Experimental extensions are only supported on ScratchX.');
+					continue;
+				}
+				if (!StringUtil.endsWith(URLUtil.getServerName(extObj.javascriptURL).toLowerCase(),'.github.io')) {
+					extensionRefused(extObj, 'Experimental extensions must be hosted on GitHub Pages.');
+					continue;
+				}
 				ext.javascriptURL = extObj.javascriptURL;
 				ext.showBlocks = false;
 				if(extObj.id) ext.id = extObj.id;
-				setEnabled(extObj.extensionName, true);
 			}
+
+			extensionDict[extObj.extensionName] = ext;
+			setEnabled(extObj.extensionName, true);
 		}
 		Scratch.app.updatePalette();
+		Scratch.app.translationChanged();
 	}
 
 	// -----------------------------
@@ -261,10 +345,10 @@ public class ExtensionManager {
 
 	public function menuItemsFor(op:String, menuName:String):Array {
 		// Return a list of menu items for the given menu of the extension associated with op or null.
-		var i:int = op.indexOf('.');
-		if (i < 0) return null;
-		var ext:ScratchExtension = extensionDict[op.slice(0, i)];
-		if (ext == null) return null; // unknown extension
+		var extName:String = unpackExtensionName(op);
+		if (!extName) return null;
+		var ext:ScratchExtension = extensionDict[extName];
+		if (!ext || !ext.menus) return null; // unknown extension
 		return ext.menus[menuName];
 	}
 
@@ -308,18 +392,56 @@ public class ExtensionManager {
 	//------------------------------
 
 	public function primExtensionOp(b:Block):* {
-		var i:int = b.op.indexOf('.');
-		var extName:String = b.op.slice(0, i);
+		var unpackedOp:Array = unpackExtensionAndOp(b.op);
+		var extName:String = unpackedOp[0];
 		var ext:ScratchExtension = extensionDict[extName];
 		if (ext == null) return 0; // unknown extension
-		var primOrVarName:String = b.op.slice(i + 1);
+		var primOrVarName:String = unpackedOp[1];
 		var args:Array = [];
-		for (i = 0; i < b.args.length; i++) {
+		for (var i:int = 0; i < b.args.length; i++) {
 			args.push(app.interp.arg(b, i));
 		}
 
 		var value:*;
-		if (b.isReporter) {
+		if(b.isHat && b.isAsyncHat){
+			if(b.requestState == 0){
+				request(extName, primOrVarName, args, b);
+				app.interp.doYield();
+				return null;
+			}
+			else if(b.requestState == 2){
+				b.requestState = 0;
+				if(b.forceAsync){
+					value = b.response as Boolean;
+				}
+				else{
+					var responseObj:Object = b.response as Object;
+					args.push(responseObj);
+					if(responseObj && responseObj.hasOwnProperty('predicate')){
+						app.externalCall('ScratchExtensions.getReporter', function(v:*):void {
+							value = v;
+						}, ext.name, responseObj.predicate, args);
+					}
+					else{
+						value = true;
+					}
+				}
+				if(value){
+					if(!app.runtime.waitingHatFired(b, true)){
+						app.interp.doYield();
+					}
+				}
+				else{
+					app.interp.doYield();
+					app.runtime.waitingHatFired(b, false);
+				}
+			}
+			else{
+				app.interp.doYield();
+			}
+			return;
+		}
+		else if (b.isReporter) {
 			if(b.isRequester) {
 				if(b.requestState == 2) {
 					b.requestState = 0;
@@ -402,13 +524,20 @@ public class ExtensionManager {
 					activeThread.firstTime = true;
 				}
 			}
-			else
+			else {
 				httpCall(ext, op, args);
+			}
 		} else {
-			if(op == 'reset_all') op = 'resetAll';
+			if (Scratch.app.jsEnabled) {
+				if (op == 'reset_all') {
+					app.externalCall('ScratchExtensions.stop', null, ext.name);
+				}
+				else {
+					// call a JavaScript extension function with the given arguments
+					app.externalCall('ScratchExtensions.runCommand', null, ext.name, op, args);
+				}
+			}
 
-			// call a JavaScript extension function with the given arguments
-			if(Scratch.app.jsEnabled) app.externalCall('ScratchExtensions.runCommand', null, ext.name, op, args);
 			app.interp.redraw(); // make sure interpreter doesn't do too many extension calls in one cycle
 		}
 	}
@@ -430,7 +559,7 @@ public class ExtensionManager {
 			ext.busy.push(ext.nextID);
 			ext.waiting[b] = ext.nextID;
 
-			if (b.forcedRequester) {
+			if (b.forceAsync) {
 				// We're forcing a non-requester to be treated as a requester
 				app.externalCall('ScratchExtensions.getReporterForceAsync', null, ext.name, op, args, ext.nextID);
 			} else {
@@ -560,30 +689,41 @@ public class ExtensionManager {
 		var i:int;
 		var lines:Array = response.split('\n');
 		for each (var line:String in lines) {
-			var tokens:Array = line.split(/\s+/);
-			if (tokens.length > 1) {
-				var key:String = tokens[0];
-				if (key.indexOf('_') == 0) { // internal status update or response
-					if ('_busy' == key) {
-						for (i = 1; i < tokens.length; i++) {
-							var id:int = parseInt(tokens[i]);
-							if (ext.busy.indexOf(id) == -1) ext.busy.push(id);
-						}
-					}
-					if ('_problem' == key) ext.problem = line.slice(9);
-					if ('_success' == key) ext.success = line.slice(9);
-				} else { // sensor value
-					var val:String = decodeURIComponent(tokens[1]);
-					var n:Number = Number(val);
-					var path:Array = key.split('/');
-					for (i = 0; i < path.length; i++) {
-						 // normalize URL encoding for each path segment
-						path[i] = encodeURIComponent(decodeURIComponent(path[i]));
-					}
-					ext.stateVars[path.join('/')] = isNaN(n) ? val : n;
+			i = line.indexOf(' ');
+			if (i == -1) i = line.length;
+			var key:String = line.slice(0, i);
+			var value:String = decodeURIComponent(line.slice(i + 1));
+			switch (key) {
+			case '_busy':
+				for each (var token:String in value.split(' ')) {
+					var id:int = parseInt(token);
+					if (ext.busy.indexOf(id) == -1) ext.busy.push(id);
 				}
+				break;
+			case '_problem':
+				ext.problem = value;
+				break;
+			case '_success':
+				ext.success = value;
+				break;
+			default:
+				var n:Number = Interpreter.asNumber(value);
+				var path:Array = key.split('/');
+				for (i = 0; i < path.length; i++) {
+					// normalize URL encoding for each path segment
+					path[i] = encodeURIComponent(decodeURIComponent(path[i]));
+				}
+				ext.stateVars[path.join('/')] = n == n ? n : value;
 			}
 		}
 	}
 
+	public function hasExperimentalExtensions():Boolean {
+		for each (var ext:ScratchExtension in extensionDict) {
+			if (!ext.isInternal && ext.javascriptURL) {
+				return true;
+			}
+		}
+		return false;
+	}
 }}

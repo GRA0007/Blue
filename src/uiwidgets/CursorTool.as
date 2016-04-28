@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Scratch Project Editor and Player
  * Copyright (C) 2014 Massachusetts Institute of Technology
  *
@@ -133,7 +133,7 @@ public class CursorTool {
 	public static function init(app:Scratch):void {
 		CursorTool.app = app;
 		app.stage.addEventListener(MouseEvent.MOUSE_MOVE, mouseMove);
-//		app.stage.addEventListener(Event.MOUSE_LEAVE, mouseLeave);
+		app.stage.addEventListener(Event.MOUSE_LEAVE, mouseLeave);
 	}
 
 	private static function mouseMove(ignore:*):void {

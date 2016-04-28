@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Scratch Project Editor and Player
  * Copyright (C) 2014 Massachusetts Institute of Technology
  *
@@ -47,11 +47,7 @@ public class ProcedureSpecEditor extends Sprite {
 
 	private const labelColor:int = 0x8738bf; // 0x6c36b3; // 0x9c35b3;
 	private const selectedLabelColor:int = 0xefa6ff;
-	
-/*	private var customBlockButton:IconButton;
-	private var customReporterButton:IconButton;
-	private var customBooleanButton:IconButton;
-*/
+
 	public function ProcedureSpecEditor(originalSpec:String, inputNames:Array, warpFlag:Boolean) {
 		addChild(base = new Shape());
 		setWidthHeight(350, 10);
@@ -67,9 +63,6 @@ public class ProcedureSpecEditor extends Sprite {
 		moreButton.disableMouseover();
 
 		addButtonsAndLabels();
-/*		addCustomBlockButton()
-		addCustomReporterButton()
-		addCustomBooleanButton()*/
 		addwarpCheckbox();
 
 		addChild(deleteButton = new IconButton(deleteItem, Resources.createBmp('removeItem')));
@@ -101,45 +94,8 @@ public class ProcedureSpecEditor extends Sprite {
 		g.beginFill(CSS.white);
 		g.drawRect(0, 0, w, h);
 		g.endFill();
-		
-/*		blockButton.x = 3;
-		blockButton.y = 7;
-		reporterButton.x = 13;
-		reporterButton.y = 7;
-		booleanButton.x = 3;
-		booleanButton.y = 23;*/
 	}
-	
-/*	private function addCustomBlockButton() : void {
-		var blockButtonClicked:Function = null;
-		blockButtonClicked = function(param1:*):void {
-			trace("hmmm");
-		};
-		blockButton = new IconButton(blockButtonClicked, "customNewBlock");
-		blockButton.isMomentary = true;
-		addChild(this.blockButton);
-	}
-	
-	private function addCustomReporterButton() : void {
-		var reporterButtonClicked:Function = null;
-		reporterButtonClicked = function(param1:*):void {
-			trace("hmmm");
-		};
-		reporterButton = new IconButton(reporterButtonClicked, "customNewReporter");
-		reporterButton.isMomentary = true;
-		addChild(this.reporterButton);
-	}
-	
-	private function addCustomBooleanButton() : void {
-		var booleanButtonClicked:Function = null;
-		booleanButtonClicked = function(param1:*):void {
-			trace("hmmm");
-		};
-		booleanButton = new IconButton(booleanButtonClicked, "customNewBoolean");
-		booleanButton.isMomentary = true;
-		addChild(this.booleanButton);
-	}
-*/
+
 	private function clearRow():void {
 		for each (var el:DisplayObject in row) {
 			if (el.parent) el.parent.removeChild(el);

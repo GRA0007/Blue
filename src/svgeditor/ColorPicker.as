@@ -18,14 +18,17 @@
  */
 
 package svgeditor {
-	import flash.display.*;
-	import flash.events.*;
-	import flash.filters.GlowFilter;
-	import flash.geom.*;
-	import flash.utils.Dictionary;
-	import assets.Resources;
-	import uiwidgets.*;
-	import util.Color;
+import assets.Resources;
+
+import flash.display.*;
+import flash.events.*;
+import flash.filters.GlowFilter;
+import flash.geom.*;
+import flash.utils.Dictionary;
+
+import uiwidgets.*;
+
+import util.Color;
 
 public class ColorPicker extends Sprite {
 
@@ -71,10 +74,8 @@ public class ColorPicker extends Sprite {
 			if (b && b.lastEvent) b.lastEvent.stopPropagation();
 		}
 		var ib:IconButton = new IconButton(
-			selectEyedropper,
-			ImageEdit.makeToolButton('eyedropper', true),
-			ImageEdit.makeToolButton('eyedropper', false),
-			true);
+				selectEyedropper, ImageEdit.makeToolButton('eyedropper', true), ImageEdit.makeToolButton(
+						'eyedropper', false), true);
 		editor.registerToolButton('eyedropper', ib);
 		ib.x = primaryColorSwatch.x + 163;
 		ib.y = 0;
@@ -119,7 +120,7 @@ public class ColorPicker extends Sprite {
 			var tmp:int = props.rawColor;
 			props.rawColor = props.rawSecondColor;
 			props.rawSecondColor = tmp;
-			drawPropsUI.sendChangeEvent();
+			drawPropsUI.onColorChange();
 			updateSwatches();
 		}
 		primaryColorSwatch = new Sprite();
@@ -148,7 +149,8 @@ public class ColorPicker extends Sprite {
 		var a:Number = drawPropsUI.settings.alpha;
 		if (a == 0.0) {
 			color = transparentColor;
-		} else {
+		}
+		else {
 			var col:uint = drawPropsUI.settings.color;
 			color = paletteReverseDict[col];
 		}
@@ -166,7 +168,8 @@ public class ColorPicker extends Sprite {
 		// Convert current color to HSV to find it
 		var hsv:Array = Color.rgb2hsv(drawPropsUI.settings.color);
 		var bmp:Bitmap = hsvColorPicker.getChildAt(0) as Bitmap;
-		setColorByHSVPos(new Point((bmp.bitmapData.width-1) * hsv[0] / 360, (bmp.bitmapData.height-1) * hsv[1]), false);
+		setColorByHSVPos(
+				new Point((bmp.bitmapData.width - 1) * hsv[0] / 360, (bmp.bitmapData.height - 1) * hsv[1]), false);
 
 		// Now set the brightness
 		(hsvColorPicker.getChildAt(1) as Slider).value = hsv[2];
@@ -219,11 +222,12 @@ public class ColorPicker extends Sprite {
 		var alpha:Number = 1.0;
 		if (e.target != transparentColor) {
 			color = paletteDict[e.target];
-		} else {
+		}
+		else {
 			alpha = 0;
 		}
 		setCurrentColor(color, alpha);
-		drawPropsUI.sendChangeEvent();
+		drawPropsUI.onColorChange();
 		//pickWheelColor();
 	}
 
@@ -275,12 +279,13 @@ public class ColorPicker extends Sprite {
 		if (evt.type == MouseEvent.MOUSE_DOWN) {
 			stage.addEventListener(MouseEvent.MOUSE_MOVE, setWheelColor);
 			stage.addEventListener(MouseEvent.MOUSE_UP, setWheelColor);
-		} else if (evt.type == MouseEvent.MOUSE_UP) {
+		}
+		else if (evt.type == MouseEvent.MOUSE_UP) {
 			stage.removeEventListener(MouseEvent.MOUSE_MOVE, setWheelColor);
 			stage.removeEventListener(MouseEvent.MOUSE_UP, setWheelColor);
 		}
 		if (evt.type != MouseEvent.MOUSE_UP) {
-			setColorByHSVPos(new Point(hsvColorPicker.mouseX,hsvColorPicker.mouseY));
+			setColorByHSVPos(new Point(hsvColorPicker.mouseX, hsvColorPicker.mouseY));
 		}
 	}
 
@@ -297,7 +302,7 @@ public class ColorPicker extends Sprite {
 				m.translate(-pos.x, -pos.y);
 				b.draw(hsvColorPicker, m);
 				setCurrentColor(b.getPixel32(0, 0), 1, false);
-				drawPropsUI.sendChangeEvent();
+				drawPropsUI.onColorChange();
 			}
 		}
 	}
@@ -319,7 +324,7 @@ public class ColorPicker extends Sprite {
 		var i:uint, sel:Sprite;
 		var stride:uint = paletteSwatchW + 2;
 		for (i = 0; i < grays.length; ++i) {
-			sel = makeColorSelector( Color.fromHSV(0, 0, grays[i]) );
+			sel = makeColorSelector(Color.fromHSV(0, 0, grays[i]));
 			sel.x = i * stride + leftSide;
 			sel.y = 0;
 			palette.addChild(sel);
@@ -339,7 +344,7 @@ public class ColorPicker extends Sprite {
 
 		for each (s in [0.2, 0.4, 1]) {
 			for each (h in hues) {
-				sel = makeColorSelector( Color.fromHSV(h, s, 1.0) );
+				sel = makeColorSelector(Color.fromHSV(h, s, 1.0));
 				sel.x = (i % hues.length) * stride + leftSide;
 				sel.y = y;
 				palette.addChild(sel);
@@ -350,7 +355,7 @@ public class ColorPicker extends Sprite {
 
 		for each (v in [0.8, 0.6, 0.4]) {
 			for each (h in hues) {
-				sel = makeColorSelector( Color.fromHSV(h, 1.0, v) );
+				sel = makeColorSelector(Color.fromHSV(h, 1.0, v));
 				sel.x = (i % hues.length) * stride + leftSide;
 				sel.y = y;
 				palette.addChild(sel);
@@ -365,7 +370,8 @@ public class ColorPicker extends Sprite {
 		if (!isTransparent) {
 			paletteDict[s] = color;
 			paletteReverseDict[color] = s;
-		} else {
+		}
+		else {
 			// don't add transparent to the dictionary
 			transparentColor = s;
 		}
@@ -399,4 +405,5 @@ public class ColorPicker extends Sprite {
 		if (highlight) palette.setChildIndex(spr, 0);
 	}
 
-}}
+}
+}

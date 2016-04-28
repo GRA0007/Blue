@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Scratch Project Editor and Player
  * Copyright (C) 2014 Massachusetts Institute of Technology
  *
@@ -18,19 +18,19 @@
  */
 
 package ui.media {
-	import flash.display.*;
-	import flash.events.*;
-	import flash.net.*;
-	import flash.text.*;
-	import flash.ui.*;
-	import flash.utils.*;
-	import assets.Resources;
-	import extensions.ScratchExtension;
-	import scratch.*;
-	import sound.mp3.MP3Loader;
-	import translation.Translator;
-	import uiwidgets.*;
-	import util.*;
+import flash.display.*;
+import flash.events.*;
+import flash.media.Sound;
+import flash.net.*;
+import flash.text.*;
+import flash.utils.*;
+import assets.Resources;
+import extensions.ScratchExtension;
+import scratch.*;
+import sound.mp3.MP3Loader;
+import translation.Translator;
+import uiwidgets.*;
+import util.*;
 
 public class MediaLibrary extends Sprite {
 
@@ -44,12 +44,12 @@ public class MediaLibrary extends Sprite {
 		'All', 'Hardware'];
 	private static const soundCategories:Array = [
 		'All', 'Animal', 'Effects', 'Electronic', 'Human', 'Instruments',
-		'Music Loops', 'Percussion', 'Vocals'];
+		'Music Loops', 'Musical Notes', 'Percussion', 'Vocals'];
 
 	private static const backdropThemes:Array = [
 		'Castle', 'City', 'Flying', 'Holiday', 'Music and Dance', 'Nature', 'Space', 'Sports', 'Underwater'];
 	private static const costumeThemes:Array = [
-		'Castle', 'City', 'Flying', 'Holiday', 'Music and Dance', 'Space', 'Sports', 'Underwater', 'Walking'];
+		'Castle', 'City', 'Dance', 'Dress-Up', 'Flying', 'Holiday', 'Music', 'Space', 'Sports', 'Underwater', 'Walking'];
 
 	private static const imageTypes:Array = ['All', 'Bitmap', 'Vector'];
 
@@ -75,7 +75,7 @@ public class MediaLibrary extends Sprite {
 	private var okayButton:Button;
 	private var cancelButton:Button;
 
-	private static var libraryCache:Array; // cache of all mediaLibrary entries
+	private static var libraryCache:Object = {}; // cache of all mediaLibrary entries
 
 	public function MediaLibrary(app:Scratch, type:String, whenDone:Function) {
 		this.app = app;
@@ -216,11 +216,11 @@ public class MediaLibrary extends Sprite {
 
 	private function addTitle():void {
 		var s:String = assetType;
-		if ('backdrop' == s) s = Translator.map('Backdrop Library');
-		if ('costume' == s) s = Translator.map('Costume Library');
-		if ('extension' == s) s = Translator.map('Extension Library');
-		if ('sprite' == s) s = Translator.map('Sprite Library');
-		if ('sound' == s) s = Translator.map('Sound Library');
+		if ('backdrop' == s) s = 'Backdrop Library';
+		if ('costume' == s) s = 'Costume Library';
+		if ('extension' == s) s = 'Extension Library';
+		if ('sprite' == s) s = 'Sprite Library';
+		if ('sound' == s) s = 'Sound Library';
 		addChild(title = Resources.makeLabel(Translator.map(s), titleFormat));
 	}
 
@@ -287,17 +287,17 @@ spriteFeaturesFilter.visible = false; // disable features filter for now
 		function gotLibraryData(data:ByteArray):void {
 			if (!data) return; // failure
 			var s:String = data.readUTFBytes(data.length);
-			libraryCache = util.JSON.parse(stripComments(s)) as Array;
+			libraryCache[assetType] = util.JSON.parse(stripComments(s)) as Array;
 			collectEntries();
 		}
 		function collectEntries():void {
 			allItems = [];
-			for each (var entry:Object in libraryCache) {
+			for each (var entry:Object in libraryCache[assetType]) {
 				if (entry.type == assetType) {
 					if (entry.tags is Array) entry.category = entry.tags[0];
 					var info:Array = entry.info as Array;
 					if (info) {
-						if ((entry.type == 'backdrop') || (assetType == 'costume')) {
+						if (entry.type == 'backdrop') {
 							entry.width = info[0];
 							entry.height = info[1];
 						}
@@ -320,7 +320,7 @@ spriteFeaturesFilter.visible = false; // disable features filter for now
 			addScratchExtensions();
 			return;
 		}
-		if (!libraryCache) app.server.getMediaLibrary(gotLibraryData);
+		if (!libraryCache[assetType]) app.server.getMediaLibrary(assetType, gotLibraryData);
 		else collectEntries();
 	}
 
@@ -328,12 +328,14 @@ spriteFeaturesFilter.visible = false; // disable features filter for now
 	protected function addScratchExtensions():void {
 		const extList:Array = [
 			ScratchExtension.PicoBoard(),
-			ScratchExtension.WeDo()];
+			ScratchExtension.WeDo(),
+			ScratchExtension.WeDo2()
+		];
 		allItems = [];
 		for each (var ext:ScratchExtension in extList) {
 			allItems.push(new MediaLibraryItem({
 				extension: ext,
-				name: ext.name,
+				name: ext.displayName,
 				md5: ext.thumbnailMD5,
 				tags: ext.tags
 			}));
@@ -422,14 +424,30 @@ spriteFeaturesFilter.visible = false; // disable features filter for now
 			var item:MediaLibraryItem = resultsPane.getChildAt(i) as MediaLibraryItem;
 			if (item && item.isHighlighted()) {
 				var md5AndExt:String = item.dbObj.md5;
+				var obj:Object = null;
 				if (assetType == 'extension') {
 					whenDone(item.dbObj.extension);
 				} else if (md5AndExt.slice(-5) == '.json') {
 					io.fetchSprite(md5AndExt, whenDone);
 				} else if (assetType == 'sound') {
 					io.fetchSound(md5AndExt, item.dbObj.name, whenDone);
-				} else {
-					io.fetchImage(md5AndExt, item.dbObj.name, 0, whenDone);
+				} else if (assetType == 'costume') {
+					obj = {
+						centerX: item.dbObj.info[0],
+						centerY: item.dbObj.info[1],
+						bitmapResolution: 1
+					};
+					if (item.dbObj.info.length == 3)
+						obj.bitmapResolution = item.dbObj.info[2];
+
+					io.fetchImage(md5AndExt, item.dbObj.name, 0, whenDone, obj);
+				} else { // assetType == backdrop
+					if (item.dbObj.info.length == 3) {
+						obj = {centerX: 99999, centerY: 99999, bitmapResolution: item.dbObj.info[2]};
+					} else if (item.dbObj.info.length == 2 && item.dbObj.info[0] == 960 && item.dbObj.info[1] == 720) {
+						obj = {centerX: 99999, centerY: 99999, bitmapResolution: 2};
+					}
+					io.fetchImage(md5AndExt, item.dbObj.name, 0, whenDone, obj);
 				}
 			}
 		}
@@ -514,10 +532,10 @@ spriteFeaturesFilter.visible = false; // disable features filter for now
 			whenDone(costumeOrSprite);
 		}
 		function decodeError():void {
-			DialogBox.notify('Error decoding image', 'Sorry, Scratch (Blue) was unable to load the image '+fName+'.', Scratch.app.stage);
+			DialogBox.notify('Error decoding image', 'Sorry, Scratch was unable to load the image '+fName+'.', Scratch.app.stage);
 		}
 		function spriteError():void {
-			DialogBox.notify('Error decoding sprite', 'Sorry, Scratch (Blue) was unable to load the sprite '+fName+'.', Scratch.app.stage);
+			DialogBox.notify('Error decoding sprite', 'Sorry, Scratch was unable to load the sprite '+fName+'.', Scratch.app.stage);
 		}
 		var costumeOrSprite:*;
 		var fExt:String = '';
@@ -531,7 +549,11 @@ spriteFeaturesFilter.visible = false; // disable features filter for now
 			var loader:Loader = new Loader();
 			loader.contentLoaderInfo.addEventListener(Event.COMPLETE, imageDecoded);
 			loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, function(e:Event):void { decodeError(); });
-			loader.loadBytes(data);
+			try {
+				loader.loadBytes(data);
+			} catch(e:*) {
+				decodeError();
+			}
 		} else if (fExt == '.gif') {
 			try {
 				importGIF(fName, data);
@@ -545,10 +567,7 @@ spriteFeaturesFilter.visible = false; // disable features filter for now
 			uploadCostume(costumeOrSprite as ScratchCostume, uploadComplete);
 		} else {
 			data.position = 0;
-			if (data.readUTFBytes(4) != 'ObjS') {
-				data.position = 0;
-				new ProjectIO(app).decodeSpriteFromZipFile(data, spriteDecoded, spriteError);
-			} else {
+			if (data.bytesAvailable > 4 && data.readUTFBytes(4) == 'ObjS') {
 				var info:Object;
 				var objTable:Array;
 				data.position = 0;
@@ -566,6 +585,9 @@ spriteFeaturesFilter.visible = false; // disable features filter for now
 					return;
 				}
 				new ProjectIO(app).decodeAllImages(newProject.allObjects(), imagesDecoded, spriteError);
+			} else {
+				data.position = 0;
+				new ProjectIO(app).decodeSpriteFromZipFile(data, spriteDecoded, spriteError);
 			}
 		}
 	}
@@ -643,7 +665,7 @@ spriteFeaturesFilter.visible = false; // disable features filter for now
 		if(!sndToUpload) {
 			DialogBox.notify(
 					'Sorry!',
-					'The sound file '+origName+' is not recognized by Scratch (Blue).  Please use MP3 or WAV sound files.',
+					'The sound file '+origName+' is not recognized by Scratch.  Please use MP3 or WAV sound files.',
 					stage);
 			return;
 		}
@@ -665,16 +687,38 @@ spriteFeaturesFilter.visible = false; // disable features filter for now
 			snd = new ScratchSound(sndName, data); // try reading the data as a WAV file
 		} catch (e:Error) { }
 
-		if (snd && (snd.sampleCount > 0)) { // WAV data
+		if (snd && snd.sampleCount > 0) { // WAV data
 			startSoundUpload(snd, origName, uploadComplete);
 		} else { // try to read data as an MP3 file
-			if (app.lp) app.lp.setTitle('Converting mp3...');
-			setTimeout(function():void {
-				MP3Loader.convertToScratchSound(sndName, data, function(s:ScratchSound):void {
-					snd = s;
-					startSoundUpload(s, origName, uploadComplete);
-				});
-			}, 1);
+			if (app.lp) app.lp.setTitle('Converting mp3 file...');
+			var sound:Sound;
+			function uploadConvertedSound(out:ScratchSound):void {
+				snd = out;
+				if (snd && snd.sampleCount > 0) {
+					startSoundUpload(out, origName, uploadComplete);
+				}
+				else {
+					app.removeLoadProgressBox();
+					DialogBox.notify('Error decoding sound', 'Sorry, Scratch was unable to load the sound ' + sndName + '.', Scratch.app.stage);
+				}
+			}
+			SCRATCH::allow3d {
+				sound = new Sound();
+				try {
+					data.position = 0;
+					sound.loadCompressedDataFromByteArray(data, data.length);
+					MP3Loader.extractSamples(origName, sound, sound.length * 44.1, uploadConvertedSound);
+				}
+				catch(e:Error) {
+					trace(e);
+					uploadComplete();
+				}
+			}
+
+			if (!sound)
+				setTimeout(function():void {
+					MP3Loader.convertToScratchSound(sndName, data, uploadConvertedSound);
+				}, 1);
 		}
 	}
 

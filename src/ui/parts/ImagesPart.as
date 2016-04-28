@@ -24,17 +24,23 @@
 // as well as the image editor, camera, import button and other image media tools.
 
 package ui.parts {
-	import flash.display.*;
-	import flash.events.MouseEvent;
-	import flash.geom.*;
-	import flash.text.*;
-	import flash.utils.setTimeout;
-	import scratch.*;
-	import svgeditor.*;
-	import svgutils.*;
-	import translation.Translator;
-	import ui.media.*;
-	import uiwidgets.*;
+import flash.display.*;
+import flash.events.MouseEvent;
+import flash.geom.*;
+import flash.text.*;
+import flash.utils.setTimeout;
+
+import scratch.*;
+
+import svgeditor.*;
+
+import svgutils.*;
+
+import translation.Translator;
+
+import ui.media.*;
+
+import uiwidgets.*;
 
 public class ImagesPart extends UIPart {
 
@@ -54,6 +60,7 @@ public class ImagesPart extends UIPart {
 	private var clearButton:Button;
 	private var libraryButton:Button;
 	private var editorImportButton:Button;
+	private var cropButton:IconButton;
 	private var flipHButton:IconButton;
 	private var flipVButton:IconButton;
 	private var centerButton:IconButton;
@@ -75,7 +82,7 @@ public class ImagesPart extends UIPart {
 		addListFrame();
 		addChild(nameField = new EditableLabel(nameChanged));
 
-		addChild(editor = new SVGEdit(app, this));
+		addEditor(true);
 
 		addUndoButtons();
 		addFlipButtons();
@@ -83,13 +90,21 @@ public class ImagesPart extends UIPart {
 		updateTranslation();
 	}
 
+	protected function addEditor(isSVG:Boolean):void {
+		if (isSVG) {
+			addChild(editor = new SVGEdit(app, this));
+		}
+		else {
+			addChild(editor = new BitmapEdit(app, this));
+		}
+	}
+
 	public static function strings():Array {
 		return [
-			'Clear', 'Add', 'Import', 'New backdrop:', 'New costume:', 'photo1',
-			'Undo', 'Redo', 'Flip left-right', 'Flip up-down', 'Set costume center',
-			'Choose backdrop from library', 'Choose costume from library',
-			'Paint new backdrop', 'Upload backdrop from file', 'New backdrop from camera',
-			'Paint new costume', 'Upload costume from file', 'New costume from camera',
+			'Clear', 'Add', 'Import', 'New backdrop:', 'New costume:', 'photo1', 'Undo', 'Redo', 'Flip left-right',
+			'Flip up-down', 'Set costume center', 'Choose backdrop from library', 'Choose costume from library',
+			'Paint new backdrop', 'Upload backdrop from file', 'New backdrop from camera', 'Paint new costume',
+			'Upload costume from file', 'New costume from camera',
 		];
 	}
 
@@ -119,12 +134,13 @@ public class ImagesPart extends UIPart {
 			SimpleTooltips.add(paintButton, {text: 'Paint new backdrop', direction: 'bottom'});
 			SimpleTooltips.add(importButton, {text: 'Upload backdrop from file', direction: 'bottom'});
 			SimpleTooltips.add(cameraButton, {text: 'New backdrop from camera', direction: 'bottom'});
-		} else {
+		}
+		else {
 			SimpleTooltips.add(paintButton, {text: 'Paint new costume', direction: 'bottom'});
 			SimpleTooltips.add(importButton, {text: 'Upload costume from file', direction: 'bottom'});
 			SimpleTooltips.add(cameraButton, {text: 'New costume from camera', direction: 'bottom'});
 		}
-}
+	}
 
 	private function isStage():Boolean { return app.viewedObj() && app.viewedObj().isStage }
 
@@ -192,7 +208,7 @@ public class ImagesPart extends UIPart {
 		useBitmapEditor(c.isBitmap() && !c.text);
 		editor.editCostume(c, obj.isStage);
 		editor.setZoomAndScroll(zoomAndScroll);
-		if(changed) app.setSaveNeeded();
+		if (changed) app.setSaveNeeded();
 	}
 
 	private function addListFrame():void {
@@ -230,11 +246,12 @@ public class ImagesPart extends UIPart {
 		if (flag) {
 			if (editor is BitmapEdit) return;
 			if (editor && editor.parent) removeChild(editor);
-			addChild(editor = new BitmapEdit(app, this));
-		} else {
+			addEditor(false);
+		}
+		else {
 			if (editor is SVGEdit) return;
 			if (editor && editor.parent) removeChild(editor);
-			addChild(editor = new SVGEdit(app, this));
+			addEditor(true);
 		}
 		if (oldSettings) {
 			editor.setShapeProps(oldSettings);
@@ -252,17 +269,19 @@ public class ImagesPart extends UIPart {
 			editor.setWidthHeight(contentsW, h - editor.y - 14);
 		}
 
+		contentsW = w - 16;
 		// import button
 		libraryButton.x = clearButton.x + clearButton.width + smallSpace;
 		libraryButton.y = clearButton.y;
 		editorImportButton.x = libraryButton.x + libraryButton.width + smallSpace;
 		editorImportButton.y = clearButton.y;
 
-		// flip and costume center buttons
-		flipHButton.x = editorImportButton.x + editorImportButton.width + bigSpace;
-		flipVButton.x = flipHButton.x + flipHButton.width + smallSpace;
-		centerButton.x = flipVButton.x + flipVButton.width + smallSpace;
-		flipHButton.y = flipVButton.y = centerButton.y = nameField.y - 1;
+		// buttons in the upper right
+		centerButton.x = contentsW - centerButton.width;
+		flipVButton.x = centerButton.x - flipVButton.width - smallSpace;
+		flipHButton.x = flipVButton.x - flipHButton.width - smallSpace;
+		cropButton.x = flipHButton.x - cropButton.width - smallSpace;
+		cropButton.y = flipHButton.y = flipVButton.y = centerButton.y = nameField.y - 1;
 	}
 
 	// -----------------------------
@@ -279,10 +298,8 @@ public class ImagesPart extends UIPart {
 
 	private function makeTopButton(fcn:Function, iconName:String, isRadioButton:Boolean = false):IconButton {
 		return new IconButton(
-			fcn,
-			SoundsPart.makeButtonImg(iconName, true, topButtonSize),
-			SoundsPart.makeButtonImg(iconName, false, topButtonSize),
-			isRadioButton);
+				fcn, SoundsPart.makeButtonImg(iconName, true, topButtonSize),
+				SoundsPart.makeButtonImg(iconName, false, topButtonSize), isRadioButton);
 	}
 
 	// -----------------------------
@@ -318,7 +335,10 @@ public class ImagesPart extends UIPart {
 		useBitmapEditor(false);
 
 		var svg:SVGElement = new SVGElement('svg');
-		svg.subElements.push(SVGElement.makeBitmapEl(c.baseLayerBitmap, 1 / c.bitmapResolution));
+		var nonTransparentBounds:Rectangle = c.baseLayerBitmap.getColorBoundsRect(0xFF000000, 0x00000000, false);
+		if (nonTransparentBounds.width != 0 && nonTransparentBounds.height != 0) {
+			svg.subElements.push(SVGElement.makeBitmapEl(c.baseLayerBitmap, 1 / c.bitmapResolution));
+		}
 		c.rotationCenterX /= c.bitmapResolution;
 		c.rotationCenterY /= c.bitmapResolution;
 		c.setSVGData(new SVGExport(svg).svgData(), false, false);
@@ -360,21 +380,46 @@ public class ImagesPart extends UIPart {
 		lib.importFromDisk();
 	}
 
-	private function addCostume(c:ScratchCostume):void {
+	private function addCostume(costumeOrList:*):void {
+		var c:ScratchCostume = costumeOrList as ScratchCostume;
+
+		// If they imported a GIF, take the first frame only
+		if (!c && costumeOrList is Array)
+			c = costumeOrList[0] as ScratchCostume;
+
 		var p:Point = new Point(240, 180);
 		editor.addCostume(c, p);
 	}
 
 	public function refreshUndoButtons():void {
-		undoButton.setDisabled(!editor.canUndo(), 0.5);
-		redoButton.setDisabled(!editor.canRedo(), 0.5);
-		if (editor.canClearCanvas()) {
-			clearButton.alpha = 1;
-			clearButton.mouseEnabled = true;
-		} else {
-			clearButton.alpha = 0.5;
-			clearButton.mouseEnabled = false;
+		if(undoButton){
+			undoButton.setDisabled(!(editor.canUndo() || editor.canUndoSegmentation()), 0.5);
 		}
+		if(redoButton){
+			redoButton.setDisabled(!(editor.canRedo() || editor.canRedoSegmentation()), 0.5);
+		}
+		if(clearButton){
+			if (editor.canClearCanvas()) {
+				clearButton.alpha = 1;
+				clearButton.mouseEnabled = true;
+			}
+			else {
+				clearButton.alpha = 0.5;
+				clearButton.mouseEnabled = false;
+			}
+		}
+	}
+
+	public function setCanCrop(enabled:Boolean):void {
+		if (enabled) {
+			cropButton.alpha = 1;
+			cropButton.mouseEnabled = true;
+		}
+		else {
+			cropButton.alpha = 0.5;
+			cropButton.mouseEnabled = false;
+		}
+
 	}
 
 	// -----------------------------
@@ -382,16 +427,26 @@ public class ImagesPart extends UIPart {
 	//------------------------------
 
 	private function addFlipButtons():void {
+		addChild(cropButton = makeTopButton(crop, 'crop'));
 		addChild(flipHButton = makeTopButton(flipH, 'flipH'));
-		addChild(flipVButton = makeTopButton(flipV,'flipV'));
+		addChild(flipVButton = makeTopButton(flipV, 'flipV'));
+		cropButton.isMomentary = true;
 		flipHButton.isMomentary = true;
 		flipVButton.isMomentary = true;
+		SimpleTooltips.add(cropButton, {text: 'Crop to selection', direction: 'bottom'});
 		SimpleTooltips.add(flipHButton, {text: 'Flip left-right', direction: 'bottom'});
 		SimpleTooltips.add(flipVButton, {text: 'Flip up-down', direction: 'bottom'});
+		setCanCrop(false);
 	}
 
-	private function flipH(ignore:*):void { editor.flipContent(false) }
-	private function flipV(ignore:*):void { editor.flipContent(true) }
+	private function crop(ignore:*):void {
+		var bitmapEditor:BitmapEdit = editor as BitmapEdit;
+		if (bitmapEditor) {
+			bitmapEditor.cropToSelection();
+		}
+	}
+	private function flipH(ignore:*):void { editor.flipContent(false); }
+	private function flipV(ignore:*):void { editor.flipContent(true); }
 
 	private function addCenterButton():void {
 		function setCostumeCenter(b:IconButton):void {
@@ -441,23 +496,24 @@ public class ImagesPart extends UIPart {
 		addAndSelectCostume(ScratchCostume.emptyBitmapCostume('', isStage()));
 	}
 
-	private function costumeFromCamera(ignore:* = null):void {
-		function savePhotoAsCostume(photo:BitmapData):void {
-			app.closeCameraDialog();
-			var obj:ScratchObj = app.viewedObj();
-			if (obj == null) return;
-			if (obj.isStage) { // resize photo to stage
-				var scale:Number = 480 / photo.width;
-				var m:Matrix = new Matrix();
-				m.scale(scale, scale);
-				var scaledPhoto:BitmapData = new BitmapData(480, 360, true, 0);
-				scaledPhoto.draw(photo, m);
-				photo = scaledPhoto;
-			}
-			var c:ScratchCostume = new ScratchCostume(Translator.map('photo1'), photo);
-			addAndSelectCostume(c);
-			editor.getWorkArea().zoom();
+	protected function savePhotoAsCostume(photo:BitmapData):void {
+		app.closeCameraDialog();
+		var obj:ScratchObj = app.viewedObj();
+		if (obj == null) return;
+		if (obj.isStage) { // resize photo to stage
+			var scale:Number = 480 / photo.width;
+			var m:Matrix = new Matrix();
+			m.scale(scale, scale);
+			var scaledPhoto:BitmapData = new BitmapData(480, 360, true, 0);
+			scaledPhoto.draw(photo, m);
+			photo = scaledPhoto;
 		}
+		var c:ScratchCostume = new ScratchCostume(Translator.map('photo1'), photo);
+		addAndSelectCostume(c);
+		editor.getWorkArea().zoom();
+	}
+
+	private function costumeFromCamera(ignore:* = null):void {
 		app.openCameraDialog(savePhotoAsCostume);
 	}
 
@@ -484,4 +540,5 @@ public class ImagesPart extends UIPart {
 		}
 	}
 
-}}
+}
+}

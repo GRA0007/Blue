@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Scratch Project Editor and Player
  * Copyright (C) 2014 Massachusetts Institute of Technology
  *
@@ -24,20 +24,26 @@
 // Represents a variable display.
 
 package watchers {
-import blocks.BlockIO;
+import blocks.Block;
+
+import extensions.ExtensionManager;
 
 import flash.display.*;
-	import flash.filters.BevelFilter;
-	import flash.events.MouseEvent;
-	import flash.geom.Point;
-	import flash.text.*;
-	import interpreter.*;
-	import scratch.*;
-	import uiwidgets.*;
-	import util.*;
-	import blocks.Block;
-	import translation.Translator;
-	import primitives.*;
+import flash.events.MouseEvent;
+import flash.filters.BevelFilter;
+import flash.geom.Point;
+import flash.text.*;
+
+import interpreter.*;
+
+import scratch.*;
+
+import translation.Translator;
+
+import uiwidgets.*;
+
+import util.*;
+import primitives.*;
 
 public class Watcher extends Sprite implements DragClient {
 
@@ -186,10 +192,10 @@ public class Watcher extends Sprite implements DragClient {
 	}
 
 	private function specForCmd():String {
-		var i:int = cmd.indexOf('.');
-		if(i > -1) {
+		var extName:String = ExtensionManager.unpackExtensionName(cmd);
+		if (extName) {
 			var spec:Array = Scratch.app.extensionManager.specForCmd(cmd);
-			if(spec) return cmd.substr(0, i) + ': '+spec[0];
+			if (spec) return extName + ': ' + spec[0];
 		}
 
 		for each (var entry:Array in Specs.commands) {
@@ -252,9 +258,9 @@ public class Watcher extends Sprite implements DragClient {
 			case "maxCloneCount": return (app.MaxCloneCount + 2);
 		}
 
-		if(cmd.indexOf('.') > -1) {
+		if(ExtensionManager.hasExtensionPrefix(cmd)) {
 			var spec:Array = Scratch.app.extensionManager.specForCmd(cmd);
-			if(spec) {
+			if (spec) {
 				block = new Block(spec[0], spec[1], Specs.blockColor(spec[2]), spec[3]);
 				return Scratch.app.interp.evalCmd(block);
 			}
@@ -315,15 +321,9 @@ public class Watcher extends Sprite implements DragClient {
 			readout.x = 0;
 			readout.y = 3;
 		} else {
-			if (mode == TEXT_MODE) {
-				frame.visible = label.visible = false;
-				readout.x = 0;
-				readout.y = 3;
-			} else {
-				frame.visible = label.visible = true;
-				readout.x = label.width + 8;
-				readout.y = 3;
-			}
+			frame.visible = label.visible = true;
+			readout.x = label.width + 8;
+			readout.y = 3;
 		}
 		if (mode == SLIDER_MODE) {
 			slider.visible = knob.visible = true;
@@ -390,14 +390,10 @@ public class Watcher extends Sprite implements DragClient {
 		m.addItem("large readout", 2);
 		if (targetIsVariable()) {
 			m.addItem("slider", 3);
-			m.addItem("text", 4);
+//			m.addItem("text", 4);
 			if (mode == SLIDER_MODE) {
 				m.addLine();
 				m.addItem("set slider min and max", 5);
-			}
-			if (mode == TEXT_MODE) {
-				m.addLine();
-				m.addItem("set font", 5);
 			}
 		}
 		m.addLine();
@@ -407,8 +403,8 @@ public class Watcher extends Sprite implements DragClient {
 
 	private function sliderMinMaxDialog():void {
 		function setMinMax():void {
-			var min:String = d.fields['Min'].text;
-			var max:String = d.fields['Max'].text;
+			var min:String = d.getField('Min');
+			var max:String = d.getField('Max');
 			var minVal:Number = Number(min);
 			var maxVal:Number = Number(max);
 			if (isNaN(minVal) || isNaN(maxVal)) return;

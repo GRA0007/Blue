@@ -31,24 +31,33 @@
 package scratch {
 import by.blooddy.crypto.MD5;
 
+import flash.media.Sound;
 import flash.utils.*;
-	import sound.*;
-	import sound.mp3.MP3Loader;
-	import util.*;
+
+import logging.LogLevel;
+
+import sound.*;
+import sound.mp3.MP3Loader;
+
+import util.*;
 
 public class ScratchSound {
 
 	public var soundName:String = '';
 	public var soundID:int;
 	public var md5:String;
-	public var soundData:ByteArray = new ByteArray();
+	private var __soundData:ByteArray = new ByteArray();
 	public var format:String = '';
 	public var rate:int = 44100;
 	public var sampleCount:int;
-	public var bitsPerSample:int; // used only for compressed Squeak sounds; not saved
+	public var sampleDataStart:int;
+	public var bitsPerSample:int; // primarily used for compressed Squeak sounds; not saved
 
 	public var editorData:Object; // cache of data used by sound editor; not saved
+	public var channels:uint = 1;
 	private const WasEdited:int = -10; // special soundID used to indicate sounds that have been edited
+	SCRATCH::allow3d
+	public var nativeSound:Sound;
 
 	// Undo support; not saved
 	public var undoList:Array = [];
@@ -58,12 +67,18 @@ public class ScratchSound {
 		this.soundName = name;
 		if (sndData != null) {
 			try {
-				var info:* = WAVFile.decode(sndData);
-				if (!((info.encoding == 1) || (info.encoding == 17))) throw Error('Unsupported WAV format');
+				var info:Object = WAVFile.decode(sndData);
+				if ([1, 3, 17].indexOf(info.encoding) == -1) throw Error('Unsupported WAV format');
 				soundData = sndData;
-				format = (info.encoding == 17) ? 'adpcm' : '';
+				if (info.encoding == 17)
+					format = 'adpcm';
+				else if (info.encoding == 3)
+					format = 'float';
 				rate = info.samplesPerSecond;
 				sampleCount = info.sampleCount;
+				bitsPerSample = info.bitsPerSample;
+				channels = info.channels;
+				sampleDataStart = info.sampleDataStart;
 				reduceSizeIfNeeded(info.channels);
 			} catch (e:*) {
 				setSamples(new Vector.<int>(0), 22050);
@@ -71,18 +86,27 @@ public class ScratchSound {
 		}
 	}
 
+	public function get soundData():ByteArray {
+		return __soundData;
+	}
+
+	public function set soundData(data:ByteArray):void {
+		__soundData = data;
+		md5 = null;
+	}
+
 	private function reduceSizeIfNeeded(channels:int):void {
 		// Convert stereo to mono, downsample if rate > 32000, or both.
 		// Compress if data is over threshold and not already compressed.
 		const compressionThreshold:int = 30 * 44100; // about 30 seconds
-		if ((rate > 32000) || (channels == 2)) {
+		if (rate > 32000 || channels == 2 || format == 'float') {
 			var newRate:int = (rate > 32000) ? rate / 2 : rate;
-			var oldSamples:Vector.<int> = WAVFile.extractSamples(soundData);
-			var newSamples:Vector.<int> =
-				(channels == 2) ?
-					stereoToMono(oldSamples, (newRate < rate)) :
-					downsample(oldSamples);
-			setSamples(newSamples, newRate, true);
+			var samples:Vector.<int> = WAVFile.extractSamples(soundData);
+			if (rate > 32000 || channels == 2)
+				samples = (channels == 2) ?
+					stereoToMono(samples, (newRate < rate)) :
+					downsample(samples);
+			setSamples(samples, newRate, true);
 			soundID = 0;
 		} else if ((soundData.length > compressionThreshold) && ('' == format)) {
 			// Compress large, uncompressed sounds
@@ -124,7 +148,7 @@ public class ScratchSound {
 		// Support for converting MP3 format sounds in Scratch projects was removed during alpha test.
 		// If this is on old, MP3 formatted sound, convert it to WAV format. Otherwise, do nothing.
 		function whenDone(snd:ScratchSound):void {
-Scratch.app.log('Converting MP3 to WAV: ' + soundName);
+			Scratch.app.log(LogLevel.INFO, 'Converting MP3 to WAV', {soundName: soundName});
 			md5 = null;
 			soundData = snd.soundData;
 			format = snd.format;
@@ -138,9 +162,9 @@ Scratch.app.log('Converting MP3 to WAV: ' + soundName);
 	}
 
 	public function sndplayer():ScratchSoundPlayer {
-		var player:ScratchSoundPlayer
+		var player:ScratchSoundPlayer;
 		if (format == 'squeak') player = new SqueakSoundPlayer(soundData, bitsPerSample, rate);
-		else if ((format == '') || (format == 'adpcm')) player = new ScratchSoundPlayer(soundData);
+		else if (format == '' || format == 'adpcm' || format == 'float') player = new ScratchSoundPlayer(soundData);
 		else player = new ScratchSoundPlayer(WAVFile.empty()); // player on empty sound
 		player.scratchSound = this;
 		return player;
@@ -172,7 +196,8 @@ Scratch.app.log('Converting MP3 to WAV: ' + soundName);
 		if (format == 'squeak') { // convert Squeak ADPCM to WAV ADPCM
 			var uncompressedData:ByteArray = new SqueakSoundDecoder(bitsPerSample).decode(soundData);
 			if (uncompressedData.length == 0) uncompressedData.writeShort(0); // a WAV file must have at least one sample
-Scratch.app.log('Converting squeak sound to WAV ADPCM; sampleCount old: ' + sampleCount + ' new: ' + (uncompressedData.length / 2));
+			Scratch.app.log(LogLevel.INFO, 'Converting squeak sound to WAV ADPCM',
+				{oldSampleCount: sampleCount, newSampleCount: (uncompressedData.length / 2)});
 			sampleCount = uncompressedData.length / 2;
 			soundData = WAVFile.encode(uncompressedData, sampleCount, rate, true);
 			format = 'adpcm';
@@ -181,7 +206,7 @@ Scratch.app.log('Converting squeak sound to WAV ADPCM; sampleCount old: ' + samp
 		}
 		reduceSizeIfNeeded(1); // downsample or compress to reduce size before saving
 		if (soundID == WasEdited) { md5 = null; soundID = -1 } // sound was edited; force md5 to be recomputed
-		if (!md5) md5 = by.blooddy.crypto.MD5.hashBytes(soundData) + '.wav';
+		if (!md5) md5 = MD5.hashBytes(soundData) + '.wav';
 	}
 
 	public static function isWAV(data:ByteArray):Boolean {

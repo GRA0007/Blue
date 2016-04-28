@@ -56,6 +56,8 @@ package primitives {
 
 public class Primitives {
 
+//	private const MaxCloneCount:int = 300;
+
 	protected var app:Scratch;
 	protected var interp:Interpreter;
 	private var counter:int;
@@ -168,7 +170,6 @@ public class Primitives {
 			}
 			return repeatString(interp.arg(b, 0), interp.arg(b, 1));
 		}
-
 		// clone
 		primTable["createCloneOf"]		= primCreateCloneOf;
 		primTable["deleteClone"]		= primDeleteClone;
@@ -189,7 +190,7 @@ public class Primitives {
 		
 		primTable["internetConnection"]	= function(b:*):* {
 //			return "true";
-			return app.isOffline;
+			return app.checkIsOffline();
 		}
 		
 		//System
@@ -308,15 +309,19 @@ public class Primitives {
 /*		primTable["customDialog"] = function(b:*):* {
 			return app.primCustomDialog(interp.arg(b, 0), interp.arg(b, 1), interp.arg(b, 2), interp.arg(b, 3), interp.arg(b, 4), interp.arg(b, 5), interp.arg(b, 6), interp.arg(b, 7), interp.arg(b, 8));
 		}*/
-/*		primTable[":mode"] = function(b:*):* {
+		primTable[":mode"] = function(b:*):* {
 			var mo:* = interp.arg(b, 0);
 			switch(mo) {
-			case "fullscreen": return Math.PI;
-			case "editor": app.exitPresentationMode();
+			case "fullscreen": app.setPresentationMode(true);
+			case "normal": app.setPresentationMode(false);
 			}
 			return 0;
-		}*/
-//		primTable["fullscreenMode"] = function(b:*):* { return app.isInPresentationMode() };
+		}
+		primTable["fullscreenMode"] = function(b:*):* { return app.isInPresentationMode() };
+		
+		primTable["inlineComment"] = function(b:*):* { };
+		
+		primTable["blockComment"] = function(b:*):* { };
 		
 		//Other Variable blocks
 /*		primTable["varSet:colorTo:"] = function(b:*):* {
@@ -351,10 +356,15 @@ public class Primitives {
 		var low:Number = (n1 <= n2) ? n1 : n2;
 		var hi:Number = (n1 <= n2) ? n2 : n1;
 		if (low == hi) return low;
+
 		// if both low and hi are ints, truncate the result to an int
-		if ((int(low) == low) && (int(hi) == hi)) {
+		var ba1:BlockArg = b.args[0] as BlockArg;
+		var ba2:BlockArg = b.args[1] as BlockArg;
+		var int1:Boolean = ba1 ? ba1.numberType == BlockArg.NT_INT : int(n1) == n1;
+		var int2:Boolean = ba2 ? ba2.numberType == BlockArg.NT_INT : int(n2) == n2;
+		if (int1 && int2)
 			return low + int(Math.random() * ((hi + 1) - low));
-		}
+
 		return (Math.random() * (hi - low)) + low;
 	}
 
@@ -404,7 +414,7 @@ public class Primitives {
 		case "ln": return Math.log(n);
 		case "log": return Math.log(n) / Math.LN10;
 		case "e ^": return Math.exp(n);
-		case "10 ^": return Math.exp(n * Math.LN10);
+		case "10 ^": return Math.pow(10, n);
 		}
 		return 0;
 	}
@@ -419,12 +429,18 @@ public class Primitives {
 		return 0;
 	}
 
+	private static const emptyDict:Dictionary = new Dictionary();
 	private static var lcDict:Dictionary = new Dictionary();
 	public static function compare(a1:*, a2:*):int {
 		// This is static so it can be used by the list "contains" primitive.
 		var n1:Number = Interpreter.asNumber(a1);
 		var n2:Number = Interpreter.asNumber(a2);
-		if (isNaN(n1) || isNaN(n2)) {
+		// X != X is faster than isNaN()
+		if (n1 != n1 || n2 != n2) {
+			// Suffix the strings to avoid properties and methods of the Dictionary class (constructor, hasOwnProperty, etc)
+			if (a1 is String && emptyDict[a1]) a1 += '_';
+			if (a2 is String && emptyDict[a2]) a2 += '_';
+
 			// at least one argument can't be converted to a number: compare as strings
 			var s1:String = lcDict[a1];
 			if(!s1) s1 = lcDict[a1] = String(a1).toLowerCase();

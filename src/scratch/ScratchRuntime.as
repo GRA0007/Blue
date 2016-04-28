@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Scratch Project Editor and Player
  * Copyright (C) 2014 Massachusetts Institute of Technology
  *
@@ -21,25 +21,46 @@
 // John Maloney, September 2010
 
 package scratch {
-	import flash.display.*;
-	import flash.events.*;
-	import flash.geom.Rectangle;
-	import flash.media.*;
-	import flash.net.*;
-	import flash.system.System;
-	import flash.text.TextField;
-	import flash.utils.*;
-	import blocks.Block;
-	import blocks.BlockArg;
-	import interpreter.*;
-	import primitives.VideoMotionPrims;
-	import sound.ScratchSoundPlayer;
-	import translation.*;
-	import ui.media.MediaInfo;
-	import ui.BlockPalette;
-	import uiwidgets.DialogBox;
-	import util.*;
-	import watchers.*;
+import assets.Resources;
+
+import blocks.Block;
+import blocks.BlockArg;
+
+import extensions.ExtensionManager;
+
+import flash.display.*;
+import flash.events.*;
+import flash.geom.Matrix;
+import flash.geom.Point;
+import flash.geom.Rectangle;
+import flash.media.*;
+import flash.net.*;
+import flash.system.System;
+import flash.text.TextField;
+import flash.utils.*;
+
+import interpreter.*;
+
+import leelib.util.flvEncoder.*;
+
+import logging.LogLevel;
+
+import primitives.VideoMotionPrims;
+
+import sound.ScratchSoundPlayer;
+
+import translation.*;
+
+import ui.BlockPalette;
+import ui.RecordingSpecEditor;
+import ui.SharingSpecEditor;
+import ui.media.MediaInfo;
+
+import uiwidgets.DialogBox;
+
+import util.*;
+
+import watchers.*;
 
 public class ScratchRuntime {
 
@@ -51,6 +72,7 @@ public class ScratchRuntime {
 	public var lastAnswer:String = '';
 	public var cloneCount:int;
 	public var edgeTriggersEnabled:Boolean = false; // initially false, becomes true when project first run
+	public var currentDoObj:ScratchObj = null;
 	public var ba:ByteArray;
 
 	private var microphone:Microphone;
@@ -71,16 +93,75 @@ public class ScratchRuntime {
 	//------------------------------
 
 	public function stepRuntime():void {
-		if (projectToInstall != null/* && app.isOffline*/) {
+		if (projectToInstall != null && (app.isOffline || app.isExtensionDevMode)) {
 			installProject(projectToInstall);
 			if (saveAfterInstall) app.setSaveNeeded(true);
 			projectToInstall = null;
 			saveAfterInstall = false;
-			app.loadInProgress = false;
 			return;
 		}
-
-		if (recording) saveFrame(); // Recording a YouTube video?  Old / Unused currently.
+		if (ready==ReadyLabel.COUNTDOWN) {
+			var tR:Number = getTimer()*.001-videoSeconds;
+			while (t>videoSounds.length/videoFramerate+1/videoFramerate) {
+				saveSound();
+			}
+			var count:int = 3;
+			if (tR>=3.75){
+				ready = ReadyLabel.READY;
+				count = 1;
+				videoSounds = [];
+				videoFrames=[];
+				if (fullEditor) Scratch.app.log(LogLevel.TRACK, "Editor video started",{projectID: app.projectID});
+				else Scratch.app.log(LogLevel.TRACK, "Project video started",{projectID: app.projectID});
+			}
+			else if (tR>=2.5){
+				count=1
+			}
+			else if (tR>=1.25 && micReady) {
+				count=2;
+			}
+			else if (tR>=1.25) {
+				videoSeconds+=tR;
+			}
+			else {
+				app.refreshStagePart();
+			}
+		}
+		if (recording) { // Recording a YouTube video?
+			var t:Number = getTimer()*.001-videoSeconds;
+			//If, based on time and framerate, the current frame needs to be in the video, capture the frame.
+			//Will always be true if framerate is 30, as every frame is captured.
+			if (t>videoSounds.length/videoFramerate+1/videoFramerate) {
+				if (fullEditor) app.removeRecordingTools();
+				//saves visual frame to frames and sound clip to sounds
+				saveFrame();
+				app.updateRecordingTools(t);
+			}
+			else {
+				//Will only run in low quality or full editor mode, when this frame isn't captured for video
+				//To reduce lag in low quality mode and full editor mode, video frames are only written
+				//to the file if a new frame isn't being captured and the total number of frames captured so far
+				//is divisible by 2 or 3.
+				//Some frames will be written to the file after recording has finished.
+				app.updateRecordingTools(t);
+				if (videoFrames.length>videoPosition && (videoFrames.length%2==0 || videoFrames.length%3==0)) {
+					baFlvEncoder.addFrame(videoFrames[videoPosition],videoSounds[videoPosition]);
+					//forget about frame just written
+					videoFrames[videoPosition]=null;
+					videoSounds[videoPosition]=null;
+					videoPosition++;
+				}
+			}
+			//For a high quality video, every frame is immediately written to the video file
+			//after being captured, to reduce memory.
+			if (videoFrames.length>videoPosition && videoFramerate==30.0) {
+				baFlvEncoder.addFrame(videoFrames[videoPosition],videoSounds[videoPosition]);
+				//forget about frame just written
+				videoFrames[videoPosition]=null;
+				videoSounds[videoPosition]=null;
+				videoPosition++;
+			}
+		}
 		app.extensionManager.step();
 		if (motionDetector) motionDetector.step(); // Video motion detection
 
@@ -91,49 +172,342 @@ public class ScratchRuntime {
 		processEdgeTriggeredHats();
 		interp.stepThreads();
 		app.stagePane.commitPenStrokes();
-	 }
-
-//-------- recording test ---------
-	public var recording:Boolean;
-	private var frames:Array = [];
-
-	private function saveFrame():void {
-		var f:BitmapData = new BitmapData(480, 360);
-		f.draw(app.stagePane);
-		frames.push(f);
-		if ((frames.length % 100) == 0) {
-			trace('frames: ' + frames.length + ' mem: ' + System.totalMemory);
+		
+		if (ready==ReadyLabel.COUNTDOWN || ready==ReadyLabel.READY) {
+			app.stagePane.countdown(count);
 		}
 	}
 
-	public function startRecording():void {
+//-------- recording video code ---------
+	public var recording:Boolean;
+	private var videoFrames:Array = [];
+	private var videoSounds:Array = [];
+	private var videoTimer:Timer;
+	private var baFlvEncoder:ByteArrayFlvEncoder;
+	private var videoPosition:int;
+	private var videoSeconds:Number;
+	private var videoAlreadyDone:int;
+	
+	private var projectSound:Boolean;
+	private var micSound:Boolean;
+	private var showCursor:Boolean;
+	public var fullEditor:Boolean;
+	private var videoFramerate:Number;
+	private var videoWidth:int;
+	private var videoHeight:int;
+	public var ready:int=ReadyLabel.NOT_READY;
+	
+	private var micBytes:ByteArray;
+	private var micPosition:int = 0;
+	private var mic:Microphone;
+	private var micReady:Boolean;
+	
+	private var timeout:int;
+	
+	private function saveFrame():void {
+		saveSound();
+		var t:Number = getTimer()*.001-videoSeconds;
+		while (t>videoSounds.length/videoFramerate+1/videoFramerate) {
+			saveSound();
+		}
+		if (showCursor) var cursor:DisplayObject = Resources.createDO('videoCursor');
+		if (showCursor && app.gh.mouseIsDown) var circle:Bitmap = Resources.createBmp('mouseCircle');
+		var f:BitmapData;
+		if (fullEditor) {
+			var aWidth:int = app.stage.stageWidth;
+			var aHeight:int = app.stage.stageHeight;
+			if (!Scratch.app.isIn3D) {
+				if (app.stagePane.videoImage) app.stagePane.videoImage.visible = false;
+			}
+			if (videoWidth!=aWidth || videoHeight!=aHeight) {
+				var scale:Number = 1.0;
+				scale = videoWidth/aWidth > videoHeight/aHeight ? videoHeight/aHeight : videoWidth/aWidth;
+				var m:Matrix = new Matrix();
+				m.scale(scale,scale);
+				f = new BitmapData(videoWidth,videoHeight,false);
+				f.draw(app.stage,m,null, null, new Rectangle(0,0,aWidth*scale,aHeight*scale),false);
+				if(Scratch.app.isIn3D) {
+					var scaled:Number = scale;
+					if (!app.editMode) {
+						scaled *= app.presentationScale;
+					}
+					else if (app.stageIsContracted) {
+						scaled*=0.5;
+					}
+					var d:BitmapData = app.stagePane.saveScreenData();
+					f.draw(d, new Matrix( scaled, 0, 0, scaled, app.stagePane.localToGlobal(new Point(0, 0)).x*scale, app.stagePane.localToGlobal(new Point(0, 0)).y*scale));
+				}
+				else if (app.stagePane.videoImage) app.stagePane.videoImage.visible = true;
+				if (showCursor && app.gh.mouseIsDown) {
+					f.draw(circle,new Matrix(scale,0,0,scale,(app.stage.mouseX-circle.width/2.0)*scale,(app.stage.mouseY-circle.height/2.0)*scale));
+				}
+				if (showCursor) {
+					f.draw(cursor,new Matrix(scale,0,0,scale,app.stage.mouseX*scale,app.stage.mouseY*scale));
+				}
+			}
+			else {
+				f = new BitmapData(videoWidth,videoHeight,false);
+				f.draw(app.stage);
+				if(Scratch.app.isIn3D) {
+					var scaler:Number = 1;
+					if (!app.editMode) {
+						scaler *= app.presentationScale;
+					}
+					else if (app.stageIsContracted) {
+						scaler*=0.5;
+					}
+					var e:BitmapData = app.stagePane.saveScreenData();
+					if (scaler==1) f.copyPixels(e, e.rect,new Point(app.stagePane.localToGlobal(new Point(0, 0)).x, app.stagePane.localToGlobal(new Point(0, 0)).y));
+					else f.draw(e, new Matrix( scaler, 0, 0, scaler, app.stagePane.localToGlobal(new Point(0, 0)).x, app.stagePane.localToGlobal(new Point(0, 0)).y));
+				}
+				else if (app.stagePane.videoImage) app.stagePane.videoImage.visible = true;
+				if (showCursor && app.gh.mouseIsDown) {
+					f.copyPixels(circle.bitmapData,circle.bitmapData.rect,new Point(app.stage.mouseX-circle.width/2.0,app.stage.mouseY-circle.height/2.0));
+				}
+				if (showCursor) {
+					f.draw(cursor,new Matrix(1,0,0,1,app.stage.mouseX,app.stage.mouseY));
+				}
+			}
+		}
+		else {
+			f = app.stagePane.saveScreenData();
+			if (showCursor && app.gh.mouseIsDown) {
+				f.copyPixels(circle.bitmapData,circle.bitmapData.rect,new Point(app.stagePane.mouseX-circle.width/2.0,app.stagePane.mouseY-circle.height/2.0));
+			}
+			if (showCursor) {
+				f.draw(cursor,new Matrix(1,0,0,1,app.stagePane.scratchMouseX()+240,-app.stagePane.scratchMouseY()+180));
+			}
+		}
+		while (videoSounds.length>videoFrames.length) {
+			videoFrames.push(f);
+		}
+	}
+	
+	private function saveSound():void {
+		var floats:Array = [];
+		if (micSound && micBytes.length>0) {
+			micBytes.position=micPosition;
+			while (micBytes.length>micBytes.position && floats.length<=baFlvEncoder.audioFrameSize/4) {
+				floats.push(micBytes.readFloat());
+			}
+			micPosition = micBytes.position;
+			micBytes.position = micBytes.length;
+		}
+		while (floats.length<=baFlvEncoder.audioFrameSize/4) {
+			floats.push(0);
+		}
+		if (projectSound) {
+			for (var p:int = 0; p<ScratchSoundPlayer.activeSounds.length; p++) {
+				var index:int = 0;
+				var d:ScratchSoundPlayer = ScratchSoundPlayer.activeSounds[p];
+				d.dataBytes.position = d.readPosition;
+				while (index<floats.length && d.dataBytes.position<d.dataBytes.length) {
+					floats[index]+=d.dataBytes.readFloat();
+					if (p==ScratchSoundPlayer.activeSounds.length-1) {
+						if (floats[index]<-1 || floats[index]>1) {
+							var current1:int = p+1+int(micSound);
+							floats[index]=floats[index]/current1;
+						}
+					}
+					index++;
+				}
+				d.readPosition=d.dataBytes.position;
+				d.dataBytes.position=d.dataBytes.length;
+			}
+		}
+		var combinedStream:ByteArray = new ByteArray();
+		for each (var n:Number in floats) {
+			combinedStream.writeFloat(n);
+		}
+		floats = null;
+		videoSounds.push(combinedStream);
+		combinedStream = null;
+	}
+	
+	private function micSampleDataHandler(event:SampleDataEvent):void 
+	{ 
+	    while(event.data.bytesAvailable) 
+	    {
+	        var sample:Number = event.data.readFloat(); 
+	        micBytes.writeFloat(sample);  
+	        micBytes.writeFloat(sample);
+	    } 
+	} 
+	
+	public function startVideo(editor:RecordingSpecEditor):void {
+		projectSound = editor.soundFlag();
+		micSound = editor.microphoneFlag();
+		fullEditor = editor.editorFlag();
+		showCursor = editor.cursorFlag();
+		videoFramerate = (!editor.fifteenFlag()) ? 15.0 : 30.0;
+		if (fullEditor) {
+			videoFramerate=10.0;
+		}
+		micReady = true;
+		if (micSound) {
+			mic = Microphone.getMicrophone(); 
+			mic.setSilenceLevel(0);
+			mic.gain = editor.getMicVolume(); 
+			mic.rate = 44; 
+			micReady=false;
+		}
+		if (fullEditor) {
+			if (app.stage.stageWidth<960 && app.stage.stageHeight<640) {
+				videoWidth = app.stage.stageWidth;
+				videoHeight = app.stage.stageHeight;
+			}
+			else {
+				var ratio:Number = app.stage.stageWidth/app.stage.stageHeight;
+				if (960/ratio<640) {
+					videoWidth = 960;
+					videoHeight = 960/ratio;
+				}
+				else {
+					videoWidth = 640*ratio;
+					videoHeight = 640;
+				}
+			}
+		}
+		else {
+			videoWidth = 480;
+			videoHeight = 360;
+		}
+		ready=ReadyLabel.COUNTDOWN;
+		videoSeconds = getTimer()*.001;
+		baFlvEncoder = new ByteArrayFlvEncoder(videoFramerate);
+		baFlvEncoder.setVideoProperties(videoWidth, videoHeight);
+		baFlvEncoder.setAudioProperties(FlvEncoder.SAMPLERATE_44KHZ, true, true, true);
+		baFlvEncoder.start();
+		waitAndStart();
+	}
+	
+	public function exportToVideo():void {
+		var specEditor:RecordingSpecEditor = new RecordingSpecEditor();
+		function startCountdown():void {
+			startVideo(specEditor);
+		}
+		DialogBox.close("Record Project Video",null,specEditor,"Start",app.stage,startCountdown);
+	}
+	
+	public function stopVideo():void {
+		if (recording) videoTimer.dispatchEvent(new TimerEvent(TimerEvent.TIMER));
+		else if (ready==ReadyLabel.COUNTDOWN || ReadyLabel.READY) {
+			ready=ReadyLabel.NOT_READY;
+			app.refreshStagePart();
+			app.stagePane.countdown(0);
+		}
+	}
+	
+	public function finishVideoExport(event:TimerEvent):void {
+		stopRecording();
+		stopAll();
+		app.addLoadProgressBox("Writing video to file...");
+		videoAlreadyDone = videoPosition;
+		clearTimeout(timeout);
+		timeout = setTimeout(saveRecording,1);
+	}
+	
+	public function waitAndStart():void {
+		if (!micReady && !mic.hasEventListener(StatusEvent.STATUS)) {
+			micBytes = new ByteArray();
+			mic.addEventListener(SampleDataEvent.SAMPLE_DATA, micSampleDataHandler);
+			micReady=true;
+		}
+		if (ready==ReadyLabel.COUNTDOWN || ready==ReadyLabel.NOT_READY) {
+			if (ready==ReadyLabel.NOT_READY) {
+				baFlvEncoder=null;
+				return;
+			}
+			clearTimeout(timeout);
+			timeout = setTimeout(waitAndStart, 1);
+			return;
+		}
+		app.stagePane.countdown(0);
+		ready=ReadyLabel.NOT_READY;
+		app.refreshStagePart();
+		var player:ScratchSoundPlayer, length:int;
+		videoSeconds = getTimer() * 0.001;
+		for each (player in ScratchSoundPlayer.activeSounds) {
+			length = int((player.soundChannel.position*.001)*videoFramerate);
+			player.readPosition = Math.max(Math.min(baFlvEncoder.audioFrameSize*length,player.dataBytes.length),0);
+		}
 		clearRecording();
 		recording = true;
+		var seconds:int = 60; //modify to change length of video
+		videoTimer = new Timer(1000*seconds,1);
+    	videoTimer.addEventListener(TimerEvent.TIMER, finishVideoExport);
+    	videoTimer.start();
 	}
-
+	
 	public function stopRecording():void {
 		recording = false;
+		videoTimer.stop();
+    	videoTimer.removeEventListener(TimerEvent.TIMER, finishVideoExport);
+		videoTimer = null;
+		//if (fullEditor && app.render3D) app.go3D();
+		app.refreshStagePart();
 	}
 
 	public function clearRecording():void {
 		recording = false;
-		frames = [];
+		videoFrames = [];
+		videoSounds = [];
+		micBytes = new ByteArray();
+		micPosition=0;
+		videoPosition=0;
 		System.gc();
+		ready=ReadyLabel.NOT_READY;
 		trace('mem: ' + System.totalMemory);
 	}
 
-	// TODO: If keeping this then make it write each frame while recording AND add sound recording
 	public function saveRecording():void {
-		var myWriter:SimpleFlvWriter = SimpleFlvWriter.getInstance();
-		var data:ByteArray = new ByteArray();
-		myWriter.createFile(data, 480, 360, 30, frames.length / 30.0);
-		for (var i:int = 0; i < frames.length; i++) {
-			myWriter.saveFrame(frames[i]);
-			frames[i] = null;
+		//any captured frames that haven't been written to file yet are written here
+		if (videoFrames.length>videoPosition) {
+			for (var b:int=0; b<20; b++) {
+				if (videoPosition>=videoFrames.length) {
+					break;
+				}
+				baFlvEncoder.addFrame(videoFrames[videoPosition],videoSounds[videoPosition]);
+				videoFrames[videoPosition]=null;
+				videoSounds[videoPosition]=null;
+				videoPosition++;
+			}
+			if (app.lp) app.lp.setProgress(Math.min((videoPosition-videoAlreadyDone) / (videoFrames.length-videoAlreadyDone), 1)); 
+			clearTimeout(timeout);
+			timeout = setTimeout(saveRecording, 1);
+			return;
 		}
-		frames = [];
-		trace('data: ' + data.length);
-		new FileReference().save(data, 'movie.flv');
+		var seconds:Number = videoFrames.length/videoFramerate;
+		app.removeLoadProgressBox();
+		baFlvEncoder.updateDurationMetadata();
+		if (micSound) {
+			mic.removeEventListener(SampleDataEvent.SAMPLE_DATA, micSampleDataHandler);
+			mic = null;
+		}
+		videoFrames = [];
+		videoSounds = [];
+		micBytes = null;
+		micPosition=0;
+		var video:ByteArray;
+		video = baFlvEncoder.byteArray;
+		baFlvEncoder.kill();
+		function saveFile():void {
+			var file:FileReference = new FileReference();
+			file.save(video, "movie.flv");
+			Scratch.app.log(LogLevel.TRACK, "Video downloaded", {projectID: app.projectID, seconds: roundToTens(seconds), megabytes: roundToTens(video.length/1000000)});
+			var specEditor:SharingSpecEditor = new SharingSpecEditor();
+			DialogBox.close("Playing and Sharing Your Video",null,specEditor,"Back to Scratch");
+		    releaseVideo(false);
+        }
+		function releaseVideo(log:Boolean = true):void {
+			if (log) Scratch.app.log(LogLevel.TRACK, "Video canceled", {projectID: app.projectID, seconds: roundToTens(seconds), megabytes: roundToTens(video.length/1000000)});
+            video = null;
+		}
+		DialogBox.close("Video Finished!","To save, click the button below.",null,"Save and Download",app.stage,saveFile,releaseVideo,null,true);
+	}
+	
+	private function roundToTens(x:Number):Number {
+		return int((x)*10)/10.;
 	}
 
 //----------
@@ -193,25 +567,28 @@ public class ScratchRuntime {
 		if (30 == ch) keyName = 'up arrow';
 		if (31 == ch) keyName = 'down arrow';
 		if (32 == ch) keyName = 'space';
-		if (keyName == null) return;
-		var startMatchingKeyHats:Function = function (stack:Block, target:ScratchObj):void {
-			if ((stack.op == 'whenKeyPressed') && (stack.args[0].argValue == keyName)) {
-				// only start the stack if it is not already running
-				if (!interp.isRunning(stack, target)) interp.toggleThread(stack, target);
+		function startMatchingKeyHats(stack:Block, target:ScratchObj):void {
+			if (stack.op == 'whenKeyPressed') {
+				var k:String = stack.args[0].argValue;
+				if (k == 'any' || k == keyName) {
+					// only start the stack if it is not already running
+					if (!interp.isRunning(stack, target)) interp.toggleThread(stack, target);
+				}
 			}
 		}
 		allStacksAndOwnersDo(startMatchingKeyHats);
 	}
 
+	// Returns a sorted array of all messages in use, or a single-element array containing the default message name.
 	public function collectBroadcasts():Array {
 		function addBlock(b:Block):void {
 			if ((b.op == 'broadcast:') ||
-				(b.op == 'doBroadcastAndWait') ||
-				(b.op == 'whenIReceive')) {
-					if (b.args[0] is BlockArg) {
-						var msg:String = b.args[0].argValue;
-						if (result.indexOf(msg) < 0) result.push(msg);
-					}
+					(b.op == 'doBroadcastAndWait') ||
+					(b.op == 'whenIReceive')) {
+				if (b.args[0] is BlockArg) {
+					var msg:String = b.args[0].argValue;
+					if (result.indexOf(msg) < 0) result.push(msg);
+				}
 			}
 		}
 		var result:Array = [];
@@ -223,8 +600,11 @@ public class ScratchRuntime {
 			var b:Block = palette.getChildAt(i) as Block;
 			if (b) addBlock(b);
 		}
-		result.sort();
-		return result;
+		if (result.length > 0) {
+			result.sort();
+			return result;
+		}
+		return [Translator.map('message1')];
 	}
 
 	public function hasUnofficialExtensions():Boolean {
@@ -241,12 +621,11 @@ public class ScratchRuntime {
 	}
 
 	private function isUnofficialExtensionBlock(b:Block):Boolean {
-		var i:int = b.op.indexOf('.');
-		if(i == -1) return false;
-		var extName:String = b.op.substr(0, i);
-		return !app.extensionManager.isInternal(extName);
+		var extName:String = ExtensionManager.unpackExtensionName(b.op);
+		return extName && !app.extensionManager.isInternal(extName);
 	}
 
+	SCRATCH::allow3d
 	public function hasGraphicEffects():Boolean {
 		var found:Boolean = false;
 		allStacksAndOwnersDo(function (stack:Block, target:ScratchObj):void {
@@ -260,66 +639,110 @@ public class ScratchRuntime {
 		return found;
 	}
 
+	SCRATCH::allow3d
 	private function isGraphicEffectBlock(b:Block):Boolean {
 		return ('op' in b && (b.op == 'changeGraphicEffect:by:' || b.op == 'setGraphicEffect:to:') &&
-				('argValue' in b.args[0]) && b.args[0].argValue != 'ghost' && b.args[0].argValue != 'brightness');
+		('argValue' in b.args[0]) && b.args[0].argValue != 'ghost' && b.args[0].argValue != 'brightness');
 	}
 
 	// -----------------------------
 	// Edge-trigger sensor hats
 	//------------------------------
 
-	private var triggeredHats:Array = [];
+	protected var triggeredHats:Array = [];
 
 	private function clearEdgeTriggeredHats():void { edgeTriggersEnabled = true; triggeredHats = [] }
 
 	// hats whose triggering condition is currently true
-	private var activeHats:Array = [];
-	private function startEdgeTriggeredHats(hat:Block, target:ScratchObj):void {
+	protected var activeHats:Array = [];
+	protected var waitingHats:Array = []
+	protected function startEdgeTriggeredHats(hat:Block, target:ScratchObj):void {
 		if (!hat.isHat || !hat.nextBlock) return; // skip disconnected hats
 
-		var triggerCondition:Boolean = false;
 		if ('whenSensorGreaterThan' == hat.op) {
 			var sensorName:String = interp.arg(hat, 0);
 			var threshold:Number = interp.numarg(hat, 1);
-			trigger(
-				('loudness' == sensorName && soundLevel() > threshold) ||
-				('timer' == sensorName && timer() > threshold) ||
-				('video motion' == sensorName && target.visible && VideoMotionPrims.readMotionSensor('motion', target) > threshold));
-		} else if ('whenSensorConnected' == hat.op) {
-			trigger(getBooleanSensor(interp.arg(hat, 0)));
-		} else if (app.jsEnabled) {
-			var dotIndex:int = hat.op.indexOf('.');
-			if (dotIndex > -1) {
-				var extName:String = hat.op.substr(0, dotIndex);
-				if (app.extensionManager.extensionActive(extName)) {
-					var op:String = hat.op.substr(dotIndex+1);
-					var args:Array = hat.args;
-					var finalArgs:Array = new Array(args.length);
-					for (var i:uint=0; i<args.length; ++i)
-						finalArgs[i] = interp.arg(hat, i);
-
-					app.externalCall('ScratchExtensions.getReporter', trigger, extName, op, finalArgs);
-				}
-			}
-		}
-
-		// TODO: Is it safe to do this in a callback, or must it happen before we return from startEdgeTriggeredHats?
-		function trigger(triggerCondition:Boolean):void {
-			if (triggerCondition) {
+			if (('loudness' == sensorName && soundLevel() > threshold) ||
+					('timer' == sensorName && timer() > threshold) ||
+					('video motion' == sensorName && target.visible && VideoMotionPrims.readMotionSensor('motion', target) > threshold)) {
 				if (triggeredHats.indexOf(hat) == -1) { // not already trigged
 					// only start the stack if it is not already running
 					if (!interp.isRunning(hat, target)) interp.toggleThread(hat, target);
 				}
 				activeHats.push(hat);
 			}
+		} else if ('whenSensorConnected' == hat.op) {
+			if (getBooleanSensor(interp.arg(hat, 0))) {
+				if (triggeredHats.indexOf(hat) == -1) { // not already trigged
+					// only start the stack if it is not already running
+					if (!interp.isRunning(hat, target)) interp.toggleThread(hat, target);
+				}
+				activeHats.push(hat);
+			}
+		} else if (app.jsEnabled) {
+			var unpackedOp:Array = ExtensionManager.unpackExtensionAndOp(hat.op);
+			var extName:String = unpackedOp[0];
+			if (extName && app.extensionManager.extensionActive(extName)) {
+				var op:String = unpackedOp[1];
+				var numArgs:uint = hat.args.length;
+				var finalArgs:Array = new Array(numArgs);
+				for (var i:uint = 0; i < numArgs; ++i)
+					finalArgs[i] = interp.arg(hat, i);
+
+				processExtensionReporter(hat, target, extName, op, finalArgs);
+			}
 		}
+	}
+
+	private function processExtensionReporter(hat:Block, target:ScratchObj, extName:String, op:String, finalArgs:Array):void {
+		// TODO: Is it safe to do this in a callback, or must it happen before we return from startEdgeTriggeredHats?
+		function triggerHatBlock(triggerCondition:Boolean):void {
+			if (triggerCondition) {
+				if (triggeredHats.indexOf(hat) == -1) { // not already trigged
+					// only start the stack if it is not already running
+
+					if (!interp.isRunning(hat, target)) interp.toggleThread(hat, target);
+				}
+				activeHats.push(hat);
+			}
+		}
+		if(!hat.isAsyncHat){
+			app.externalCall('ScratchExtensions.getReporter', triggerHatBlock, extName, op, finalArgs);
+		}
+		else{
+			//Tell the block to wait like a reporter, fire if true
+			if(hat.requestState == 0){
+				if(!interp.isRunning(hat, target)){
+					interp.toggleThread(hat, target, 0, true);
+				}
+			}
+			if(triggeredHats.indexOf(hat) >= 0){
+				activeHats.push(hat);
+			}
+		}
+	}
+
+	public function waitingHatFired(hat:Block, willExec:Boolean):Boolean{
+		if(willExec){
+			if(activeHats.indexOf(hat) < 0){
+				hat.showRunFeedback();
+				if(hat.forceAsync){
+					activeHats.push(hat);
+				}
+				return true;
+			}
+		}
+		else{
+			activeHats.splice(activeHats.indexOf(hat), 1);
+			triggeredHats.splice(triggeredHats.indexOf(hat), 1);
+		}
+		return false;
 	}
 
 	private function processEdgeTriggeredHats():void {
 		if (!edgeTriggersEnabled) return;
 		activeHats = [];
-		allStacksAndOwnersDo(startEdgeTriggeredHats);
+		allStacksAndOwnersDo(startEdgeTriggeredHats,true);
 		triggeredHats = activeHats;
 	}
 
@@ -327,14 +750,17 @@ public class ScratchRuntime {
 		// Turn on video the first time a video sensor reporter or hat block is added.
 		stack.allBlocksDo(function(b:Block):void {
 			var op:String = b.op;
+			if (op == Specs.GET_PARAM) b.parameterIndex = -1;  // need to invalidate index cache
 			if (('senseVideoMotion' == op) ||
-				(('whenSensorGreaterThan' == op) && ('video motion' == interp.arg(b, 0)))) {
-					app.libraryPart.showVideoButton();
+					(('whenSensorGreaterThan' == op) && ('video motion' == interp.arg(b, 0)))) {
+				app.libraryPart.showVideoButton();
 			}
 
-			// Should we go 3D?
-			if(isGraphicEffectBlock(b))
-				app.go3D();
+			SCRATCH::allow3d {
+				// Should we go 3D?
+				if(isGraphicEffectBlock(b))
+					app.go3D();
+			}
 		});
 	}
 
@@ -366,9 +792,15 @@ public class ScratchRuntime {
 			installProjectFromFile(fileName, data);
 		}
 		stopAll();
-		var filter1:FileFilter = new FileFilter('Scratch 1.4 Project', '*.sb');
-		var filter2:FileFilter = new FileFilter('Scratch 2 Project', '*.sb2');
-		Scratch.loadSingleFile(fileLoadHandler, [filter1, filter2])
+
+		var filter:FileFilter;
+		if (Scratch.app.isExtensionDevMode) {
+			filter = new FileFilter('ScratchX Project', '*.sbx;*.sb;*.sb2');
+		}
+		else {
+			filter = new FileFilter('Scratch Project', '*.sb;*.sb2');
+		}
+		Scratch.loadSingleFile(fileLoadHandler, filter);
 	}
 
 	public function installProjectFromFile(fileName:String, data:ByteArray):void {
@@ -384,7 +816,7 @@ public class ScratchRuntime {
 		var newProject:ScratchStage;
 		stopAll();
 		data.position = 0;
-		if (data.readUTFBytes(8) != 'ScratchV') {
+		if (data.length < 8 || data.readUTFBytes(8) != 'ScratchV') {
 			data.position = 0;
 			newProject = new ProjectIO(app).decodeProjectFromZipFile(data);
 			if (!newProject) {
@@ -426,7 +858,7 @@ public class ScratchRuntime {
 		if (app.stagePane != null) stopAll();
 		if (app.scriptsPane) app.scriptsPane.viewScriptsFor(null);
 
-		if(app.isIn3D) app.render3D.setStage(project, project.penLayer);
+		SCRATCH::allow3d { if(app.isIn3D) app.render3D.setStage(project, project.penLayer); }
 
 		for each (var obj:ScratchObj in project.allObjects()) {
 			obj.showCostume(obj.currentCostumeIndex);
@@ -435,8 +867,10 @@ public class ScratchRuntime {
 			if (spr) spr.setDirection(spr.direction);
 		}
 
-		app.extensionManager.clearImportedExtensions();
-		app.extensionManager.loadSavedExtensions(project.info.savedExtensions);
+		app.resetPlugin(function():void {
+			app.extensionManager.clearImportedExtensions();
+			app.extensionManager.loadSavedExtensions(project.info.savedExtensions);
+		});
 		app.installStage(project);
 		app.updateSpriteLibrary(true);
 		// set the active sprite
@@ -449,9 +883,10 @@ public class ScratchRuntime {
 		}
 		app.extensionManager.step();
 		app.projectLoaded();
-		checkForGraphicEffects();
+		SCRATCH::allow3d { checkForGraphicEffects(); }
 	}
 
+	SCRATCH::allow3d
 	public function checkForGraphicEffects():void {
 		if(hasGraphicEffects()) app.go3D();
 		else app.go2D();
@@ -473,7 +908,9 @@ public class ScratchRuntime {
 	public function hideAskPrompt(p:AskPrompter):void {
 		interp.askThread = null;
 		lastAnswer = p.answer();
-		p.parent.removeChild(p);
+		if (p.parent) {
+			p.parent.removeChild(p);
+		}
 		app.stage.focus = null;
 	}
 
@@ -552,13 +989,13 @@ public class ScratchRuntime {
 		// Return local time properties.
 		var now:Date = new Date();
 		switch (which) {
-		case 'hour': return now.hours;
-		case 'minute': return now.minutes;
-		case 'second': return now.seconds;
-		case 'year': return now.fullYear; // four digit year (e.g. 2012)
-		case 'month': return now.month + 1; // 1-12
-		case 'date': return now.date; // 1-31
-		case 'day of week': return now.day + 1; // 1-7, where 1 is Sunday
+			case 'hour': return now.hours;
+			case 'minute': return now.minutes;
+			case 'second': return now.seconds;
+			case 'year': return now.fullYear; // four digit year (e.g. 2012)
+			case 'month': return now.month + 1; // 1-12
+			case 'date': return now.date; // 1-31
+			case 'day of week': return now.day + 1; // 1-7, where 1 is Sunday
 		}
 		return ''; // shouldn't happen
 	}
@@ -591,19 +1028,24 @@ public class ScratchRuntime {
 		return result;
 	}
 
-	public function renameVariable(oldName:String, newName:String, block:Block):void {
+	public function renameVariable(oldName:String, newName:String):void {
+		if (oldName == newName) return;
 		var owner:ScratchObj = app.viewedObj();
-		var v:Variable = owner.lookupVar(oldName);
+		if (!owner.ownsVar(oldName)) owner = app.stagePane;
+		if (owner.hasName(newName)) {
+			DialogBox.notify("Cannot Rename", "That name is already in use.");
+			return;
+		}
 
+		var v:Variable = owner.lookupVar(oldName);
 		if (v != null) {
-			if (!owner.ownsVar(v.name)) owner = app.stagePane;
 			v.name = newName;
 			if (v.watcher) v.watcher.changeVarName(newName);
 		} else {
 			owner.lookupOrCreateVar(newName);
 		}
 		updateVarRefs(oldName, newName, owner);
-		clearAllCaches();
+		app.updatePalette();
 	}
 
 	public function updateVariable(v:Variable):void {}
@@ -669,7 +1111,7 @@ public class ScratchRuntime {
 	public function renameCostume(newName:String):void {
 		var obj:ScratchObj = app.viewedObj();
 		var costume:ScratchCostume = obj.currentCostume();
-        costume.costumeName = '';
+		costume.costumeName = '';
 		var oldName:String = costume.costumeName;
 		newName = obj.unusedCostumeName(newName || Translator.map('costume1'));
 		costume.costumeName = newName;
@@ -680,7 +1122,7 @@ public class ScratchRuntime {
 		var obj:ScratchObj = app.viewedObj();
 		var oldName:String = obj.objName;
 		obj.objName = '';
-		newName = app.stagePane.unusedSpriteName(newName || 'Sprite1');
+		newName = app.stagePane.unusedSpriteName(newName || Translator.map('Sprite1'));
 		obj.objName = newName;
 		for each (var lw:ListWatcher in app.viewedObj().lists) {
 			lw.updateTitle();
@@ -695,17 +1137,17 @@ public class ScratchRuntime {
 		app.setSaveNeeded();
 	}
 
-    public function renameSound(s:ScratchSound, newName:String):void {
-        var obj:ScratchObj = app.viewedObj();
-        var oldName:String = s.soundName;
-        s.soundName = '';
-        newName = obj.unusedSoundName(newName || Translator.map('sound1'));
-        s.soundName = newName;
-        allUsesOfSoundDo(oldName, function (a:BlockArg):void {
-            a.setArgValue(newName);
-        });
-        app.setSaveNeeded();
-    }
+	public function renameSound(s:ScratchSound, newName:String):void {
+		var obj:ScratchObj = app.viewedObj();
+		var oldName:String = s.soundName;
+		s.soundName = '';
+		newName = obj.unusedSoundName(newName || Translator.map('sound1'));
+		s.soundName = newName;
+		allUsesOfSoundDo(oldName, function (a:BlockArg):void {
+			a.setArgValue(newName);
+		});
+		app.setSaveNeeded();
+	}
 
 	public function clearRunFeedback():void {
 		if(app.editMode) {
@@ -736,12 +1178,28 @@ public class ScratchRuntime {
 		return result;
 	}
 
+	public function renameBroadcast(oldMsg:String, newMsg:String):void {
+		if (oldMsg == newMsg) return;
+
+		if (allSendersOfBroadcast(newMsg).length > 0 ||
+			allReceiversOfBroadcast(newMsg).length > 0) {
+			DialogBox.notify("Cannot Rename", "That name is already in use.");
+			return;
+		}
+
+		for each(var obj:Block in allBroadcastBlocksWithMsg(oldMsg)) {
+				Block(obj).broadcastMsg = newMsg;
+		}
+
+		app.updatePalette();
+	}
+
 	private function sendsBroadcast(obj:ScratchObj, msg:String):Boolean {
 		for each (var stack:Block in obj.scripts) {
 			var found:Boolean;
 			stack.allBlocksDo(function (b:Block):void {
-				if ((b.op == 'broadcast:') || (b.op == 'doBroadcastAndWait')) {
-					if (b.args[0].argValue == msg) found = true;
+				if (b.op == 'broadcast:' || b.op == 'doBroadcastAndWait') {
+					if (b.broadcastMsg == msg) found = true;
 				}
 			});
 			if (found) return true;
@@ -755,12 +1213,26 @@ public class ScratchRuntime {
 			var found:Boolean;
 			stack.allBlocksDo(function (b:Block):void {
 				if (b.op == 'whenIReceive') {
-					if (b.args[0].argValue.toLowerCase() == msg) found = true;
+					if (b.broadcastMsg.toLowerCase() == msg) found = true;
 				}
 			});
 			if (found) return true;
 		}
 		return false;
+	}
+
+	private function allBroadcastBlocksWithMsg(msg:String):Array {
+		var result:Array = [];
+		for each (var o:ScratchObj in app.stagePane.allObjects()) {
+			for each (var stack:Block in o.scripts) {
+				stack.allBlocksDo(function (b:Block):void {
+					if (b.op == 'broadcast:' || b.op == 'doBroadcastAndWait' || b.op == 'whenIReceive') {
+						if (b.broadcastMsg == msg) result.push(b);
+					}
+				});
+			}
+		}
+		return result;
 	}
 
 	public function allUsesOfBackdrop(backdropName:String):Array {
@@ -788,7 +1260,7 @@ public class ScratchRuntime {
 	}
 
 	public function allUsesOfSprite(spriteName:String):Array {
-		var spriteMenus:Array = ["spriteOnly", "spriteOrMouse", "spriteOrStage", "touching"];
+		var spriteMenus:Array = ["spriteOnly", "spriteOrMouse", "spriteOrStage", "touching", "location"];
 		var result:Array = [];
 		for each (var stack:Block in allStacks()) {
 			// for each block in stack
@@ -809,21 +1281,21 @@ public class ScratchRuntime {
 			// for each block in stack
 			stack.allBlocksDo(function (b:Block):void {
 				if (b.op == Specs.GET_VAR && b.spec == varName) result.push(b);
-				if (variableBlocks.indexOf(b.op) != -1 && b.args[0].argValue == varName) result.push(b);
+				if (variableBlocks.indexOf(b.op) != -1 && b.args[0] is BlockArg && b.args[0].argValue == varName) result.push(b);
 			});
 		}
 		return result;
 	}
 
-    public function allUsesOfSoundDo(soundName:String, f:Function):void {
-        for each (var stack:Block in app.viewedObj().scripts) {
-            stack.allBlocksDo(function (b:Block):void {
-                for each (var a:* in b.args) {
-                    if (a is BlockArg && a.menuName == 'sound' && a.argValue == soundName) f(a);
-                }
-            });
-        }
-    }
+	public function allUsesOfSoundDo(soundName:String, f:Function):void {
+		for each (var stack:Block in app.viewedObj().scripts) {
+			stack.allBlocksDo(function (b:Block):void {
+				for each (var a:* in b.args) {
+					if (a is BlockArg && a.menuName == 'sound' && a.argValue == soundName) f(a);
+				}
+			});
+		}
+	}
 
 	public function allCallsOf(callee:String, owner:ScratchObj, includeRecursive:Boolean = true):Array {
 		var result:Array = [];
@@ -854,11 +1326,11 @@ public class ScratchRuntime {
 		// return an array containing all stacks in all objects
 		var result:Array = [];
 		allStacksAndOwnersDo(
-			function (stack:Block, target:ScratchObj):void { result.push(stack) });
+				function (stack:Block, target:ScratchObj):void { result.push(stack) });
 		return result;
 	}
 
-	public function allStacksAndOwnersDo(f:Function):void {
+	public function allStacksAndOwnersDo(f:Function,setDoObj:Boolean=false):void {
 		// Call the given function on every stack in the project, passing the stack and owning sprite/stage.
 		// This method is used by broadcast, so enumerate sprites/stage from front to back to match Scratch.
 		var stage:ScratchStage = app.stagePane;
@@ -866,10 +1338,13 @@ public class ScratchRuntime {
 		for (var i:int = stage.numChildren - 1; i >= 0; i--) {
 			var o:* = stage.getChildAt(i);
 			if (o is ScratchObj) {
+				if (setDoObj) currentDoObj = ScratchObj(o);
 				for each (stack in ScratchObj(o).scripts) f(stack, o);
 			}
 		}
+		if (setDoObj) currentDoObj = stage;
 		for each (stack in stage.scripts) f(stack, stage);
+		currentDoObj = null;
 	}
 
 	public function clearAllCaches():void {
@@ -909,8 +1384,10 @@ public class ScratchRuntime {
 		}
 		var w:DisplayObject = isList ? watcherForList(targetObj, varName) : watcherForVar(targetObj, varName);
 		if (w is ListWatcher) ListWatcher(w).prepareToShow();
-		if (w != null) showOnStage(w);
-		app.updatePalette(false);
+		if (w != null && (!w.visible || !w.parent)) {
+			showOnStage(w);
+			app.updatePalette(false);
+		}
 	}
 
 	private function showOnStage(w:DisplayObject):void {
@@ -953,8 +1430,10 @@ public class ScratchRuntime {
 
 	public function hideVarOrListFor(varName:String, isList:Boolean, targetObj:ScratchObj):void {
 		var w:DisplayObject = isList ? watcherForList(targetObj, varName) : watcherForVar(targetObj, varName);
-		if (w != null) w.visible = false;
-		app.updatePalette(false);
+		if (w != null && w.visible) {
+			w.visible = false;
+			app.updatePalette(false);
+		}
 	}
 
 	public function watcherShowing(data:Object):Boolean {

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Scratch Project Editor and Player
  * Copyright (C) 2014 Massachusetts Institute of Technology
  *
@@ -23,33 +23,33 @@
 // This part holds the Scratch Logo, cursor tools, screen mode buttons, and more.
 
 package ui.parts {
-	import flash.display.*;
-	import flash.events.MouseEvent;
-	import flash.text.*;
-	import flash.net.navigateToURL;
-	import flash.net.URLRequest
-	import assets.Resources;
-	import interpreter.*;
-	import blocks.*;
+import flash.display.*;
+import flash.events.MouseEvent;
+import flash.text.*;
+import flash.net.navigateToURL;
+import flash.net.URLRequest;
+import assets.Resources;
+import interpreter.*;
 
-	import scratch.*;
-	import watchers.ListWatcher;
+import extensions.ExtensionDevManager;
+import scratch.*;
+import watchers.ListWatcher;
 
-	import translation.*;
+import flash.display.*;
+import flash.events.MouseEvent;
+import flash.text.*;
 
-	import ui.*;
-	import ui.media.*;
-	import ui.parts.*;
+import translation.Translator;
 
-	import uiwidgets.*;
-
-	import util.*;
+import uiwidgets.*;
+import util.*;
 
 public class TopBarPart extends UIPart {
 
 	private var shape:Shape;
 	protected var languageButton:IconButton;
 	protected var logo:IconButton;
+	protected var logoButton:IconButton;
 
 	protected var fileMenu:IconButton;
 	protected var editMenu:IconButton;
@@ -60,10 +60,15 @@ public class TopBarPart extends UIPart {
 	private var growTool:IconButton;
 	private var shrinkTool:IconButton;
 	private var helpTool:IconButton;
+	private var toolButtons:Array = [];
 	private var toolOnMouseDown:String;
 
 	private var offlineNotice:TextField;
 	private const offlineNoticeFormat:TextFormat = new TextFormat(CSS.font, 13, CSS.white, true);
+
+	protected var loadExperimentalButton:Button;
+	protected var exportButton:Button;
+	protected var extensionLabel:TextField;
 
 	public function TopBarPart(app:Scratch) {
 		this.app = app;
@@ -78,6 +83,21 @@ public class TopBarPart extends UIPart {
 		languageButton.isMomentary = true;
 		addTextButtons();
 		addToolButtons();
+		if (Scratch.app.isExtensionDevMode) {
+			addChild(logoButton = new IconButton(app.logoButtonPressed, Resources.createBmp('scratchxlogo')));
+			const desiredButtonHeight:Number = 20;
+			logoButton.scaleX = logoButton.scaleY = 1;
+			var scale:Number = desiredButtonHeight / logoButton.height;
+			logoButton.scaleX = logoButton.scaleY = scale;
+
+			addChild(exportButton = new Button('Save Project', function():void { app.exportProjectToFile(); }));
+			addChild(extensionLabel = makeLabel('My Extension', offlineNoticeFormat, 2, 2));
+
+			var extensionDevManager:ExtensionDevManager = Scratch.app.extensionManager as ExtensionDevManager;
+			if (extensionDevManager) {
+				addChild(loadExperimentalButton = extensionDevManager.makeLoadExperimentalExtensionButton());
+			}
+		}
 	}
 
 	public static function strings():Array {
@@ -99,7 +119,8 @@ public class TopBarPart extends UIPart {
 	private function addLogo() : void {
 		var logoClicked:Function = null;
 		logoClicked = function(param1:*):void {
-			navigateToURL(new URLRequest("http://blue.gwiddle.org"), "_self");
+			//TODO: Get a new website :P
+			navigateToURL(new URLRequest("http://bluemod.webatu.com/"), "_self");
 			trace("REDIRECTING");
 		};
 		logo = new IconButton(logoClicked, "scratchlogo");
@@ -110,7 +131,7 @@ public class TopBarPart extends UIPart {
 	public function updateTranslation():void {
 		removeTextButtons();
 		addTextButtons();
-		if (offlineNotice) offlineNotice.text = Translator.map('Offline Editor') + ' (beta)';
+		if (offlineNotice) offlineNotice.text = Translator.map('Offline Editor');
 		refresh();
 	}
 
@@ -119,12 +140,23 @@ public class TopBarPart extends UIPart {
 		this.h = h;
 		var g:Graphics = shape.graphics;
 		g.clear();
-		g.beginFill(CSS.topBarColor);
+		g.beginFill(CSS.topBarColor());
 		g.drawRect(0, 0, w, h);
 		g.endFill();
 		fixLayout();
 	}
 
+/*	protected function fixLogoLayout():int {
+		var nextX:int = 9;
+		if (logoButton) {
+			logoButton.x = nextX;
+			logoButton.y = 5;
+			nextX += logoButton.width + buttonSpace;
+		}
+		return nextX;
+	}
+
+	protected const buttonSpace:int = 12;*/
 	protected function fixLayout():void {
 		var buttonY:int = 5;
 		logo.x = 1;
@@ -156,9 +188,30 @@ public class TopBarPart extends UIPart {
 		helpTool.x = shrinkTool.right() + space;
 		copyTool.y = cutTool.y = shrinkTool.y = growTool.y = helpTool.y = buttonY - 3;
 
-		if(offlineNotice) {
+		if (offlineNotice) {
 			offlineNotice.x = w - offlineNotice.width - 5;
 			offlineNotice.y = 5;
+		}
+
+		// From here down, nextX is the next item's right edge and decreases after each item
+		nextX = w - 5;
+
+		if (loadExperimentalButton) {
+			loadExperimentalButton.x = nextX - loadExperimentalButton.width;
+			loadExperimentalButton.y = h + 5;
+			// Don't upload nextX: we overlap with other items. At most one set should show at a time.
+		}
+
+		if (exportButton) {
+			exportButton.x = nextX - exportButton.width;
+			exportButton.y = h + 5;
+			nextX = exportButton.x - 5;
+		}
+
+		if (extensionLabel) {
+			extensionLabel.x = nextX - extensionLabel.width;
+			extensionLabel.y = h + 5;
+			nextX = extensionLabel.x - 5;
 		}
 	}
 
@@ -166,15 +219,22 @@ public class TopBarPart extends UIPart {
 		if (app.isOffline) {
 			helpTool.visible = app.isOffline;
 		}
+
+		if (Scratch.app.isExtensionDevMode) {
+			var hasExperimental:Boolean = app.extensionManager.hasExperimentalExtensions();
+			exportButton.visible = hasExperimental;
+			extensionLabel.visible = hasExperimental;
+			loadExperimentalButton.visible = !hasExperimental;
+
+			var extensionDevManager:ExtensionDevManager = app.extensionManager as ExtensionDevManager;
+			if (extensionDevManager) {
+				extensionLabel.text = extensionDevManager.getExperimentalExtensionNames().join(', ');
+			}
+		}
 		fixLayout();
 	}
 
 	protected function addTextButtons():void {
-/*		var aboutClicked:Function = null;
-		aboutClicked = function(param1:*):void
-		{
-			app.showAboutDialog();
-		};*/
 		addChild(fileMenu = makeMenuButton('File', app.showFileMenu, true));
 		addChild(editMenu = makeMenuButton('Edit', app.showEditMenu, true));
 		addChild(aboutButton = makeMenuButton("About", app.showAboutDialog, false));
@@ -196,12 +256,17 @@ public class TopBarPart extends UIPart {
 				CursorTool.setTool(newTool);
 			}
 		}
-		addChild(copyTool = makeToolButton('copyTool', selectTool));
-		addChild(cutTool = makeToolButton('cutTool', selectTool));
-		addChild(growTool = makeToolButton('growTool', selectTool));
-		addChild(shrinkTool = makeToolButton('shrinkTool', selectTool));
-		addChild(helpTool = makeToolButton('helpTool', selectTool));
 
+		toolButtons.push(copyTool = makeToolButton('copyTool', selectTool));
+		toolButtons.push(cutTool = makeToolButton('cutTool', selectTool));
+		toolButtons.push(growTool = makeToolButton('growTool', selectTool));
+		toolButtons.push(shrinkTool = makeToolButton('shrinkTool', selectTool));
+		toolButtons.push(helpTool = makeToolButton('helpTool', selectTool));
+		if(!app.isMicroworld){
+			for each (var b:IconButton in toolButtons) {
+				addChild(b);
+			}
+		}
 		SimpleTooltips.add(copyTool, {text: 'Duplicate', direction: 'bottom'});
 		SimpleTooltips.add(cutTool, {text: 'Delete', direction: 'bottom'});
 		SimpleTooltips.add(growTool, {text: 'Grow', direction: 'bottom'});
@@ -209,16 +274,21 @@ public class TopBarPart extends UIPart {
 		SimpleTooltips.add(helpTool, {text: 'Block help', direction: 'bottom'});
 	}
 
-	public function clearToolButtons():void { clearToolButtonsExcept(null) }
+	public function clearToolButtons():void {
+		clearToolButtonsExcept(null)
+	}
 
-	private function clearToolButtonsExcept(activeButton: IconButton):void {
-		for each (var b:IconButton in [copyTool, cutTool, growTool, shrinkTool, helpTool]) {
+	private function clearToolButtonsExcept(activeButton:IconButton):void {
+		for each (var b:IconButton in toolButtons) {
 			if (b != activeButton) b.turnOff();
 		}
 	}
 
 	private function makeToolButton(iconName:String, fcn:Function):IconButton {
-		function mouseDown(evt:MouseEvent):void { toolOnMouseDown = CursorTool.tool }
+		function mouseDown(evt:MouseEvent):void {
+			toolOnMouseDown = CursorTool.tool
+		}
+
 		var onImage:Sprite = toolButtonImage(iconName, CSS.overColor, 1);
 		var offImage:Sprite = toolButtonImage(iconName, 0, 0);
 		var b:IconButton = new IconButton(fcn, onImage, offImage);
@@ -261,5 +331,5 @@ public class TopBarPart extends UIPart {
 
 		return result;
 	}
-
-}}
+}
+}

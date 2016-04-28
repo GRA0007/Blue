@@ -46,6 +46,10 @@ public class ScratchSoundPlayer {
 
 	// sound being played
 	public var scratchSound:ScratchSound;
+	
+	//video recording
+	public var dataBytes:ByteArray;
+	public var readPosition:int;
 
 	// sound data, step size, and current stream position
 	protected var soundData:ByteArray;
@@ -54,12 +58,13 @@ public class ScratchSoundPlayer {
 	protected var stepSize:Number;
 	private var adpcmBlockSize:int;
 	protected var bytePosition:int;  // use our own position to allow sound data to be shared
-	protected var soundChannel:SoundChannel;
+	public var soundChannel:SoundChannel;
 	private var lastBufferTime:uint;
 
 	// volume support
 	public var client:*;
-	protected var volume:Number = 1.0;
+	public var volume:Number = 1.0;
+	public var savedVolume:Number;
 	private var lastClientVolume:Number;
 
 	// interpolation function and state
@@ -68,35 +73,51 @@ public class ScratchSoundPlayer {
 	private var thisSample:int, nextSample:int;
 
 	public function ScratchSoundPlayer(wavFileData:ByteArray) {
+		readPosition = 0;
 		getSample = getSample16Uncompressed;
 		if (wavFileData != null) {
-			var info:* = WAVFile.decode(wavFileData);
-			soundData = wavFileData;
-			startOffset = info.sampleDataStart;
-			endOffset = startOffset + info.sampleDataSize;
-			stepSize = info.samplesPerSecond / 44100.0;
-			if (info.encoding == 17) {
-				adpcmBlockSize = info.adpcmBlockSize;
-				getSample = getSampleADPCM;
-			} else {
-				if (info.bitsPerSample == 8) getSample = getSample8Uncompressed;
-				if (info.bitsPerSample == 16) getSample = getSample16Uncompressed;
+			try {
+				var info:* = WAVFile.decode(wavFileData);
+				soundData = wavFileData;
+				startOffset = info.sampleDataStart;
+				endOffset = startOffset + info.sampleDataSize;
+				stepSize = info.samplesPerSecond / 44100.0;
+				if (info.encoding == 17) {
+					adpcmBlockSize = info.adpcmBlockSize;
+					getSample = getSampleADPCM;
+				} else {
+					if (info.bitsPerSample == 8) getSample = getSample8Uncompressed;
+					if (info.bitsPerSample == 16) getSample = getSample16Uncompressed;
+				}
+			}
+			catch (e:*) {
+				Scratch.app.logException(e);
 			}
 		}
 	}
 
-	public function atEnd():Boolean { return soundChannel == null }
+	public function isPlaying(snd:ByteArray = null):Boolean {
+		return (activeSounds.indexOf(this) > -1 && (!snd || soundData == snd));
+	}
+
+	public function atEnd():Boolean { return soundChannel == null; }
 
 	public function stopPlaying():void {
 		if (soundChannel != null) {
-			soundChannel.stop();
+			var sc:SoundChannel = soundChannel;
 			soundChannel = null;
+			sc.stop();
+			sc.dispatchEvent(new Event(Event.SOUND_COMPLETE));
 		}
 		var i:int = activeSounds.indexOf(this);
 		if (i >= 0) activeSounds.splice(i, 1);
+		dataBytes = null;
 	}
 
 	public function startPlaying(doneFunction:Function = null):void {
+		readPosition=0;
+		dataBytes = new ByteArray();
+		dataBytes.position=0;
 		stopIfAlreadyPlaying();
 		activeSounds.push(this);
 		bytePosition = startOffset;
@@ -105,7 +126,13 @@ public class ScratchSoundPlayer {
 		var flashSnd:Sound = new Sound();
 		flashSnd.addEventListener(SampleDataEvent.SAMPLE_DATA, writeSampleData);
 		soundChannel = flashSnd.play();
-		if (doneFunction != null) soundChannel.addEventListener(Event.SOUND_COMPLETE, doneFunction);
+		if (soundChannel) {
+			if (doneFunction != null) soundChannel.addEventListener(Event.SOUND_COMPLETE, doneFunction);
+		} else {
+			// User has no sound card or too many sounds already playing.
+			stopPlaying();
+			if (doneFunction != null) doneFunction();
+		}
 	}
 
 	protected function stopIfAlreadyPlaying():void {
@@ -145,6 +172,7 @@ public class ScratchSoundPlayer {
 			data.writeFloat(n);
 			data.writeFloat(n);
 		}
+		dataBytes.writeBytes(data);
 		if ((bytePosition >= endOffset) && (lastBufferTime == 0)) {
 			lastBufferTime = getTimer();
 		}

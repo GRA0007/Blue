@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Scratch Project Editor and Player
  * Copyright (C) 2014 Massachusetts Institute of Technology
  *
@@ -24,18 +24,24 @@
 // category, including the blocks, buttons, and watcher toggle boxes.
 
 package scratch {
-	import flash.display.*;
-	import flash.events.MouseEvent;
-	import flash.events.Event;
-	import flash.net.*;
-	import flash.text.*;
-	import blocks.*;
-	import extensions.*;
-	import ui.media.MediaLibrary;
-	import ui.ProcedureSpecEditor;
-	import ui.parts.UIPart;
-	import uiwidgets.*;
-	import translation.Translator;
+import blocks.*;
+
+import extensions.*;
+
+import flash.display.*;
+import flash.events.Event;
+import flash.events.MouseEvent;
+import flash.geom.ColorTransform;
+import flash.net.*;
+import flash.text.*;
+
+import translation.Translator;
+
+import ui.ProcedureSpecEditor;
+import ui.media.MediaLibrary;
+import ui.parts.UIPart;
+
+import uiwidgets.*;
 
 public class PaletteBuilder {
 
@@ -87,7 +93,7 @@ public class PaletteBuilder {
 				var blockColor:int = (app.interp.isImplemented(spec[3])) ? catColor : 0x505050;
 				var defaultArgs:Array = targetObj.defaultArgsFor(spec[3], spec.slice(4));
 				var label:String = spec[0];
-				if(targetObj.isStage && spec[3] == 'whenClicked') label = 'when Stage clicked';
+				if (targetObj.isStage && spec[3] == 'whenClicked') label = 'when Stage clicked';
 				var block:Block = new Block(label, spec[1], blockColor, spec[3], defaultArgs);
 				var showCheckbox:Boolean = isCheckboxReporter(spec[3]);
 				if (showCheckbox) addReporterCheckbox(block);
@@ -143,6 +149,13 @@ public class PaletteBuilder {
 	}
 
 	protected function addExtensionButtons():void {
+		addAddExtensionButton();
+		if (Scratch.app.isExtensionDevMode) {
+			var extensionDevManager:ExtensionDevManager = Scratch.app.extensionManager as ExtensionDevManager;
+			if (extensionDevManager) {
+				addItem(extensionDevManager.makeLoadExperimentalExtensionButton());
+			}
+		}
 	}
 
 	protected function addAddExtensionButton():void {
@@ -183,6 +196,10 @@ public class PaletteBuilder {
 
 	protected function createVar(name:String, varSettings:VariableSettings):* {
 		var obj:ScratchObj = (varSettings.isLocal) ? app.viewedObj() : app.stageObj();
+		if (obj.hasName(name)) {
+			DialogBox.notify("Cannot Add", "That name is already in use.");
+			return;
+		}
 		var variable:* = (varSettings.isList ? obj.lookupOrCreateList(name) : obj.lookupOrCreateVar(name));
 
 		app.runtime.showVarOrListFor(name, varSettings.isList, obj);
@@ -193,7 +210,7 @@ public class PaletteBuilder {
 
 	private function makeVariable():void {
 		function makeVar2():void {
-			var n:String = d.fields['Variable name'].text.replace(/^\s+|\s+$/g, '');
+			var n:String = d.getField('Variable name').replace(/^\s+|\s+$/g, '');
 			if (n.length == 0) return;
 
 			createVar(n, varSettings);
@@ -211,11 +228,12 @@ public class PaletteBuilder {
 
 	private function makeList():void {
 		function makeList2(d:DialogBox):void {
-			var n:String = d.fields['List name'].text.replace(/^\s+|\s+$/g, '');
+			var n:String = d.getField('List name').replace(/^\s+|\s+$/g, '');
 			if (n.length == 0) return;
 
 			createVar(n, varSettings);
 		}
+
 		var d:DialogBox = new DialogBox(makeList2);
 		var varSettings:VariableSettings = makeVarSettings(true, app.viewedObj().isStage);
 		d.addTitle('New List');
@@ -247,6 +265,7 @@ public class PaletteBuilder {
 			app.updatePalette();
 			app.setSaveNeeded();
 		}
+
 		var specEditor:ProcedureSpecEditor = new ProcedureSpecEditor('', [], false);
 		var d:DialogBox = new DialogBox(addBlockHat);
 		d.addTitle('New Block');
@@ -292,6 +311,7 @@ public class PaletteBuilder {
 			}
 			app.updatePalette();
 		}
+
 		var lib:MediaLibrary = app.getMediaLibrary('extension', addExt);
 		lib.open();
 	}
@@ -313,7 +333,7 @@ public class PaletteBuilder {
 	}
 
 	protected function isCheckboxReporter(op:String):Boolean {
-		const checkboxReporters: Array = [
+		const checkboxReporters:Array = [
 			'xpos', 'ypos', 'heading', 'costumeIndex', 'scale', 'volume', 'timeAndDate',
 			'backgroundIndex', 'sceneName', 'tempo', 'answer', 'timer', 'soundLevel', 'isLoud',
 			'sensor:', 'sensorPressed:', 'senseVideoMotion', 'xScroll', 'yScroll',
@@ -322,7 +342,7 @@ public class PaletteBuilder {
 	}
 
 	private function isSpriteSpecific(op:String):Boolean {
-		const spriteSpecific: Array = ['costumeIndex', 'xpos', 'ypos', 'heading', 'scale', 'volume', 'rotationStyle', 'visible', 'isPenDown', 'penHue', 'penShade', 'penSize', 'costumeName'/*, ':effect'*/];
+		const spriteSpecific:Array = ['costumeIndex', 'xpos', 'ypos', 'heading', 'scale', 'volume', 'rotationStyle', 'visible', 'isPenDown', 'penHue', 'penShade', 'penSize', 'costumeName'/*, ':effect'*/];
 		return spriteSpecific.indexOf(op) > -1;
 	}
 
@@ -356,13 +376,13 @@ public class PaletteBuilder {
 		var data:Object = b.clientData;
 		if (data.block) {
 			switch (data.block.op) {
-			case 'senseVideoMotion':
-				data.targetObj = getBlockArg(data.block, 1) == 'Stage' ? app.stagePane : app.viewedObj();
-			case 'sensor:':
-			case 'sensorPressed:':
-			case 'timeAndDate':
-				data.param = getBlockArg(data.block, 0);
-				break;
+				case 'senseVideoMotion':
+					data.targetObj = getBlockArg(data.block, 1) == 'Stage' ? app.stagePane : app.viewedObj();
+				case 'sensor:':
+				case 'sensorPressed:':
+				case 'timeAndDate':
+					data.param = getBlockArg(data.block, 0);
+					break;
 			}
 		}
 		var showFlag:Boolean = !app.runtime.watcherShowing(data);
@@ -382,33 +402,58 @@ public class PaletteBuilder {
 
 	protected function getExtensionMenu(ext:ScratchExtension):Menu {
 		function showAbout():void {
-			// Open in the tips window if the URL starts with /info/ and another tab otherwise
-			if (ext.url) {
+			if (ext.isInternal) {
+				// Internal extensions are handled specially by tip-bar.js
+				app.showTip('ext:' + ext.name);
+			}
+			else if (ext.url) {
+				// Open in the tips window if the URL starts with /info/ and another tab otherwise
 				if (ext.url.indexOf('/info/') === 0) app.showTip(ext.url);
-				else if(ext.url.indexOf('http') === 0) navigateToURL(new URLRequest(ext.url));
-				else DialogBox.notify('Extensions', 'Unable to load about page: the URL given for extension "' + ext.name + '" is not formatted correctly.');
+				else if (ext.url.indexOf('http') === 0) navigateToURL(new URLRequest(ext.url));
+				else DialogBox.notify('Extensions', 'Unable to load about page: the URL given for extension "' + ext.displayName + '" is not formatted correctly.');
 			}
 		}
+
 		function hideExtension():void {
 			app.extensionManager.setEnabled(ext.name, false);
 			app.updatePalette();
 		}
 
 		var m:Menu = new Menu();
-		m.addItem(Translator.map('About') + ' ' + ext.name + ' ' + Translator.map('extension') + '...', showAbout, !!ext.url);
+		m.addItem(Translator.map('About') + ' ' + ext.displayName + ' ' + Translator.map('extension') + '...', showAbout, !!ext.url);
 		m.addItem('Remove extension blocks', hideExtension);
+
+		var extensionDevManager:ExtensionDevManager = Scratch.app.extensionManager as ExtensionDevManager;
+
+		if (!ext.isInternal && extensionDevManager) {
+			m.addLine();
+			var localFileName:String = extensionDevManager.getLocalFileName(ext);
+			if (localFileName) {
+				if (extensionDevManager.isLocalExtensionDirty()) {
+					m.addItem('Load changes from ' + localFileName, function ():void {
+						extensionDevManager.loadLocalCode();
+					});
+				}
+				m.addItem('Disconnect from ' + localFileName, function ():void {
+					extensionDevManager.stopWatchingExtensionFile();
+				});
+			}
+		}
+
 		return m;
 	}
 
 	protected const pwidth:int = 215;
+
 	protected function addExtensionSeparator(ext:ScratchExtension):void {
 		function extensionMenu(ignore:*):void {
 			var m:Menu = getExtensionMenu(ext);
 			m.showOnStage(app.stage);
 		}
+
 		nextY += 7;
 
-		var titleButton:IconButton = UIPart.makeMenuButton(ext.name, extensionMenu, true, CSS.textColor);
+		var titleButton:IconButton = UIPart.makeMenuButton(ext.displayName, extensionMenu, true, CSS.textColor);
 		titleButton.x = 5;
 		titleButton.y = nextY;
 		app.palette.addChild(titleButton);
@@ -416,29 +461,80 @@ public class PaletteBuilder {
 		addLineForExtensionTitle(titleButton, ext);
 
 		var indicator:IndicatorLight = new IndicatorLight(ext);
-		indicator.addEventListener(MouseEvent.CLICK, function(e:Event):void {Scratch.app.showTip('extensions');}, false, 0, true);
+		indicator.addEventListener(MouseEvent.CLICK, function (e:Event):void {
+			Scratch.app.showTip('extensions');
+		}, false, 0, true);
 		app.extensionManager.updateIndicator(indicator, ext);
 		indicator.x = pwidth - 30;
 		indicator.y = nextY + 2;
 		app.palette.addChild(indicator);
 
 		nextY += titleButton.height + 10;
+
+		var extensionDevManager:ExtensionDevManager = Scratch.app.extensionManager as ExtensionDevManager;
+		if (extensionDevManager) {
+			// Show if this extension is being updated by a file
+			var fileName:String = extensionDevManager.getLocalFileName(ext);
+			if (fileName) {
+				var extensionEditStatus:TextField = UIPart.makeLabel('Connected to ' + fileName, CSS.normalTextFormat, 8, nextY - 5);
+				app.palette.addChild(extensionEditStatus);
+
+				nextY += extensionEditStatus.textHeight + 3;
+			}
+		}
 	}
+
+	[Embed(source='../assets/reload.png')]
+	private static const reloadIcon:Class;
 
 	protected function addLineForExtensionTitle(titleButton:IconButton, ext:ScratchExtension):void {
 		var x:int = titleButton.width + 12;
+		var w:int = pwidth - x - 48;
 		addLine(x, nextY + 9, pwidth - x - 38);
+		var extensionDevManager:ExtensionDevManager = Scratch.app.extensionManager as ExtensionDevManager;
+		var dirty:Boolean = extensionDevManager && extensionDevManager.isLocalExtensionDirty(ext);
+		if (dirty)
+			w -= 15;
+		addLine(x, nextY + 9, w);
+
+		if (dirty) {
+			var reload:Bitmap = new reloadIcon();
+			reload.scaleX = 0.75;
+			reload.scaleY = 0.75;
+			var reloadBtn:Sprite = new Sprite();
+			reloadBtn.addChild(reload);
+			reloadBtn.x = x + w + 6;
+			reloadBtn.y = nextY + 2;
+			app.palette.addChild(reloadBtn);
+			SimpleTooltips.add(reloadBtn, {
+				text: 'Click to load changes (running old code from ' + extensionDevManager.getLocalCodeDate() + ')',
+				direction: 'top'
+			});
+
+			reloadBtn.addEventListener(MouseEvent.MOUSE_DOWN, function (e:MouseEvent):void {
+				SimpleTooltips.hideAll();
+				extensionDevManager.loadLocalCode();
+			});
+
+			reloadBtn.addEventListener(MouseEvent.ROLL_OVER, function (e:MouseEvent):void {
+				reloadBtn.transform.colorTransform = new ColorTransform(2, 2, 2);
+			});
+
+			reloadBtn.addEventListener(MouseEvent.ROLL_OUT, function (e:MouseEvent):void {
+				reloadBtn.transform.colorTransform = new ColorTransform();
+			});
+		}
 	}
 
 	private function addBlocksForExtension(ext:ScratchExtension):void {
 		var blockColor:int = Specs.extensionsColor;
-		var opPrefix:String = ext.useScratchPrimitives ? '' : ext.name + '.';
+		var opPrefix:String = ext.useScratchPrimitives ? '' : ext.name + ExtensionManager.extensionSeparator;
 		for each (var spec:Array in ext.blockSpecs) {
 			if (spec.length >= 3) {
 				var op:String = opPrefix + spec[2];
 				var defaultArgs:Array = spec.slice(3);
 				var block:Block = new Block(spec[1], spec[0], blockColor, op, defaultArgs);
-				var showCheckbox:Boolean = (spec[0] == 'r' && defaultArgs.length == 0);
+				var showCheckbox:Boolean = (block.isReporter && !block.isRequester && defaultArgs.length == 0);
 				if (showCheckbox) addReporterCheckbox(block);
 				addItem(block, showCheckbox);
 			} else {
@@ -465,4 +561,5 @@ public class PaletteBuilder {
 		app.palette.addChild(line);
 	}
 
-}}
+}
+}
