@@ -342,6 +342,7 @@ public class Primitives {
 		new MotionAndPenPrims(app, interp).addPrimsTo(primTable);
 		new SoundPrims(app, interp).addPrimsTo(primTable);
 		new VideoMotionPrims(app, interp).addPrimsTo(primTable);
+		new ColorPrims(app, interp).addPrimsTo(primTable);
 		addOtherPrims(primTable);
 	}
 
@@ -548,23 +549,18 @@ public class Primitives {
 		}
 	}
 	
-	private function primIsType(b:Block):Boolean {
+	private function primIsType(b:Block):* {
 		var string:* = interp.arg(b, 0);
 		var type:* = interp.arg(b, 1);
 		switch(type) {
-		case "a number": return string is Number;
+		case "a number": return !isNaN(Number(string));
 		case "a string": return string is String;
-		case "a boolean": return string is Boolean;
+		case "a boolean": return (String(string) === "0") || (String(string) === "1") || (String(string) === "true") || (String(string) === "false");
 		case "a color": return string is Color;
 		}
 		return false;
 	}
 	
-	private function rgbtohex(red:Number, green:Number, blue:Number):* {
-		var intVal:int = red << 16 | green << 8 | blue;
-		var hexVal:String = intVal.toString(16);
-		hexVal = "#" + (hexVal.length < 6 ? "0" + hexVal : hexVal);
-		return hexVal;
-	}
+	
 
 }}

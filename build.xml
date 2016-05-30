@@ -31,6 +31,7 @@
 			<source-path path-element="${SRC_DIR}" />
 			<library-path file="${LIBS_DIR}/as3corelib.swc" />
 			<library-path file="${LIBS_DIR}/blooddy_crypto.swc" />
+			<library-path file="${LIBS_DIR}/grabcut.swc" />
 			<library-path file="${FLEX_HOME}/frameworks/libs/framework.swc" />
 			<static-link-runtime-shared-libraries>true</static-link-runtime-shared-libraries>
 			<default-size width="800" height="600" />
@@ -46,6 +47,7 @@
 			<source-path path-element="${SRC_DIR}" />
 			<library-path file="${LIBS_DIR}/as3corelib.swc" />
 			<library-path file="${LIBS_DIR}/blooddy_crypto.swc" />
+			<library-path file="${LIBS_DIR}/grabcut.swc" />
 			<library-path file="${FLEX_HOME}/frameworks/libs/framework.swc" />
 			<static-link-runtime-shared-libraries>true</static-link-runtime-shared-libraries>
 			<default-size width="800" height="600" />
