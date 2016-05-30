@@ -36,6 +36,8 @@ public class Specs {
 	public static const CHANGE_VAR:String = "changeVar:by:";
 	public static const GET_LIST:String = "contentsOfList:";
 	public static const CALL:String = "call";
+	public static const CALL_BOOLEAN:String = "callb";
+	public static const CALL_NUMBER:String = "callr"
 	public static const PROCEDURE_DEF:String = "procDef";
 	public static const GET_PARAM:String = "getParam";
 
@@ -404,6 +406,9 @@ public class Specs {
 		["-"],
 		["%m.mathOp of %n",						"r", 8, "computeFunction:of:",	"sqrt", 9],
 		["%m.constant",							"r", 8, "constant",				"pi"],
+
+		//More Blocks 10
+		["report %s",							"f", 20, "report",				""],
 
 		// variables
 		["create variable %s for all sprites %b",			" ", 9, "addVariable"],

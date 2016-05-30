@@ -660,8 +660,8 @@ public class ScratchRuntime {
 		if (!hat.isHat || !hat.nextBlock) return; // skip disconnected hats
 
 		if ('whenSensorGreaterThan' == hat.op) {
-			var sensorName:String = interp.arg(hat, 0);
-			var threshold:Number = interp.numarg(hat, 1);
+			var sensorName:String = (hat.args[0] as BlockArg).argValue;
+			var threshold:Number = Number((hat.args[1] as BlockArg).argValue) || 0;
 			if (('loudness' == sensorName && soundLevel() > threshold) ||
 					('timer' == sensorName && timer() > threshold) ||
 					('video motion' == sensorName && target.visible && VideoMotionPrims.readMotionSensor('motion', target) > threshold)) {
@@ -672,7 +672,7 @@ public class ScratchRuntime {
 				activeHats.push(hat);
 			}
 		} else if ('whenSensorConnected' == hat.op) {
-			if (getBooleanSensor(interp.arg(hat, 0))) {
+			if (getBooleanSensor((hat.args[0] as BlockArg).argValue)) {
 				if (triggeredHats.indexOf(hat) == -1) { // not already trigged
 					// only start the stack if it is not already running
 					if (!interp.isRunning(hat, target)) interp.toggleThread(hat, target);
@@ -687,7 +687,7 @@ public class ScratchRuntime {
 				var numArgs:uint = hat.args.length;
 				var finalArgs:Array = new Array(numArgs);
 				for (var i:uint = 0; i < numArgs; ++i)
-					finalArgs[i] = interp.arg(hat, i);
+					finalArgs[i] = (hat.args[i] as BlockArg).argValue;
 
 				processExtensionReporter(hat, target, extName, op, finalArgs);
 			}
@@ -752,7 +752,7 @@ public class ScratchRuntime {
 			var op:String = b.op;
 			if (op == Specs.GET_PARAM) b.parameterIndex = -1;  // need to invalidate index cache
 			if (('senseVideoMotion' == op) ||
-					(('whenSensorGreaterThan' == op) && ('video motion' == interp.arg(b, 0)))) {
+					(('whenSensorGreaterThan' == op) && ('video motion' == (b.args[0] as BlockArg).argValue))) {
 				app.libraryPart.showVideoButton();
 			}
 
