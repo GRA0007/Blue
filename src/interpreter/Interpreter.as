@@ -492,7 +492,8 @@ public class Interpreter {
 		specialTable[Specs.GET_VAR]		= primVarGet;
 		primTable[Specs.SET_VAR]		= primVarSet;
 		primTable[Specs.CHANGE_VAR]		= primVarChange;
-		specialTable[Specs.GET_PARAM]		= primGetParam;
+		specialTable[Specs.GET_PARAM]	= primGetParam;
+		specialTable[Specs.GET_LOOP]	= primGetLoop
 //		primTable["varSet:colorTo:"]	= primVarSetColor;
 
 		// edge-trigger hat blocks
@@ -710,8 +711,18 @@ public class Interpreter {
 		}
 		activeThread.pushStateForBlock(report0Block);
 		activeThread.args = b;
-		proc.loopBlock = insideLoop;
+		activeThread.loopBlock = insideLoop;
 		startCmdList(proc);
+	}
+
+	private function primGetLoop(b:Array):void {
+		var block:Block = activeThread.block;
+
+		activeThread.popState();
+		startCmdList(activeThread.loopBlock);
+		activeThread.firstTime = true;
+		if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
+
 	}
 
 	private function primReturn(b:Array):void {

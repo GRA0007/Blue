@@ -69,6 +69,7 @@ public class BlockIO {
 		if (b.op == Specs.GET_VAR) return [Specs.GET_VAR, b.spec];		// variable reporter
 		if (b.op == Specs.GET_LIST) return [Specs.GET_LIST, b.spec];	// list reporter
 		if (b.op == Specs.GET_PARAM) return [Specs.GET_PARAM, b.spec, b.type]; // parameter reporter
+		if (b.op == Specs.GET_LOOP) return [Specs.GET_LOOP, b.spec, b.type]; // inside of custom c block
 		if (b.op == Specs.PROCEDURE_DEF)								// procedure definition
 			return [Specs.PROCEDURE_DEF, b.spec, b.parameterNames, b.defaultArgValues, b.warpProcFlag, b.procedureType];
 		if (b.op == Specs.CALL) {
@@ -201,6 +202,8 @@ public class BlockIO {
 		case Specs.GET_PARAM:
 			var paramType:String = (cmd.length >= 3) ? cmd[2] : 'r';
 			return new Block(cmd[1], paramType, Specs.parameterColor, Specs.GET_PARAM);
+		case Specs.GET_LOOP:
+			return new Block(cmd[1], '', Specs.parameterColor, Specs.GET_LOOP);
 		case 'changeVariable':
 			var varOp:String = cmd[2];
 			if (varOp == Specs.SET_VAR) {

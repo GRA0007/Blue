@@ -292,7 +292,7 @@ public class Block extends Sprite {
 			b.setArg(i, pBlock);
 		}
 		b.fixArgLayout();
-		if (procedureType == "c") b.insertBlockSub1(new Block('substack', '', Specs.procedureColor, Specs.GET_PARAM))
+		if (procedureType == "c") b.insertBlockSub1(new Block('substack', '', Specs.procedureColor, Specs.GET_LOOP));
 		return b;
 	}
 
@@ -305,7 +305,7 @@ public class Block extends Sprite {
 	}
 
 	public function isEmbeddedParameter():Boolean {
-		if ((op != Specs.GET_PARAM) || !(parent is Block)) return false;
+		if (!(op == Specs.GET_PARAM || op == Specs.GET_LOOP) || !(parent is Block)) return false;
 		return Block(parent).op == 'proc_declaration';
 	}
 

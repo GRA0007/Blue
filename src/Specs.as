@@ -41,6 +41,7 @@ public class Specs {
 	public static const CALL_C:String = "callc";
 	public static const PROCEDURE_DEF:String = "procDef";
 	public static const GET_PARAM:String = "getParam";
+	public static const GET_LOOP:String = "getLoop";
 
 	public static const motionCategory:int = 1;
 	public static const looksCategory:int = 2;
