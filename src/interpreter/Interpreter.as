@@ -718,8 +718,12 @@ public class Interpreter {
 	private function primGetLoop(b:Array):void {
 		var block:Block = activeThread.block;
 
+		if (activeThread.firstTime) {
+			activeThread.pushStateForBlock(activeThread.loopBlock);
+			activeThread.firstTime = false;
+			return;
+		}
 		activeThread.popState();
-		startCmdList(activeThread.loopBlock);
 		activeThread.firstTime = true;
 		if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
 

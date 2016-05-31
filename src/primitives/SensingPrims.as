@@ -46,7 +46,7 @@ public class SensingPrims {
 		primTable['touchingColor:']		= primTouchingColor;
 		primTable['color:sees:']		= primColorSees;
 
-		primTable['doAsk']				= primAsk;
+		specialTable['doAsk']				= primAsk;
 		primTable['answer']				= function(b:*):* { return app.runtime.lastAnswer };
 
 		primTable['mousePressed']		= function(b:*):* { return app.gh.mouseIsDown };
@@ -217,7 +217,10 @@ public class SensingPrims {
 			interp.doYield();
 		} else {
 			if ((obj is ScratchSprite) && (obj.visible)) ScratchSprite(obj).hideBubble();
-			interp.activeThread.firstTime = true;
+		var block:Block = interp.activeThread.block;
+		interp.activeThread.popState();
+		interp.activeThread.firstTime = true;
+		if (block.nextBlock) interp.activeThread.pushStateForBlock(block.nextBlock);
 		}
 	}
 
