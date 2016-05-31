@@ -391,18 +391,17 @@ public class ExtensionManager {
 	// Execution
 	//------------------------------
 
-	public function primExtensionOp(b:Block):* {
+	public function primExtensionOp(args:Array):* {
+		var activeThread:Thread = app.interp.activeThread;
+		var b:Block = activeThread.block;
 		var unpackedOp:Array = unpackExtensionAndOp(b.op);
 		var extName:String = unpackedOp[0];
 		var ext:ScratchExtension = extensionDict[extName];
 		if (ext == null) return 0; // unknown extension
 		var primOrVarName:String = unpackedOp[1];
-		var args:Array = [];
-		for (var i:int = 0; i < b.args.length; i++) {
-			args.push(app.interp.arg(b, i));
-		}
 
 		var value:*;
+
 		if(b.isHat && b.isAsyncHat){
 			if(b.requestState == 0){
 				request(extName, primOrVarName, args, b);
@@ -442,26 +441,22 @@ public class ExtensionManager {
 			return;
 		}
 		else if (b.isReporter) {
-			if(b.isRequester) {
-				if(b.requestState == 2) {
+			if (b.isRequester) {
+				if (b.requestState == 2) {
 					b.requestState = 0;
-					return b.response;
-				}
-				else if(b.requestState == 0) {
+					activeThread.popState();
+					activeThread.values.push(b.response);
+					return;
+				} else if(b.requestState == 0) {
 					request(extName, primOrVarName, args, b);
 				}
-
-				// Returns null if we just made a request or we're still waiting
-				return null;
-			}
-			else {
+			} else {
 				var sensorName:String = primOrVarName;
-				if(ext.port > 0) {  // we were checking ext.isInternal before, should we?
+				if (ext.port > 0) {  // we were checking ext.isInternal before, should we?
 					sensorName = encodeURIComponent(sensorName);
 					for each (var a:* in args) sensorName += '/' + encodeURIComponent(a); // append menu args
 					value = ext.stateVars[sensorName];
-				}
-				else if(Scratch.app.jsEnabled) {
+				} else if(Scratch.app.jsEnabled) {
 					// JavaScript
 					if (Scratch.app.isOffline) {
 						throw new IllegalOperationError("JS reporters must be requesters in Offline.");
@@ -472,7 +467,9 @@ public class ExtensionManager {
 				}
 				if (value == undefined) value = 0; // default to zero if missing
 				if ('b' == b.type) value = (ext.port>0 ? 'true' == value : true == value); // coerce value to a boolean
-				return value;
+				activeThread.popState();
+				activeThread.values.push(value);
+				return
 			}
 		} else {
 			if ('w' == b.type) {
@@ -484,12 +481,13 @@ public class ExtensionManager {
 					app.interp.doYield();
 					justStartedWait = true;
 
-					if(ext.port == 0) {
+					if (ext.port == 0) {
 						activeThread.firstTime = false;
-						if(app.jsEnabled)
+						if (app.jsEnabled) {
 							app.externalCall('ScratchExtensions.runAsync', null, ext.name, primOrVarName, args, id);
-						else
+						} else {
 							ext.busy.pop();
+						}
 
 						return;
 					}
@@ -501,6 +499,10 @@ public class ExtensionManager {
 					} else {
 						activeThread.tmp = 0;
 						activeThread.firstTime = true;
+						var block:Block = activeThread.block;
+						activeThread.popState();
+						if (block.nextBlock)
+							activeThread.pushStateForBlock(block.nextBlock);
 					}
 					return;
 				}
@@ -514,22 +516,13 @@ public class ExtensionManager {
 		if (ext == null) return; // unknown extension
 		if (ext.port > 0) {
 			var activeThread:Thread = app.interp.activeThread;
-			if(activeThread && op != 'reset_all') {
-				if(activeThread.firstTime) {
-					httpCall(ext, op, args);
-					activeThread.firstTime = false;
-					app.interp.doYield();
-				}
-				else {
-					activeThread.firstTime = true;
-				}
-			}
-			else {
 				httpCall(ext, op, args);
-			}
+				activeThread.firstTime = false;
+				app.interp.doYield();
 		} else {
+			if (op == 'reset_all') op = 'resetAll';
 			if (Scratch.app.jsEnabled) {
-				if (op == 'reset_all') {
+				if (op == 'resetAll') {
 					app.externalCall('ScratchExtensions.stop', null, ext.name);
 				}
 				else {

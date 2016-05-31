@@ -57,7 +57,7 @@ public class PaletteBuilder {
 			'Stage selected:', 'No motion blocks',
 			'Make a Block', 'Make a List', 'Make a Variable',
 			'New List', 'List name', 'New Variable', 'Variable name',
-			'New Block', 'New Reporter', 'Add an Extension'];
+			'New Block', 'Add an Extension'];
 	}
 
 	public function showBlocksForCategory(selectedCategory:int, scrollToOrigin:Boolean, shiftKey:Boolean = false):void {
@@ -66,7 +66,7 @@ public class PaletteBuilder {
 		nextY = 7;
 
 		if (selectedCategory == Specs.dataCategory) return showDataCategory();
-		if (selectedCategory == Specs.myBlocksCategory) return showMyBlocksPalette(shiftKey);
+		if (selectedCategory == Specs.myBlocksCategory) showMyBlocksPalette(shiftKey);
 
 		var catName:String = Specs.categories[selectedCategory][1];
 		var catColor:int = Specs.blockColor(selectedCategory);
@@ -128,12 +128,12 @@ public class PaletteBuilder {
 		// show creation button, hat, and call blocks
 		var catColor:int = Specs.blockColor(Specs.procedureColor);
 		addItem(new Button(Translator.map('Make a Block'), makeNewBlock, false, '/help/studio/tips/blocks/make-a-block/'));
-		addItem(new Button(Translator.map('Make a Reporter (WIP)'), makeNewReporter, false, '/help/studio/tips/blocks/make-a-block/'));
+		addBlocksForCategory(20, Specs.procedureColor);
 		var definitions:Array = app.viewedObj().procedureDefinitions();
 		if (definitions.length > 0) {
 			nextY += 5;
 			for each (var proc:Block in definitions) {
-				var b:Block = new Block(proc.spec, ' ', Specs.procedureColor, Specs.CALL, proc.defaultArgValues);
+				var b:Block = new Block(proc.spec, proc.procedureType, Specs.procedureColor, Specs.CALL, proc.defaultArgValues);
 				addItem(b);
 			}
 			nextY += 5;
@@ -256,6 +256,7 @@ public class PaletteBuilder {
 			newHat.parameterNames = specEditor.inputNames();
 			newHat.defaultArgValues = specEditor.defaultArgValues();
 			newHat.warpProcFlag = specEditor.warpFlag();
+			newHat.procedureType = specEditor.type();
 			newHat.setSpec(spec);
 			newHat.x = 10 - app.scriptsPane.x + Math.random() * 100;
 			newHat.y = 10 - app.scriptsPane.y + Math.random() * 100;
@@ -266,7 +267,7 @@ public class PaletteBuilder {
 			app.setSaveNeeded();
 		}
 
-		var specEditor:ProcedureSpecEditor = new ProcedureSpecEditor('', [], false);
+		var specEditor:ProcedureSpecEditor = new ProcedureSpecEditor('', [], false, ' ', false);
 		var d:DialogBox = new DialogBox(addBlockHat);
 		d.addTitle('New Block');
 		d.addWidget(specEditor);

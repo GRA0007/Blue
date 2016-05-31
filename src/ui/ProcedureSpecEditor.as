@@ -30,12 +30,17 @@ package ui {
 
 public class ProcedureSpecEditor extends Sprite {
 
+	private var isEdit:Boolean;
 	private var base:Shape;
+	private var shape:int;
 	private var blockShape:BlockShape;
 	private var row:Array = [];
 
 	private var moreLabel:TextField;
 	private var moreButton:IconButton;
+	private var shapeLabels:Array = [];
+	private var shapeIcons:Array = [];
+	private var shapeButtons:Array = [];
 	private var buttonLabels:Array = [];
 	private var buttons:Array = [];
 
@@ -48,11 +53,14 @@ public class ProcedureSpecEditor extends Sprite {
 	private const labelColor:int = 0x8738bf; // 0x6c36b3; // 0x9c35b3;
 	private const selectedLabelColor:int = 0xefa6ff;
 
-	public function ProcedureSpecEditor(originalSpec:String, inputNames:Array, warpFlag:Boolean) {
+	public function ProcedureSpecEditor(originalSpec:String, inputNames:Array, warpFlag:Boolean, type:String, isEdit:Boolean) {
+		this.isEdit = isEdit;
+
 		addChild(base = new Shape());
 		setWidthHeight(350, 10);
 
-		blockShape = new BlockShape(BlockShape.CmdShape, Specs.procedureColor);
+		shape = type == "b" ? BlockShape.BooleanShape : type == "r" ? BlockShape.NumberShape : BlockShape.CmdShape;
+		blockShape = new BlockShape(shape, Specs.procedureColor);
 		blockShape.setWidthAndTopHeight(100, 25, true);
 		addChild(blockShape);
 
@@ -84,7 +92,9 @@ public class ProcedureSpecEditor extends Sprite {
 			'Add string input:',
 			'Add boolean input:',
 			'Add label text:',
-			'text',
+			"Doesn't report",
+			'Reports number or text',
+			'Reports true or false',
 		];
 	}
 
@@ -111,7 +121,7 @@ public class ProcedureSpecEditor extends Sprite {
 		clearRow();
 		var i:int = 0;
 		for each (var s:String in ReadStream.tokenize(spec)) {
-			if (s.length >= 2 && s.charAt(0) == '%') { // argument spec
+			if ((s.length >= 2) && (s.charAt(0) == '%')) { // argument spec
 				var argSpec:String = s.charAt(1);
 				var arg:BlockArg = null;
 				if (argSpec == 'b') arg = makeBooleanArg();
@@ -123,11 +133,9 @@ public class ProcedureSpecEditor extends Sprite {
 				}
 			} else {
 				if ((row.length > 0) && (row[row.length - 1] is TextField)) {
-					var tf:TextField = row[row.length - 1];
-					tf.appendText(' ' + ReadStream.unescape(s));
-					fixLabelWidth(tf);
+					TextField(row[row.length - 1]).appendText(' ' + s);
 				} else {
-					addElement(makeTextField(ReadStream.unescape(s)));
+					addElement(makeTextField(s));
 				}
 			}
 		}
@@ -138,12 +146,16 @@ public class ProcedureSpecEditor extends Sprite {
 	public function spec():String {
 		var result:String = '';
 		for each (var o:* in row) {
-			if (o is TextField) result += ReadStream.escape(TextField(o).text);
+			if (o is TextField) result += TextField(o).text;
 			if (o is BlockArg) result += '%' + BlockArg(o).type;
 			if ((result.length > 0) && (result.charAt(result.length - 1) != ' ')) result += ' ';
 		}
 		if ((result.length > 0) && (result.charAt(result.length - 1) == ' ')) result = result.slice(0, result.length - 1);
 		return result;
+	}
+
+	public function type():String {
+		return shape == BlockShape.BooleanShape ? "b" : shape == BlockShape.NumberShape ? "r" : " ";
 	}
 
 	public function defaultArgValues():Array {
@@ -169,12 +181,22 @@ public class ProcedureSpecEditor extends Sprite {
 	public function inputNames():Array {
 		var result:Array = [];
 		for each (var o:* in row) {
-			if (o is BlockArg) result.push(uniqueName(result, BlockArg(o).field.text));
+			if (o is BlockArg) result.push(BlockArg(o).field.text);
 		}
 		return result;
 	}
 
 	private function addButtonsAndLabels():void {
+		shapeLabels = [
+			makeLabel("Doesn't report", 14),
+			makeLabel('Reports number or text', 14),
+			makeLabel('Reports true or false', 14),
+		];
+		shapeButtons = [
+			new IconButton(function():void { setShape(BlockShape.CmdShape) }, null),
+			new IconButton(function():void { setShape(BlockShape.NumberShape) }, null),
+			new IconButton(function():void { setShape(BlockShape.BooleanShape) }, null)
+		];
 		buttonLabels = [
 			makeLabel('Add number input:', 14),
 			makeLabel('Add string input:', 14),
@@ -185,10 +207,26 @@ public class ProcedureSpecEditor extends Sprite {
 			new Button('', function():void { appendObj(makeNumberArg()) }),
 			new Button('', function():void { appendObj(makeStringArg()) }),
 			new Button('', function():void { appendObj(makeBooleanArg()) }),
-			new Button(Translator.map('text'), function():void { appendObj(makeTextField('')) })
+			new Button('text', function():void { appendObj(makeTextField('')) })
 		];
 
+		shapeButtons[0].setOn(true);
+
 		const lightGray:int = 0xA0A0A0;
+		var icon:BlockShape;
+
+		shapeIcons = [];
+		icon = new BlockShape(BlockShape.CmdShape, Specs.procedureColor);
+		icon.setWidthAndTopHeight(34, 18, true);
+		shapeIcons.push(icon);
+
+		icon = new BlockShape(BlockShape.NumberShape, Specs.procedureColor);
+		icon.setWidthAndTopHeight(34, 18, true);
+		shapeIcons.push(icon);
+
+		icon = new BlockShape(BlockShape.BooleanShape, Specs.procedureColor);
+		icon.setWidthAndTopHeight(34, 18, true);
+		shapeIcons.push(icon);
 
 		icon = new BlockShape(BlockShape.NumberShape, lightGray);
 		icon.setWidthAndTopHeight(25, 14, true);
@@ -198,12 +236,9 @@ public class ProcedureSpecEditor extends Sprite {
 		icon.setWidthAndTopHeight(22, 14, true);
 		buttons[1].setIcon(icon);
 
-		var icon:BlockShape = new BlockShape(BlockShape.BooleanShape, lightGray);
+		icon = new BlockShape(BlockShape.BooleanShape, lightGray);
 		icon.setWidthAndTopHeight(25, 14, true);
 		buttons[2].setIcon(icon);
-
-		for each (var label:TextField in buttonLabels) addChild(label);
-		for each (var b:Button in buttons) addChild(b);
 	}
 
 	private function addwarpCheckbox():void {
@@ -224,7 +259,7 @@ public class ProcedureSpecEditor extends Sprite {
 
 	private function toggleButtons(ignore:*):void {
 		var buttonsShowing:Boolean = buttons[0].parent != null;
-		showButtons(!buttonsShowing)
+		showButtons(!buttonsShowing);
 	}
 
 	private function deleteItem(ignore:*):void {
@@ -241,15 +276,21 @@ public class ProcedureSpecEditor extends Sprite {
 	}
 
 	private function showButtons(showParams:Boolean):void {
-		var label:TextField, b:Button;
+		var label:TextField, b:Button, ib:IconButton, shape:BlockShape;
 		if (showParams) {
 			for each (label in buttonLabels) addChild(label);
+			if (!isEdit) for each (label in shapeLabels) addChild(label);
 			for each (b in buttons) addChild(b);
+			if (!isEdit) for each (ib in shapeButtons) addChild(ib);
+			if (!isEdit) for each (shape in shapeIcons) addChild(shape);
 			addChild(warpCheckbox);
 			addChild(warpLabel);
 		} else {
 			for each (label in buttonLabels) if (label.parent) removeChild(label);
+			for each (label in shapeLabels) if (label.parent) removeChild(label);
 			for each (b in buttons) if (b.parent) removeChild(b);
+			for each (ib in shapeButtons) if (b.parent) removeChild(b);
+			for each (shape in shapeIcons) if (shape.parent) removeChild(shape);
 			if (warpCheckbox.parent) removeChild(warpCheckbox);
 			if (warpLabel.parent) removeChild(warpLabel);
 		}
@@ -259,6 +300,19 @@ public class ProcedureSpecEditor extends Sprite {
 		setWidthHeight(base.width, showParams ? 215 : 55);
 		deleteButton.visible = showParams && (row.length > 1);
 		if (parent is DialogBox) DialogBox(parent).fixLayout();
+	}
+
+	private function setShape(shape:int):void {
+		this.shape = shape;
+		var ob:IconButton = shapeButtons[shape == BlockShape.BooleanShape ? 2 : shape == BlockShape.NumberShape ? 1 : 0];
+		for each (var ib:IconButton in shapeButtons) {
+			ib.setOn(ib == ob);
+		}
+		var k:int = getChildIndex(blockShape);
+		removeChildAt(k);
+		blockShape = new BlockShape(shape, Specs.procedureColor);
+		addChildAt(blockShape, k);
+		fixLayout();
 	}
 
 	private function makeBooleanArg():BlockArg {
@@ -295,9 +349,10 @@ public class ProcedureSpecEditor extends Sprite {
 		addChild(o);
 		if (stage) {
 			if (o is TextField) stage.focus = TextField(o);
-			if (o is BlockArg) BlockArg(o).startEditing();
+			if (o is BlockArg) stage.focus = BlockArg(o).field;
 		}
 		fixLayout();
+		if (parent is DialogBox) DialogBox(parent).fixLayout();
 	}
 
 	private function makeTextField(contents:String):TextField {
@@ -306,7 +361,7 @@ public class ProcedureSpecEditor extends Sprite {
 		result.backgroundColor = labelColor;
 		result.background = true;
 		result.type = TextFieldType.INPUT;
-		result.defaultTextFormat = Block.blockLabelFormat;
+		result.defaultTextFormat = new TextFormat(CSS.font, 12, 0xFFFFFF);
 		if (contents.length > 0) {
 			result.width = 1000;
 			result.text = contents;
@@ -329,11 +384,11 @@ public class ProcedureSpecEditor extends Sprite {
 		row = newRow;
 	}
 
-	private function fixLayout(updateDelete:Boolean = true):void {
+	private function fixLayout():void {
 		removeDeletedElementsFromRow();
 		blockShape.x = 10;
 		blockShape.y = 10;
-		var nextX:int = blockShape.x + 6;
+		var nextX:int = blockShape.x + (shape == BlockShape.BooleanShape ? 14 : 6);
 		var nextY:int = blockShape.y + 5;
 		var maxH:int = 0;
 		for each (var o:DisplayObject in row) maxH = Math.max(maxH, o.height);
@@ -343,29 +398,34 @@ public class ProcedureSpecEditor extends Sprite {
 			nextX += o.width + 4;
 			if ((o is BlockArg) && (BlockArg(o).type == 's')) nextX -= 2;
 		}
-		var blockW:int = Math.max(40, nextX + 4 - blockShape.x);
+		var blockW:int = Math.max(40, nextX + (shape == BlockShape.BooleanShape ? 12 : 4) - blockShape.x);
 		blockShape.setWidthAndTopHeight(blockW, maxH + 11, true);
 
 		moreButton.x = 0;
-		moreButton.y = blockShape.y + blockShape.height + 12;
+		moreButton.y = blockShape.y + blockShape.height + (shape == BlockShape.CmdShape ? 12 : 15);
 
 		moreLabel.x = 10;
 		moreLabel.y = moreButton.y - 4;
 
-		var labelX:int = blockShape.x + 45;
-		var buttonX:int = 240;
-		for each (var l:TextField in buttonLabels) {
-			buttonX = Math.max(buttonX, labelX + l.textWidth + 10);
-		}
-
-		var rowY:int = blockShape.y + blockShape.height + 30;
+		var rowY:int = blockShape.y + blockShape.height + (shape == BlockShape.CmdShape ? 30 : 33);
 		for (var i:int = 0; i < buttons.length; i++) {
-			var label:TextField = buttonLabels[i];
-			buttonLabels[i].x = labelX;
+			buttonLabels[i].x = blockShape.x + 45;
 			buttonLabels[i].y = rowY;
-			buttons[i].x = buttonX;
+			buttons[i].x = 240;
 			buttons[i].y = rowY - 4;
 			rowY += 30;
+		}
+
+		if (!isEdit) {
+			for (i = 0; i < shapeButtons.length; i++) {
+				shapeButtons[i].x = blockShape.x + 46;
+				shapeButtons[i].y = rowY + 4;
+				shapeIcons[i].x = shapeButtons[i].x + shapeButtons[i].width + 8;
+				shapeIcons[i].y = rowY;
+				shapeLabels[i].x = shapeIcons[i].x + shapeIcons[i].width + 8;
+				shapeLabels[i].y = rowY;
+				rowY += 30;
+			}
 		}
 
 		warpCheckbox.x = blockShape.x + 46;
@@ -374,8 +434,7 @@ public class ProcedureSpecEditor extends Sprite {
 		warpLabel.x = warpCheckbox.x + 18;
 		warpLabel.y = warpCheckbox.y - 3;
 
-		if (updateDelete) updateDeleteButton();
-		if (parent is DialogBox) DialogBox(parent).fixLayout();
+		updateDeleteButton();
 	}
 
 	/* Editing Parameter Names */
@@ -424,24 +483,10 @@ public class ProcedureSpecEditor extends Sprite {
 	private function setFocus(o:DisplayObject):void {
 		if (!stage) return;
 		if (o is TextField) stage.focus = TextField(o);
-		if (o is BlockArg) BlockArg(o).startEditing();
-	}
-
-	private function uniqueName(taken:Array, name:String):String {
-		if (taken.indexOf(name) == -1) return name;
-		var e:Array = /\d+$/.exec(name);
-		var n:String = e ? e[0] : "";
-		var base:String = name.slice(0, name.length - n.length);
-		var i:int = int(n || "1") + 1;
-		while (taken.indexOf(base + i) != -1) {
-			i++;
-		}
-		return base + i;
+		if (o is BlockArg) stage.focus = BlockArg(o).field;
 	}
 
 	private function focusChange(evt:FocusEvent):void {
-		var params:Array = [];
-		var change:Boolean = false;
 		// Update label fields to show focus.
 		for each (var o:DisplayObject in row) {
 			if (o is TextField) {
@@ -449,17 +494,9 @@ public class ProcedureSpecEditor extends Sprite {
 				var hasFocus:Boolean = (stage != null) && (tf == stage.focus);
 				tf.textColor = hasFocus ? 0 : 0xFFFFFF;
 				tf.backgroundColor = hasFocus ? selectedLabelColor : labelColor;
-			} else if (o is BlockArg) {
-				tf = BlockArg(o).field;
-				if (params.indexOf(tf.text) != -1) {
-					BlockArg(o).setArgValue(uniqueName(params, tf.text));
-					change = true;
-				}
-				params.push(tf.text);
 			}
 		}
-		if (change) fixLayout(false);
-		else if (evt.type == FocusEvent.FOCUS_IN) updateDeleteButton();
+		if (evt.type == FocusEvent.FOCUS_IN) updateDeleteButton();
 	}
 
 	private function updateDeleteButton():void {

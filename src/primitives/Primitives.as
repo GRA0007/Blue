@@ -67,59 +67,59 @@ public class Primitives {
 		this.interp = interpreter;
 	}
 
-	public function addPrimsTo(primTable:Dictionary):void {
+	public function addPrimsTo(primTable:Dictionary, specialTable: Dictionary):void {
 		// operators
-		primTable["+"]				= function(b:*):* { return interp.numarg(b, 0) + interp.numarg(b, 1) };
-		primTable["-"]				= function(b:*):* { return interp.numarg(b, 0) - interp.numarg(b, 1) };
-		primTable["*"]				= function(b:*):* { return interp.numarg(b, 0) * interp.numarg(b, 1) };
-		primTable["/"]				= function(b:*):* { return interp.numarg(b, 0) / interp.numarg(b, 1) };
-		primTable["≥"]				= function(b:*):* { return interp.numarg(b, 0) >= interp.numarg(b, 1) };
-		primTable["≤"]				= function(b:*):* { return interp.numarg(b, 0) <= interp.numarg(b, 1) };
-		primTable["≠"]				= function(b:*):* { return interp.arg(b, 0) != interp.arg(b, 1) };
-		primTable["^"]				= function(b:*):* { return Math.pow(interp.numarg(b, 0), interp.numarg(b, 1)) };
+		primTable["+"]				= function(b:*):* { return interp.numarg(b[0]) + interp.numarg(b[1]) };
+		primTable["-"]				= function(b:*):* { return interp.numarg(b[0]) - interp.numarg(b[1]) };
+		primTable["*"]				= function(b:*):* { return interp.numarg(b[0]) * interp.numarg(b[1]) };
+		primTable["/"]				= function(b:*):* { return interp.numarg(b[0]) / interp.numarg(b[1]) };
+		primTable["≥"]				= function(b:*):* { return interp.numarg(b[0]) >= interp.numarg(b[1]) };
+		primTable["≤"]				= function(b:*):* { return interp.numarg(b[0]) <= interp.numarg(b[1]) };
+		primTable["≠"]				= function(b:*):* { return compare(b[0], b[1]) != 0 };
+		primTable["^"]				= function(b:*):* { return Math.pow(interp.numarg(b[0]), interp.numarg(b[1])) };
 		primTable["randomFrom:to:"]	= primRandom;
-		primTable["<"]				= function(b:*):* { return compare(interp.arg(b, 0), interp.arg(b, 1)) < 0 };
-		primTable["="]				= function(b:*):* { return compare(interp.arg(b, 0), interp.arg(b, 1)) == 0 };
-		primTable[">"]				= function(b:*):* { return compare(interp.arg(b, 0), interp.arg(b, 1)) > 0 };
-		primTable["&"]				= function(b:*):* { return interp.arg(b, 0) && interp.arg(b, 1) };
-		primTable["|"]				= function(b:*):* { return interp.arg(b, 0) || interp.arg(b, 1) };
+		primTable["<"]				= function(b:*):* { return compare(b[0], b[1]) < 0 };
+		primTable["="]				= function(b:*):* { return compare(b[0], b[1]) == 0 };
+		primTable[">"]				= function(b:*):* { return compare(b[0], b[1]) > 0 };
+		primTable["&"]				= function(b:*):* { return interp.boolarg(b[0]) && interp.boolarg(b[1]) };
+		primTable["|"]				= function(b:*):* { return interp.boolarg(b[0]) || interp.boolarg(b[1]) };
+		primTable["not"]			= function(b:*):* { return !interp.boolarg(b[0]) };
 		primTable["if:then:else:"]	= primIfThenElse;
 		primTable[":asBoolean"]		= primAsBoolean;
 		primTable[":isType"]		= primIsType;
-		primTable["not"]			= function(b:*):* { return !interp.arg(b, 0) };
-		primTable["abs"]			= function(b:*):* { return Math.abs(interp.numarg(b, 0)) };
-		primTable["sqrt"]			= function(b:*):* { return Math.sqrt(interp.numarg(b, 0)) };
+		primTable["abs"]			= function(b:*):* { return Math.abs(interp.numarg(b[0])) };
+		primTable["sqrt"]			= function(b:*):* { return Math.sqrt(interp.numarg(b[0])) };
 		
 		primTable["true"]				= function(b:*):Boolean { return true };
 		primTable["false"]				= function(b:*):Boolean { return false };
 		primTable["constant"]			= primConstant;
 		primTable[":%ChanceOfTrue"]		= primChance;
 
-		primTable["concatenate:with:"]	= function(b:*):* { return ("" + interp.arg(b, 0) + interp.arg(b, 1)).substr(0, 10240); };
+		primTable["concatenate:with:"]	= function(b:*):* { return ("" + b[0] + b[1]).substr(0, 10240); };
 		primTable["letter:of:"]			= primLetterOf;
 		primTable["letters:to:of:"]		= primLettersBetween;
-		primTable["stringLength:"]		= function(b:*):* { return String(interp.arg(b, 0)).length };
+		primTable["stringLength:"]		= function(b:*):* { return String(b[0]).length };
 
 		primTable["%"]					= primModulo;
-		primTable["rounded"]			= function(b:*):* { return Math.round(interp.numarg(b, 0)) };
+		primTable["rounded"]			= function(b:*):* { return Math.round(interp.numarg(b[0])) };
 		primTable["computeFunction:of:"] = primMathFunction;
 		
 		//Strings
 		primTable["alterString"]		= primAlterString;
-		primTable["caseSensitive"]		= function(b:*):Boolean { return (interp.arg(b, 0) == interp.arg(b, 1)) };
-		primTable["asciiFor:"]			= function(b:*):* { return (interp.arg(b, 0)).charCodeAt(0) };
-		primTable["ascii:asString"]		= function(b:*):* { return String.fromCharCode(interp.numarg(b, 0)) };
+		primTable["caseSensitive"]		= function(b:*):Boolean { return (b[0] == b[1]) };
+		primTable["asciiFor:"]			= function(b:*):* { return b[0].charCodeAt(0) };
+		primTable["ascii:asString"]		= function(b:*):* { return String.fromCharCode(interp.numarg(b[0])) };
 		primTable[":contains:"]			= function(b:*):Boolean {
-			var a:* = interp.arg(b, 0);
-			if(a.indexOf(interp.arg(b, 1)) >= 0){
+			var a:* = b[0];
+			if(a.indexOf(b[1]) >= 0){
 				return true;
 			} else {
 				return false;
 			}
 		}
 		primTable["times:isIn:"]		= function(b:*):* {
-			var str:String = interp.arg(b, 1);
-			var char:String = interp.arg(b, 0);
+			var str:String = b[1];
+			var char:String = b[0];
 
 			function countOccurences(str:String, char:String):Number {
 				var count:Number = 0;
@@ -135,9 +135,9 @@ public class Primitives {
 			return countOccurences(str, char);
 		}
 		primTable["replaceEvery"]		= function(b:*):* {
-			var str:String = interp.arg(b, 1);
-			var search:String = interp.arg(b, 0);
-			var replace:String = interp.arg(b, 2);
+			var str:String = b[1];
+			var search:String = b[0];
+			var replace:String = b[2];
 
 			function strReplace(str:String, search:String, replace:String):String {
 				return str.split(search).join(replace);
@@ -146,15 +146,15 @@ public class Primitives {
 		}
 		primTable["replaceBetween"]		= function(b:*):* {
 			//First, grab the text between the two numbers
-			var s:String = interp.arg(b, 2);
-			var n1:int = interp.numarg(b, 0) - 1;
-			var n2:int = interp.numarg(b, 1);
+			var s:String = b[2];
+			var n1:int = interp.numarg(b[0]) - 1;
+			var n2:int = interp.numarg(b[1]);
 			if ((n1 < 0) || (n2 >= s.length)) return "";
 			var sect:String = s.slice(n1, n2);
-			//Then the find-and-replace tactic (FLAWED!!! Can replace two bits of identicle text...)
-			var str:String = interp.arg(b, 2);
+			//Then the find-and-replace tactic (FLAWED!!! Can replace two bits of identical text...)
+			var str:String = b[2];
 			var search:String = sect;
-			var replace:String = interp.arg(b, 3);
+			var replace:String = b[3];
 
 			function strReplace(str:String, search:String, replace:String):String {
 				return str.split(search).join(replace);
@@ -168,7 +168,7 @@ public class Primitives {
 				output += string;
 				return output;
 			}
-			return repeatString(interp.arg(b, 0), interp.arg(b, 1));
+			return repeatString(b[0], b[1]);
 		}
 		// clone
 		primTable["createCloneOf"]		= primCreateCloneOf;
@@ -184,7 +184,7 @@ public class Primitives {
 		
 		//Connect
 		primTable["openUrl:"]			= function(b:*):* {
-			var url:* = interp.arg(b, 0);
+			var url:* = b[0];
 			return navigateToURL(new URLRequest(url), "_blank");
 		}
 		
@@ -195,8 +195,8 @@ public class Primitives {
 		
 		//System
 		primTable["save:toFile:"] = function(b:*):* {
-			var ss:* = interp.arg(b, 0);
-			var nm:* = interp.arg(b, 1);
+			var ss:* = b[0];
+			var nm:* = b[1];
 			var bytes:ByteArray = new ByteArray();
 			var fileRef:FileReference=new FileReference();
 			fileRef.save(ss, nm);
@@ -236,7 +236,7 @@ public class Primitives {
 
 		//Program
 		primTable[":mode"] = function(b:*):* {
-			var mod:* = interp.arg(b, 0);
+			var mod:* = b[0];
 			switch(mod) {
 				case "fullscreen": app.activateTurboMode();
 				case "normal": app.setSmallStageMode(false);
@@ -245,7 +245,7 @@ public class Primitives {
 			return;
 		}
 /*		primTable["copy:toClipboard"]	= function(b:*):* {
-			var copy:* = interp.arg(b, 0);
+			var copy:* = b[0];
 			Clipboard.generalClipboard.clear();
 			Clipboard.generalClipboard.setData(ClipboardFormats.TEXT_FORMAT, copy);
 		}
@@ -255,11 +255,11 @@ public class Primitives {
 			return pasteData;
 		}*/
 		primTable["setCursorTo:"] = function(b:*):void {
-			var customCursor:* = interp.arg(b, 0);
+			var customCursor:* = b[0];
 			CursorTool.setCustomBlockCursor(customCursor);
 		}
 		primTable["toggleTurboMode"] = function(b:*):void {
-			var ac:* = interp.arg(b, 0);
+			var ac:* = b[0];
 			switch(ac) {
 				case "activate": app.activateTurboMode();
 				case "deactivate": app.deactivateTurboMode();
@@ -270,14 +270,14 @@ public class Primitives {
 			return interp.turboMode;
 		}
 		primTable["setMaxCloneCount"] = function(b:*):* {
-			var newMaxCloneCount:* = interp.arg(b, 0);
+			var newMaxCloneCount:* = b[0];
 			app.confirmCloneCountChange(newMaxCloneCount);
 		}
 		primTable["maxCloneCount"] = function(b:*):* {
 			return (app.MaxCloneCount + 2);
 		}
 		primTable["dialogNotify"] = function(b:*):* {
-			app.primDialogNotify(interp.arg(b, 0), interp.arg(b, 1))
+			app.primDialogNotify(b[0], b[1])
 		}
 		primTable["dialogConfirm"] = function(b:*):* {
 			if (b.requestState == 2) {
@@ -286,7 +286,7 @@ public class Primitives {
 			}
 			b.requestState = 1;
 			var bool:Boolean;
-			bool = app.primDialogConfirm(interp.arg(b, 0), interp.arg(b, 1));
+			bool = app.primDialogConfirm(b[0], b[1]);
 			b.requestState = 1;
 			setTimeout(function():* {
 				return bool;
@@ -298,19 +298,19 @@ public class Primitives {
 			app.primDialogAsk(interp.arg(b, 0), interp.arg(b, 1))
 		}*/
 		primTable["customDialogNewLine"] = function(b:*):* {
-			return interp.arg(b, 0) + "\n" + interp.arg(b, 1)
+			return b[0] + "\n" + b[1]
 		}
 		primTable["customDialogTitle"] = function(b:*):* {
-			return "d.addTitle('" + interp.arg(b, 0) + "')"
+			return "d.addTitle('" + b[0] + "')"
 		}
 		primTable["customDialogText"] = function(b:*):* {
-			return "d.addText('" + interp.arg(b, 0) + "')"
+			return "d.addText('" + b[0] + "')"
 		}
 /*		primTable["customDialog"] = function(b:*):* {
 			return app.primCustomDialog(interp.arg(b, 0), interp.arg(b, 1), interp.arg(b, 2), interp.arg(b, 3), interp.arg(b, 4), interp.arg(b, 5), interp.arg(b, 6), interp.arg(b, 7), interp.arg(b, 8));
 		}*/
 		primTable[":mode"] = function(b:*):* {
-			var mo:* = interp.arg(b, 0);
+			var mo:* = b[0];
 			switch(mo) {
 			case "fullscreen": app.setPresentationMode(true);
 			case "normal": app.setPresentationMode(false);
@@ -325,81 +325,76 @@ public class Primitives {
 		
 		//Other Variable blocks
 /*		primTable["varSet:colorTo:"] = function(b:*):* {
-			var color:* = interp.arg(b, 0);
+			var color:* = b[0];
 			Watcher.setColor(color)
 		}*/
 		
 		//Websockets
 /*		primTable["websocketConnect"] = function(b:*):* {
-			fscommand("websocketConnect", "ws://" + interp.arg(b, 0) + ":" + interp.arg(b, 1) + "/");
+			fscommand("websocketConnect", "ws://" + b[0] + ":" + b[1] + "/");
 		}*/
 		
 		//Color
-//		primTable["colorColorInput"] = function(b:*):* { return uint(interp.arg(b, 0)) };
-//		primTable["colorRGB"] = function(b:*):* { return interp.arg(b, 0) + "" + interp.arg(b, 1) + "" + interp.arg(b, 2) };//rgbtohex(interp.arg(b, 0), interp.arg(b, 1), interp.arg(b, 2)) };
+//		primTable["colorColorInput"] = function(b:*):* { return uint(b[0]) };
+//		primTable["colorRGB"] = function(b:*):* { return b[0] + "" + interp.arg(b, 1) + "" + interp.arg(b, 2) };//rgbtohex(interp.arg(b, 0), interp.arg(b, 1), interp.arg(b, 2)) };
 
-		new LooksPrims(app, interp).addPrimsTo(primTable);
-		new MotionAndPenPrims(app, interp).addPrimsTo(primTable);
-		new SoundPrims(app, interp).addPrimsTo(primTable);
-		new VideoMotionPrims(app, interp).addPrimsTo(primTable);
-		new ColorPrims(app, interp).addPrimsTo(primTable);
-		addOtherPrims(primTable);
+		new LooksPrims(app, interp).addPrimsTo(primTable, specialTable);
+		new MotionAndPenPrims(app, interp).addPrimsTo(primTable, specialTable);
+		new SoundPrims(app, interp).addPrimsTo(primTable, specialTable);
+		new VideoMotionPrims(app, interp).addPrimsTo(primTable, specialTable);
+		new ColorPrims(app, interp).addPrimsTo(primTable, specialTable);
+		addOtherPrims(primTable, specialTable);
 	}
 
-	protected function addOtherPrims(primTable:Dictionary):void {
-		new SensingPrims(app, interp).addPrimsTo(primTable);
-		new ListPrims(app, interp).addPrimsTo(primTable);
+	protected function addOtherPrims(primTable:Dictionary, specialTable:Dictionary):void {
+		new SensingPrims(app, interp).addPrimsTo(primTable, specialTable);
+		new ListPrims(app, interp).addPrimsTo(primTable, specialTable);
 	}
 
-	private function primRandom(b:Block):Number {
-		var n1:Number = interp.numarg(b, 0);
-		var n2:Number = interp.numarg(b, 1);
+	private function primRandom(b:Array):Number {
+		var n1:Number = interp.numarg(b[0]);
+		var n2:Number = interp.numarg(b[1]);
 		var low:Number = (n1 <= n2) ? n1 : n2;
 		var hi:Number = (n1 <= n2) ? n2 : n1;
 		if (low == hi) return low;
-
 		// if both low and hi are ints, truncate the result to an int
-		var ba1:BlockArg = b.args[0] as BlockArg;
-		var ba2:BlockArg = b.args[1] as BlockArg;
-		var int1:Boolean = ba1 ? ba1.numberType == BlockArg.NT_INT : int(n1) == n1;
-		var int2:Boolean = ba2 ? ba2.numberType == BlockArg.NT_INT : int(n2) == n2;
-		if (int1 && int2)
+		if ((int(low) == low) && (int(hi) == hi)) {
 			return low + int(Math.random() * ((hi + 1) - low));
-
+		}
 		return (Math.random() * (hi - low)) + low;
 	}
 
-	private function primLetterOf(b:Block):String {
-		var s:String = interp.arg(b, 1);
-		var i:int = interp.numarg(b, 0) - 1;
+	private function primLetterOf(b:Array):String {
+		var s:String = b[1];
+		var i:int = interp.numarg(b[0]) - 1;
 		if ((i < 0) || (i >= s.length)) return "";
 		return s.charAt(i);
 	}
 	
-	private function primChance(b:Block):Boolean {
-		var i:int = interp.numarg(b, 0);
+	private function primChance(b:Array):Boolean {
+		var i:int = interp.numarg(b[0]);
 		return (Math.random()<=i / 100);
 	}
 	
-	private function primLettersBetween(b:Block):String {
-		var s:String = interp.arg(b, 2);
-		var n1:int = interp.numarg(b, 0) - 1;
-		var n2:int = interp.numarg(b, 1);
+	private function primLettersBetween(b:Array):String {
+		var s:String = b[2];
+		var n1:int = interp.numarg(b[0]) - 1;
+		var n2:int = interp.numarg(b[1]);
 		if ((n1 < 0) || (n2 >= s.length)) return "";
 		return s.slice(n1, n2);
 	}
 
-	private function primModulo(b:Block):Number {
-		var n:Number = interp.numarg(b, 0);
-		var modulus:Number = interp.numarg(b, 1);
+	private function primModulo(b:Array):Number {
+		var n:Number = interp.numarg(b[0]);
+		var modulus:Number = interp.numarg(b[1]);
 		var result:Number = n % modulus;
 		if (result / modulus < 0) result += modulus;
 		return result;
 	}
 
-	private function primMathFunction(b:Block):Number {
-		var op:* = interp.arg(b, 0);
-		var n:Number = interp.numarg(b, 1);
+	private function primMathFunction(b:Array):Number {
+		var op:* = b[0];
+		var n:Number = interp.numarg(b[1]);
 		switch(op) {
 		case "abs": return Math.abs(n);
 		case "floor": return Math.floor(n);
@@ -420,8 +415,8 @@ public class Primitives {
 		return 0;
 	}
 	
-	private function primConstant(b:Block):Number {
-		var op:* = interp.arg(b, 0);
+	private function primConstant(b:Array):Number {
+		var op:* = b[0];
 		switch(op) {
 		case "pi": return Math.PI;
 		case "e": return Math.E;
@@ -457,8 +452,8 @@ public class Primitives {
 		return 1;
 	}
 
-	private function primCreateCloneOf(b:Block):void {
-		var objName:String = interp.arg(b, 0);
+	private function primCreateCloneOf(b:Array):void {
+		var objName:String = b[0];
 		var proto:ScratchSprite = app.stagePane.spriteNamed(objName);
 		if ('_myself_' == objName) proto = interp.activeThread.target;
 		if (!proto) return;
@@ -480,7 +475,7 @@ public class Primitives {
 		app.runtime.cloneCount++;
 	}
 
-	private function primDeleteClone(b:Block):void {
+	private function primDeleteClone(b:Array):void {
 		var clone:ScratchSprite = interp.targetSprite();
 		if ((clone == null) || (!clone.isClone) || (clone.parent == null)) return;
 		if (clone.bubble && clone.bubble.parent) clone.bubble.parent.removeChild(clone.bubble);
@@ -489,9 +484,9 @@ public class Primitives {
 		app.runtime.cloneCount--;
 	}
 	
-	private function primAlterString(b:Block):String {
-		var string:* = interp.arg(b, 1);
-		var type:* = interp.arg(b, 0);
+	private function primAlterString(b:Array):String {
+		var string:* = b[1];
+		var type:* = b[0];
 		switch(type) {
 		case "uppercase": return string.toUpperCase();
 		case "lowercase": return string.toLowerCase();
@@ -499,7 +494,7 @@ public class Primitives {
 		case "shuffle": return initRandomizeArray(string);
 		case "trim blanks of": return trimBlanks(string);
 		}
-		return "ERROR!";
+		return ""; //Just return a blank string upon error
 	}
 	
 	private function reverseString(tString:String):String {
@@ -529,10 +524,10 @@ public class Primitives {
 		return str;
 	}
 	
-	private function primIfThenElse(b:Block):String {
-		var If:* = interp.arg(b, 0);
-		var Then:* = interp.arg(b, 1);
-		var Else:* = interp.arg(b, 2);
+	private function primIfThenElse(b:Array):String {
+		var If:* = b[0];
+		var Then:* = b[1];
+		var Else:* = b[2];
 		if (If == true) {
 			return Then;
 		} else {
@@ -540,18 +535,13 @@ public class Primitives {
 		}
 	}
 	
-	private function primAsBoolean(b:Block):Boolean {
-		var bool:* = interp.arg(b, 0);
-		if (bool == false) {
-			return false;
-		} else {
-			return true;
-		}
+	private function primAsBoolean(b:Array):Boolean {
+		return interp.boolarg(b[0]) //Easier way to convert to boolean through the scratch interpreter
 	}
 	
-	private function primIsType(b:Block):* {
-		var string:* = interp.arg(b, 0);
-		var type:* = interp.arg(b, 1);
+	private function primIsType(b:Array):* {
+		var string:* = b[0];
+		var type:* = b[1];
 		switch(type) {
 		case "a number": return !isNaN(Number(string));
 		case "a string": return string is String;
