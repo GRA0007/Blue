@@ -37,7 +37,8 @@ public class Specs {
 	public static const GET_LIST:String = "contentsOfList:";
 	public static const CALL:String = "call";
 	public static const CALL_BOOLEAN:String = "callb";
-	public static const CALL_NUMBER:String = "callr"
+	public static const CALL_NUMBER:String = "callr";
+	public static const CALL_C:String = "callc";
 	public static const PROCEDURE_DEF:String = "procDef";
 	public static const GET_PARAM:String = "getParam";
 
@@ -277,7 +278,7 @@ public class Specs {
 		["if %b then",							"e", 6, "doIfElse"],
 		["for each %m.var in %n",				"c", 6, "doForLoop", "v", 10],
 		["while %b",							"c", 6, "doWhile"],
-		["all at once",							"c", 99, "warpSpeed"],
+		["all at once",							"c", 6, "warpSpeed"],
 		["wait until %b",						" ", 6, "doWaitUntil"],
 		["repeat until %b",						"c", 6, "doUntil"],
 		["-"],
@@ -303,7 +304,7 @@ public class Specs {
 		["if %b then",							"e", 106, "doIfElse"],
 		["for each %m.var in %n",				"c", 106, "doForLoop", "v", 10],
 		["while %b",							"c", 106, "doWhile"],
-		["all at once",							"c", 99, "warpSpeed"],
+		["all at once",							"c", 106, "warpSpeed"],
 		["wait until %b",						" ", 106, "doWaitUntil"],
 		["repeat until %b",						"c", 106, "doUntil"],
 		["-"],

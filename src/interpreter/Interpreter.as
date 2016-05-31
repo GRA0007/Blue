@@ -446,7 +446,7 @@ public class Interpreter {
 				yield = true;
 			}
 		};
-		primTable["doForLoop"]			= primForLoop;
+		specialTable["doForLoop"]			= primForLoop;
 		primTable["doIf"]				= function(b:*):* { if (boolarg(b[0])) startCmdList(this.subStack1); };
 		primTable["doIfElse"]			= function(b:*):* { if (boolarg(b[0])) startCmdList(this.subStack1); else startCmdList(this.subStack2); };
 		specialTable["doWaitUntil"]		= function(b:*):* {
@@ -479,7 +479,7 @@ public class Interpreter {
 		primTable["doReturn"]			= primReturn;
 		primTable["stopAll"]			= function(b:*):* { app.runtime.stopAll(); yield = true; };
 		primTable["stopScripts"]		= primStop;
-		primTable["warpSpeed"]			= primOldWarpSpeed;
+		specialTable["warpSpeed"]			= primOldWarpSpeed;
 
 		// procedures
 		specialTable[Specs.CALL]			= primCall;
@@ -527,7 +527,6 @@ public class Interpreter {
 	public function primNoop(b:Array):void { }
 
 	private function primForLoop(b:Array):void {
-		//Unimplemented in new interpreter
 		var list:Array = [];
 		var loopVar:Variable;
 
@@ -554,22 +553,27 @@ public class Interpreter {
 			activeThread.firstTime = false;
 		}
 
+		var block:Block = activeThread.block;
 		list = activeThread.args[0];
 		loopVar = activeThread.args[1];
 		if (activeThread.tmp < list.length) {
 			loopVar.value = list[activeThread.tmp++];
-			startCmdList(b.subStack1, true);
+			startCmdList(block.subStack1, true);
 		} else {
-			activeThread.args = null;
-			activeThread.tmp = 0;
+			activeThread.popState();
 			activeThread.firstTime = true;
+			if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock)
 		}
 	}
 
 	private function primOldWarpSpeed(b:Array):void {
-		// Semi-support for old warp block: run substack at normal speed.
-		if (b.subStack1 == null) return;
-		startCmdList(b.subStack1);
+		warpThread = activeThread;
+		warpBlock = activeThread.block;
+		var block:Block = activeThread.block;
+		activeThread.popState();
+		startCmdList(block.subStack1, true);
+		activeThread.firstTime = true;
+		if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
 	}
 
 	private function primRepeat(b:Array):void {
@@ -578,11 +582,14 @@ public class Interpreter {
 			activeThread.tmp = repeatCount;
 			activeThread.firstTime = false;
 		}
+		var block:Block = activeThread.block;
 		if (activeThread.tmp > 0) {
 			activeThread.tmp--; // decrement count
-			startCmdList(b.subStack1, true);
+			startCmdList(block.subStack1, true);
 		} else {
+			activeThread.popState();
 			activeThread.firstTime = true;
+			if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
 		}
 	}
 
@@ -676,7 +683,9 @@ public class Interpreter {
 
 		// Lookup the procedure and cache for future use
 		var obj:ScratchObj = activeThread.target;
+		var insideLoop:* = null;
 		var spec:String = block.spec;
+		if (block.type.indexOf("c") >= 0) insideLoop = block.subStack1;
 		var proc:Block = obj.procCache[spec];
 		if (!proc) {
 			proc = obj.lookupProcedure(spec);
@@ -701,6 +710,7 @@ public class Interpreter {
 		}
 		activeThread.pushStateForBlock(report0Block);
 		activeThread.args = b;
+		proc.loopBlock = insideLoop;
 		startCmdList(proc);
 	}
 
@@ -774,6 +784,7 @@ public class Interpreter {
 	private function primGetParam(b:Array):* {
 		var block:Block = activeThread.block;
 		activeThread.popState();
+		if (!block.isReporter) return;
 		if (block.parameterIndex < 0) {
 			var proc:Block = block.topBlock();
 			if (proc.parameterNames) block.parameterIndex = proc.parameterNames.indexOf(block.spec);

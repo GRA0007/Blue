@@ -40,6 +40,7 @@ public class Thread {
 	public var tmp:int;				// used by repeat and wait
 	public var values:Array;				// the evaluated inputs
 	public var args:Array;			// arguments to a user-defined procedure
+	public var loopBlock:*;		// used by c-block type procedures
 
 	// the stack
 	private var stack:Vector.<StackFrame>;
@@ -66,6 +67,7 @@ public class Thread {
 		old.tmp = tmp;
 		old.values = values;
 		old.args = args;
+		old.loopBlock = loopBlock;
 		// initForBlock
 		block = b;
 		firstTime = true;
@@ -81,6 +83,7 @@ public class Thread {
 		tmp			= old.tmp;
 		values		= old.values;
 		args		= old.args;
+		loopBlock	= old.loopBlock;
 		return true;
 	}
 
@@ -133,6 +136,7 @@ public class Thread {
 		block = b;
 		firstTime = true;
 		tmp = 0;
+		loopBlock = null;
 	}
 
 	private function growStack():void {
@@ -156,4 +160,5 @@ class StackFrame {
 	internal var tmp:int;
 	internal var values:Array;
 	internal var args:Array;
+	internal var loopBlock:*;
 }

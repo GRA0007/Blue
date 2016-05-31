@@ -44,6 +44,7 @@ public class BlockShape extends Shape {
 	public static const IfElseShape:int = 11;
 	public static const BooleanOutlineShape:int = 12;
 	public static const NumberOutlineShape:int = 13;
+	public static const LoopOutlineShape:int = 14;
 
 	// Geometry
 	public static const NotchDepth:int = 3;
@@ -183,19 +184,20 @@ public class BlockShape extends Shape {
 	private function setShape(shape:int):void {
 		this.shape = shape;
 		switch(shape) {
-		case RectShape:			drawFunction = drawRectShape; break;
-		case BooleanShape:		drawFunction = drawBooleanShape; break;
-		case NumberShape:		drawFunction = drawNumberShape; break;
+		case RectShape:				drawFunction = drawRectShape; break;
+		case BooleanShape:			drawFunction = drawBooleanShape; break;
+		case NumberShape:			drawFunction = drawNumberShape; break;
 		case CmdShape:
-		case FinalCmdShape:		drawFunction = drawCmdShape; break;
-		case CmdOutlineShape:	drawFunction = drawCmdOutlineShape; break;
+		case FinalCmdShape:			drawFunction = drawCmdShape; break;
+		case CmdOutlineShape:		drawFunction = drawCmdOutlineShape; break;
 		case BooleanOutlineShape:	drawFunction = drawBooleanOutlineShape; break;
 		case NumberOutlineShape:	drawFunction = drawNumberOutlineShape; break;
 		case LoopShape:
-		case FinalLoopShape:	drawFunction = drawLoopShape; break;
-		case IfElseShape:		drawFunction = drawIfElseShape; break;
-		case HatShape:			drawFunction = drawHatShape; break;
-		case ProcHatShape:		drawFunction = drawProcHatShape; break;
+		case FinalLoopShape:		drawFunction = drawLoopShape; break;
+		case LoopOutlineShape:		drawFunction = drawLoopOutlineShape; break;
+		case IfElseShape:			drawFunction = drawIfElseShape; break;
+		case HatShape:				drawFunction = drawHatShape; break;
+		case ProcHatShape:			drawFunction = drawProcHatShape; break;
 		}
 	}
 
@@ -307,8 +309,16 @@ public class BlockShape extends Shape {
 		drawTop(g);
 		drawRightAndBottom(g, topH, true, SubstackInset);
 		drawArm(g, h1);
-		drawRightAndBottom(g, h1 + BottomBarH, (shape == LoopShape));
+		drawRightAndBottom(g, h1 + BottomBarH, (shape == LoopShape || shape == LoopOutlineShape));
 		if (hasLoopArrow) drawLoopArrow(g, h1 + BottomBarH);
+	}
+
+	private function drawLoopOutlineShape(g:Graphics):void {
+		g.endFill();
+		g.lineStyle(2, 0xFFFFFF, 0.2);
+		drawLoopShape(g);
+		g.lineTo(0, 3);
+
 	}
 
 	private function drawLoopArrow(g:Graphics, h:int):void {

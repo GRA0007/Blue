@@ -76,6 +76,7 @@ public class Block extends Sprite {
 	public var parameterNames:Array;	// used by procedure definition hats; null for other blocks
 	public var warpProcFlag:Boolean;	// used by procedure definition hats to indicate warp speed
 	public var procedureType:*;   // used by procedure definition hats: " ","r", or "b"
+	public var loopBlock:*;
 	public var rightToLeft:Boolean;
 
 	public var isHat:Boolean = false;
@@ -155,8 +156,8 @@ public class Block extends Sprite {
 			isAsyncHat = (type == 'H') || forceAsync;
 			indentTop = 12;
 		}
-		else if (type == "c") {
-			base = new BlockShape(BlockShape.LoopShape, color);
+		else if (type == "c" || type == "oc") {
+			base = new BlockShape(type == "oc" ? BlockShape.LoopOutlineShape : BlockShape.LoopShape, color);
 		} else if (type == "cf") {
 			base = new BlockShape(BlockShape.FinalLoopShape, color);
 			isTerminal = true;
@@ -291,6 +292,7 @@ public class Block extends Sprite {
 			b.setArg(i, pBlock);
 		}
 		b.fixArgLayout();
+		if (procedureType == "c") b.insertBlockSub1(new Block('substack', '', Specs.procedureColor, Specs.GET_PARAM))
 		return b;
 	}
 
@@ -504,7 +506,7 @@ public class Block extends Sprite {
 		}
 
 		if ([' ', '', 'o', 'o '].indexOf(type) >= 0) x = Math.max(x, minCommandWidth); // minimum width for command blocks
-		if (['c', 'cf', 'e'].indexOf(type) >= 0) x = Math.max(x, minLoopWidth); // minimum width for C and E blocks
+		if (['c', 'cf', 'e', 'oc'].indexOf(type) >= 0) x = Math.max(x, minLoopWidth); // minimum width for C and E blocks
 		if (['h'].indexOf(type) >= 0) x = Math.max(x, minHatWidth); // minimum width for hat blocks
 		if (elseLabel) x = Math.max(x, indentLeft + elseLabel.width + 2);
 
