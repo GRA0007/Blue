@@ -96,7 +96,7 @@ public class Interpreter {
 
 	static private var yieldBlock:Block = new Block('', '', 0, 'yield');
 	static private var returnBlock:Block = new Block('', '', 0, 'doReturn', [0]);
-	static private var report0Block:Block = new Block('', '%s', 0, 'report', [0]);
+	static private var report0Block:Block = new Block('%s', '', 0, 'report', [0]);
 
 	public function Interpreter(app:Scratch) {
 		this.app = app;
@@ -693,6 +693,7 @@ public class Interpreter {
 			obj.procCache[spec] = proc;
 		}
 		if (!proc) {
+			if (activeThread.block.type == 'o ') activeThread.values.push(0);
 			activeThread.popState();
 			if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
 			return;
@@ -720,7 +721,7 @@ public class Interpreter {
 
 		activeThread.popState();
 		if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
-		activeThread.pushStateForBlock(activeThread.loopBlock);
+		if (activeThread.loopBlock) activeThread.pushStateForBlock(activeThread.loopBlock);
 		activeThread.firstTime = true;
 
 	}
@@ -755,14 +756,14 @@ public class Interpreter {
 		activeThread.values.push(v.value);
 	}
 
-	protected function primVarSet(b:Block):Variable {
-		var v:Variable = activeThread.target.varCache[(b.args[0] as BlockArg).argValue];
+	protected function primVarSet(b:Array):Variable {
+		var v:Variable = activeThread.target.varCache[b[0]];
 		if (!v) {
-			v = activeThread.target.varCache[b.spec] = activeThread.target.lookupOrCreateVar((b.args[0] as BlockArg).argValue);
+			v = activeThread.target.varCache[b.spec] = activeThread.target.lookupOrCreateVar(b[0]);
 			if (!v) return null;
 		}
 		var oldvalue:* = v.value;
-		v.value = (b.args[1] as BlockArg).argValue;
+		v.value = b[1];
 		return v;
 	}
 	
@@ -781,14 +782,14 @@ public class Interpreter {
          return v;
       }*/
 
-	protected function primVarChange(b:Block):Variable {
-		var name:String = (b.args[0] as BlockArg).argValue;
+	protected function primVarChange(b:Array):Variable {
+		var name:String = b[0];
 		var v:Variable = activeThread.target.varCache[name];
 		if (!v) {
 			v = activeThread.target.varCache[name] = activeThread.target.lookupOrCreateVar(name);
 			if (!v) return null;
 		}
-		v.value = Number(v.value) + (b.args[1] as BlockArg).argValue;
+		v.value = Number(v.value) + b[1];
 		return v;
 	}
 
