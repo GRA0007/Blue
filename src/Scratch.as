@@ -1140,7 +1140,7 @@ public class Scratch extends Sprite {
 	public function showAboutDialog(b:*):void {
 		DialogBox.notify(
 			'Blue ' + versionString,
-			'\nMade by GRA0007' +
+			'\nMade by GRA0007 and NoMod-Programming' +
 			'\nThanks to djdolphin, Technerd255 and others.' +
 			'\n\n\nBased off Scratch 2.0' +
 			'\nCopyright © 2012 MIT Media Laboratory' +
