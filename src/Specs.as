@@ -413,7 +413,10 @@ public class Specs {
 		["%m.constant",							"r", 8, "constant",				"pi"],
 
 		//More Blocks 10
-		["report %s",							"f", 20, "report",				""],
+		["report %s",							"f", 10, "report",				""],
+		["define temporary variables %s",		"c", 10, "doDefineVars",		"foo,bar,baz"],
+		["get temporary variable %s",			"r", 10, "getDefinedVars",		"foo"],
+		["set temporary variable %s to %s",		" ", 10, "setDefinedVars",		"foo", "0"],
 
 		// variables
 		["create variable %s for all sprites %b",			" ", 9, "addVariable"],

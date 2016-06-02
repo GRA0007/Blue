@@ -105,13 +105,14 @@ public class TalkBubble extends Sprite {
 	}
 
 	private function makeText(s:*):* {
+		var result:*;
 		if (s is ScratchColor) {
-			var result:* = new BlockArg('c', s);
+			result = new BlockArg('c', s);
 			result.x = padding;
 			result.y = padding;
 			return result;
 		} else {
-			var result:* = new TextField();
+			result = new TextField();
 			result.autoSize = TextFieldAutoSize.LEFT;
 			result.defaultTextFormat = style == 'result' ? resultFormat : textFormat;
 			result.selectable = false;  // not selectable

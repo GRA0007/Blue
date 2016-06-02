@@ -986,7 +986,7 @@ public class BlockMenus implements DragClient {
 		var m:Menu = new Menu(setBlockArg);
 		for each (var s:String in menuItems) {
 			if (s == '-') {
-				m.addLine
+				m.addLine();
 			} else {
 				m.addItem(s);
 			}

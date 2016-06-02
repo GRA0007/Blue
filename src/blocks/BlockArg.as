@@ -63,7 +63,7 @@ public class BlockArg extends Sprite {
 	public var menuName:String;
 	public var menuItems:Array;
 
-	private var menuIcon:Shape;
+	protected var menuIcon:Shape;
 
 	// BlockArg types:
 	//	b - boolean (pointed)
@@ -157,9 +157,9 @@ public class BlockArg extends Sprite {
 		}
 	}
 
-	public function labelOrNull():String { return field ? field.text : null }
+	public function labelOrNull():* { return field ? field.text : null }
 
-	public function setArgValue(value:*, label:String = null):void {
+	public function setArgValue(value:*, label:* = null):void {
 		// if provided, label is displayed in field, rather than the value
 		// this is used for sprite names and to support translation
 		argValue = value;
@@ -222,7 +222,7 @@ public class BlockArg extends Sprite {
 		return numberType ? [3, 0] : [2, -1];
 	}
 
-	private function textChanged(evt:*):void {
+	protected function textChanged(evt:*):void {
 		argValue = field.text;
 		if (numberType) {
 			// optimization: coerce to a number if possible
@@ -272,7 +272,7 @@ public class BlockArg extends Sprite {
 			type = 'm';
 			return;
 		}
-		var newMenuItems = [];
+		var newMenuItems:Array = [];
 		for each (var name:String in listItems) {
 			if (/\S/.test(name)) newMenuItems.push(name);
 		}

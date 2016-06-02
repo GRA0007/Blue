@@ -66,7 +66,7 @@ public class PaletteBuilder {
 		nextY = 7;
 
 		if (selectedCategory == Specs.dataCategory) return showDataCategory();
-		if (selectedCategory == Specs.myBlocksCategory) showMyBlocksPalette(shiftKey);
+		if (selectedCategory == Specs.myBlocksCategory) return showMyBlocksPalette(shiftKey);
 
 		var catName:String = Specs.categories[selectedCategory][1];
 		var catColor:int = Specs.blockColor(selectedCategory);
@@ -128,7 +128,7 @@ public class PaletteBuilder {
 		// show creation button, hat, and call blocks
 		var catColor:int = Specs.blockColor(Specs.procedureColor);
 		addItem(new Button(Translator.map('Make a Block'), makeNewBlock, false, '/help/studio/tips/blocks/make-a-block/'));
-		addBlocksForCategory(20, Specs.procedureColor);
+		addBlocksForCategory(10, Specs.procedureColor);
 		var definitions:Array = app.viewedObj().procedureDefinitions();
 		if (definitions.length > 0) {
 			nextY += 5;

@@ -493,7 +493,10 @@ public class Interpreter {
 		primTable[Specs.SET_VAR]		= primVarSet;
 		primTable[Specs.CHANGE_VAR]		= primVarChange;
 		specialTable[Specs.GET_PARAM]	= primGetParam;
-		specialTable[Specs.GET_LOOP]	= primGetLoop
+		specialTable[Specs.GET_LOOP]	= primGetLoop;
+		specialTable["doDefineVars"]	= primDefineVars;
+		primTable["getDefinedVars"]		= primGetDefinedVars;
+		primTable["setDefinedVars"]		= primSetDefinedVars;
 //		primTable["varSet:colorTo:"]	= primVarSetColor;
 
 		// edge-trigger hat blocks
@@ -810,6 +813,42 @@ public class Interpreter {
 			return;
 		}
 		activeThread.values.push(activeThread.args[block.parameterIndex]);
+	}
+
+	private function primDefineVars(b:Array):void {
+		var block:Block = activeThread.block;
+		var tempVarsDict:Dictionary = activeThread.tempVars;
+		var newTempVars:Array=b[0].split(",");
+		var i:int = -1;
+		if (activeThread.firstTime) {
+			// Add temporary variables
+		while (++i < newTempVars.length) {
+				tempVarsDict[newTempVars[i]] = "0";
+		}
+		activeThread.firstTime = false;
+		if (block.subStack1) activeThread.pushStateForBlock(block.subStack1);
+		} else {
+			activeThread.popState();
+			activeThread.firstTime = true;
+			if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
+			// Remove temporary variables
+			while (++i < newTempVars.length) {
+				delete tempVarsDict[newTempVars[i]];
+			}
+		}
+	}
+
+	private function primGetDefinedVars(b:Array):* {
+		var tempVarsDict:Dictionary = activeThread.tempVars;
+		var get:String=b[0];
+		return ((tempVarsDict[get]) == null) ? "0" : (tempVarsDict[get]);
+	}
+
+	private function primSetDefinedVars(b:Array):void {
+		var tempVarsDict:Dictionary = activeThread.tempVars;
+		if (tempVarsDict[b[0]] != null) {
+				tempVarsDict[b[0]] = b[1];
+		}
 	}
 
 }}

@@ -26,6 +26,7 @@
 
 package interpreter {
 	import blocks.Block;
+	import flash.utils.Dictionary;
 
 public class Thread {
 
@@ -41,6 +42,7 @@ public class Thread {
 	public var values:Array;				// the evaluated inputs
 	public var args:Array;			// arguments to a user-defined procedure
 	public var loopBlock:*;		// used by c-block type procedures
+	public var tempVars:Dictionary = new Dictionary();
 
 	// the stack
 	private var stack:Vector.<StackFrame>;
@@ -153,6 +155,7 @@ public class Thread {
 
 import blocks.*;
 import interpreter.*;
+import flash.utils.Dictionary;
 
 class StackFrame {
 	internal var block:Block;
