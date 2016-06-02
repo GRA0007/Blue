@@ -43,6 +43,9 @@ package blocks {
 	import scratch.BlockMenus;
 	import translation.Translator;
 	import util.Color;
+	import ui.ProcedureSpecEditor;
+	import uiwidgets.*;
+	import watchers.ListWatcher;
 
 public class BlockArg extends Sprite {
 
@@ -58,6 +61,7 @@ public class BlockArg extends Sprite {
 	public var isEditable:Boolean;
 	public var field:TextField;
 	public var menuName:String;
+	public var menuItems:Array;
 
 	private var menuIcon:Shape;
 
@@ -87,11 +91,19 @@ public class BlockArg extends Sprite {
 		} else if (type == 'd') {
 			base = new BlockShape(BlockShape.NumberShape, c);
 			numberType = NT_FLOAT;
-			this.menuName = menuName;
+			if (menuName.charAt(0) == '[') {
+					this.menuItems = menuName.slice(1,menuName.length - 1).split(',');
+			} else {
+					this.menuName = menuName;
+			}
 			addEventListener(MouseEvent.MOUSE_DOWN, invokeMenu);
-		} else if (type == 'm') {
+		} else if (type.charAt(0) == 'm') {
 			base = new BlockShape(BlockShape.RectShape, c);
-			this.menuName = menuName;
+			if (menuName.charAt(0) == '[') {
+					this.menuItems = menuName.slice(1,menuName.length - 1).split(',');
+			} else {
+					this.menuName = menuName;
+			}
 			addEventListener(MouseEvent.MOUSE_DOWN, invokeMenu);
 		} else if (type == 'n') {
 			base = new BlockShape(BlockShape.NumberShape, c);
@@ -115,7 +127,7 @@ public class BlockArg extends Sprite {
 		base.filters = blockArgFilters();
 		addChild(base);
 
-		if ((type == 'd') || (type == 'm')) { // add a menu icon
+		if ((type == 'd') || (type.charAt(0) == 'm')) { // add a menu icon
 			menuIcon = new Shape();
 			var g:Graphics = menuIcon.graphics;
 			g.beginFill(0, 0.6); // darker version of base color
@@ -127,7 +139,7 @@ public class BlockArg extends Sprite {
 			addChild(menuIcon);
 		}
 
-		if (editable || numberType || (type == 'm')) { // add a string field
+		if (editable || numberType || (type.charAt(0) == 'm')) { // add a string field
 			field = makeTextField();
 			if ((type == 'm') && !editable) field.textColor = 0xFFFFFF;
 			else base.setWidthAndTopHeight(30, Block.argTextFormat.size + 5); // 14 for normal arg font
@@ -239,10 +251,31 @@ public class BlockArg extends Sprite {
 
 	private function invokeMenu(evt:MouseEvent):void {
 		if ((menuIcon != null) && (evt.localX <= menuIcon.x)) return;
+		if (parent is ProcedureSpecEditor) return chooseMenuItems();
 		if (Block.MenuHandlerFunction != null) {
-			Block.MenuHandlerFunction(evt, parent, this, menuName);
+			Block.MenuHandlerFunction(evt, parent, this, menuName, menuItems);
 			evt.stopImmediatePropagation();
 		}
 	}
 
+	private function chooseMenuItems():void {
+		var d:DialogBox = new DialogBox(chooseMenuItems2);
+		d.addTitle('Edit Menu Items');
+		d.addWidget(new ListWatcher('', (type.length == 1) ? [] : (type.slice(3,type.length - 1)).split(",") ));
+		d.addAcceptCancelButtons('OK');
+		d.showOnStage(Scratch.app.stage, true);
+	}
+
+	private function chooseMenuItems2(dialog:DialogBox):void {
+		var listItems:Array = ListWatcher(dialog.widget).contents;
+		if (listItems.length == 0) {
+			type = 'm';
+			return;
+		}
+		var newMenuItems = [];
+		for each (var name:String in listItems) {
+			if (/\S/.test(name)) newMenuItems.push(name);
+		}
+		type = 'm.[' + newMenuItems.join(',') + ']';
+	}
 }}

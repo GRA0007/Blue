@@ -28,7 +28,7 @@ package uiwidgets {
 
 public class DialogBox extends Sprite {
 
-	private var fields:Dictionary = new Dictionary();
+	public var fields:Dictionary = new Dictionary();
 	private var booleanFields:Dictionary = new Dictionary();
 	public var widget:DisplayObject;
 	private var w:int, h:int;
@@ -310,6 +310,14 @@ public class DialogBox extends Sprite {
 			xButton.x = this.width-20;
 			xButton.y = 10;
 		}
+		// text lines
+		for each (var line:TextField in textLines) {
+			line.x = leftJustify ? 15 : (w - line.width) / 2;
+			line.y = fieldY;
+			fieldY += line.height;
+			if (line.text.length == 0) fieldY += blankLineSpace;
+		}
+		if (textLines.length > 0) fieldY += spaceAfterText;
 		// fields
 		for (i = 0; i < labelsAndFields.length; i++) {
 			label = labelsAndFields[i][0];
@@ -340,14 +348,6 @@ public class DialogBox extends Sprite {
 			ib.y = fieldY + 5;
 			fieldY += heightPerField;
 		}
-		// text lines
-		for each (var line:TextField in textLines) {
-			line.x = leftJustify ? 15 : (w - line.width) / 2;
-			line.y = fieldY;
-			fieldY += line.height;
-			if (line.text.length == 0) fieldY += blankLineSpace;
-		}
-		if (textLines.length > 0) fieldY += spaceAfterText;
 		// buttons
 		if (buttons.length > 0) {
 			totalW = (buttons.length - 1) * 10;

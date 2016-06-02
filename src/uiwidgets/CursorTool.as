@@ -31,36 +31,43 @@ public class CursorTool {
 
 	private static var app:Scratch;
 	private static var currentCursor:Bitmap;
+	private static var usingBlockCursor:Boolean = false;
 	private static var offsetX:int;
 	private static var offsetY:int;
 	private static var registeredCursors:Object = {};
 
 	public static function setTool(toolName:String):void {
-		hideSoftwareCursor();
+		if (!usingBlockCursor) hideSoftwareCursor();
 		tool = toolName;
 		app.enableEditorTools(tool == null);
 		if (tool == null) return;
 		switch(tool) {
 		case 'copy':
+			usingBlockCursor = false;
 			showSoftwareCursor(Resources.createBmp('copyCursor'));
 			break;
 		case 'cut':
+			usingBlockCursor = false;
 			showSoftwareCursor(Resources.createBmp('cutCursor'));
 			break;
 		case 'grow':
+			usingBlockCursor = false;
 			showSoftwareCursor(Resources.createBmp('growCursor'));
 			break;
 		case 'shrink':
+			usingBlockCursor = false;
 			showSoftwareCursor(Resources.createBmp('shrinkCursor'));
 			break;
 		case 'help':
+			usingBlockCursor = false;
 			showSoftwareCursor(Resources.createBmp('helpCursor'));
 			break;
 		case 'draw':
+			usingBlockCursor = false;
 			showSoftwareCursor(Resources.createBmp('pencilCursor'));
 			break;
 		default:
-			tool = null;
+			if (!usingBlockCursor) tool = null;
 		}
 		mouseMove(null);
 	}
@@ -70,6 +77,7 @@ public class CursorTool {
 		tool = toolName;
 		app.enableEditorTools(tool == null);
 		if (tool == null) return;
+		usingBlockCursor = true;
 		switch(tool) {
 		case 'stamp':
 			showSoftwareCursor(Resources.createBmp('stampCustomCursor'));
@@ -102,6 +110,7 @@ public class CursorTool {
 			showSoftwareCursor(Resources.createBmp('hiddenCustomCursor'));
 			break;
 		case 'normal':
+			usingBlockCursor = false;
 			hideSoftwareCursor();
 			break;
 		default:

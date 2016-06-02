@@ -128,7 +128,7 @@ public class Specs {
 		["turn @turnLeft %n degrees",			" ", 1, "turnLeft:",				15],
 		["--"],
 		["point in direction %d.direction",		" ", 1, "heading:",					90],
-		["point towards %m.spriteOrMouse",		" ", 1, "pointTowards:",			""],
+		["point towards %m.spriteOrMouse",		" ", 1, "pointTowards:",			"mouse-pointer"],
 		["point towards x: %n y: %n",			" ", 1, "pointTowardsX:y:",			10, 10],
 		["--"],
 		["go to x:%n y:%n",						" ", 1, "gotoX:y:"],
@@ -382,6 +382,9 @@ public class Specs {
 		["%n / %n",								"r", 8, "/",					"", ""],
 		["%n ^ %n",								"r", 8, "^",					"", ""],
 		["-"],
+		["bitwise %n %m.[and,or,xor,-,shift left,shift right] %n",					"r", 8, "computeBitwiseFunction:of:", 5, "and", 3],
+		// Did the above to demonstrate how custom menu options will work...
+		["-"],
 		["pick random %n to %n",		"r", 8, "randomFrom:to:",		1, 10],
 		["-"],
 		["%s < %s",								"b", 8, "<",					"", ""],
@@ -478,8 +481,8 @@ public class Specs {
 		
 		//Dialogs 14
 		["dialog notify with title %s and message %s", " ", 14, "dialogNotify", "Well Done!", "Congratulations, you won!"],
-		["dialog confirm with title %s and message %s", "B", 14, "dialogConfirm", "Are you sure?", "Are you sure you would like to continue?"],
-		["dialog ask with title %s and message %s", "R", 14, "dialogAsk", "Info", "What's your name?"],
+		["dialog confirm with title %s and message %s", "b", 14, "dialogConfirm", "Are you sure?", "Are you sure you would like to continue?"],
+		["dialog ask with title %s and message %s", "r", 14, "dialogAsk", "Info", "What's your name?"],
 		["---"],
 		["custom dialog %s %s %s %s %s %s %s %s %s", "R", 14, "customDialog"],
 		["last custom dialog entry",			"r", 14, "lastCustomDialogEntry"],

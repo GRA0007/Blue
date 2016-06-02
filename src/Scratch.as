@@ -1212,34 +1212,6 @@ public class Scratch extends Sprite {
 		return "WIP";
 	}*/
 	
-	public function primDialogNotify(boxTitle:String, boxMessage:String):void {
-		var d:DialogBox = new DialogBox();
-		DialogBox.notify(boxTitle, boxMessage, stage);
-		return;
-	}
-	
-/*	public function primDialogAsk(boxTitle:String, boxMessage:String):void {
-		var d:DialogBox = new DialogBox();
-		var returnValues:Function = null;
-		returnValues = function(bool):String {
-			return 
-		}
-		DialogBox.notify(boxTitle, boxMessage, stage);
-		return;
-	}*/
-	
-	public function primDialogConfirm(boxTitle:String, boxMessage:String):Boolean {
-		var d:DialogBox = new DialogBox();
-		d.addTitle(boxTitle);
-		d.addText(boxMessage);
-		d.addButton('OK', retTrue);
-		d.addButton('Cancel', retFalse);
-		d.showOnStage(stage);
-		function retTrue():Boolean { return true };
-		function retFalse():Boolean { return false };
-		return false;
-	}
-	
 	public function confirmCloneCountChange(param1:int):void {
 		function confirmChange():void {
 			MaxCloneCount = (param1 - 2);
@@ -1409,7 +1381,7 @@ public class Scratch extends Sprite {
 		stagePart.refresh();
 	}
 
-	public function showBubble(text:String, x:* = null, y:* = null, width:Number = 0):void {
+	public function showBubble(text:*, x:* = null, y:* = null, width:Number = 0):void {
 		if (x == null) x = stage.mouseX;
 		if (y == null) y = stage.mouseY;
 		gh.showBubble(text, Number(x), Number(y), width);

@@ -53,17 +53,28 @@ public class BlockMenus implements DragClient {
 	private static const spriteAttributes:Array = ['x position', 'y position', 'direction', 'costume #', 'costume name', 'size', 'volume'];
 	private static const stageAttributes:Array = ['backdrop #', 'backdrop name', 'volume'];
 
-	public static function BlockMenuHandler(evt:MouseEvent, block:Block, blockArg:BlockArg = null, menuName:String = null):void {
+	public static function BlockMenuHandler(evt:MouseEvent, block:Block, blockArg:BlockArg = null, menuName:String = null, menuItems:Array = null):void {
 		var menuHandler:BlockMenus = new BlockMenus(block, blockArg);
 		var op:String = block.op;
-		if (menuName == null) { // menu gesture on a block (vs. an arg)
+		if (menuName == null) { 
+			if (menuItems == null) {
+			// menu gesture on a block (vs. an arg)
 			if (op == Specs.GET_LIST) menuName = 'list';
 			if (op == Specs.GET_VAR) menuName = 'var';
 			if ((op == Specs.PROCEDURE_DEF) || (op == Specs.CALL)) menuName = 'procMenu';
 			if ((op == 'broadcast:') || (op == 'doBroadcastAndWait') || (op == 'whenIReceive')) menuName = 'broadcastInfoMenu';
 			if ((basicMathOps.indexOf(op)) > -1) { menuHandler.changeOpMenu(evt, basicMathOps); return; }
 			if ((comparisonOps.indexOf(op)) > -1) { menuHandler.changeOpMenu(evt, comparisonOps); return; }
-			if (menuName == null) { menuHandler.genericBlockMenu(evt); return; }
+			if (menuItems) {
+				menuHandler.customMenu(evt,menuItems);
+				return;
+			}
+			menuHandler.genericBlockMenu(evt); return;
+			}
+		}
+		if (menuItems) {
+				menuHandler.customMenu(evt,menuItems);
+				return;
 		}
 		if (ExtensionManager.hasExtensionPrefix(op) && menuHandler.extensionMenu(evt, menuName)) return;
 		if (menuName == 'attribute') menuHandler.attributeMenu(evt);
@@ -968,6 +979,18 @@ public class BlockMenus implements DragClient {
 		m.addItem('red');
 		m.addItem('green');
 		m.addItem('blue');
+		showMenu(m);
+	}
+
+	private function customMenu(evt:MouseEvent, menuItems:Array):void {
+		var m:Menu = new Menu(setBlockArg);
+		for each (var s:String in menuItems) {
+			if (s == '-') {
+				m.addLine
+			} else {
+				m.addItem(s);
+			}
+		}
 		showMenu(m);
 	}
 }}

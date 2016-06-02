@@ -88,13 +88,25 @@ public class ReadStream {
 		var token:String = '';
 		var isArg:Boolean;
 		var start:int = i;
+		var inBrackets:Boolean = false;
 		while (i < src.length) {
-			if (src.charCodeAt(i) <= 32) break;
 			var ch:String = src.charAt(i);
+			if (inBrackets) {
+				if (ch == ']') {
+					inBrackets = false
+				}
+				token += ch;
+				i++;
+				continue;
+			}
+			if (src.charCodeAt(i) <= 32 && !inBrackets) break;
 			if (ch == '\\') {
 				token += ch + src.charAt(i + 1);
 				i += 2;
 				continue;
+			}
+			if (ch == '[') {
+				inBrackets = true
 			}
 			if (ch == '%') {
 				if (i > start) break; // percent sign starts new token

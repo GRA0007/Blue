@@ -128,6 +128,8 @@ public class ProcedureSpecEditor extends Sprite {
 				if (argSpec == 'b') arg = makeBooleanArg();
 				if (argSpec == 'n') arg = makeNumberArg();
 				if (argSpec == 's') arg = makeStringArg();
+				if (argSpec == 'c') arg = makeColorArg();
+				if (argSpec == 'm') arg = makeMenuArg();
 				if (arg) {
 					arg.setArgValue(inputNames[i++]);
 					addElement(arg);
@@ -166,8 +168,10 @@ public class ProcedureSpecEditor extends Sprite {
 				var arg:BlockArg = BlockArg(el);
 				var v:* = 0;
 				if (arg.type == 'b') v = false;
-				if (arg.type == 'n') v = 1;
+				if (arg.type == 'n') v = 10;
 				if (arg.type == 's') v = '';
+				if (arg.type == 'm') v = '';
+				if (arg.type == 'c') v = 0xA0A0A0;
 				result.push(v);
 			}
 		}
@@ -204,12 +208,16 @@ public class ProcedureSpecEditor extends Sprite {
 			makeLabel('Add number input:', 14),
 			makeLabel('Add string input:', 14),
 			makeLabel('Add boolean input:', 14),
+			makeLabel('Add color input:', 14),
+			makeLabel('Add menu input:', 14),
 			makeLabel('Add label text:', 14)
 		];
 		buttons = [
 			new Button('', function():void { appendObj(makeNumberArg()) }),
 			new Button('', function():void { appendObj(makeStringArg()) }),
 			new Button('', function():void { appendObj(makeBooleanArg()) }),
+			new Button('', function():void { appendObj(makeColorArg()) }),
+			new Button('', function():void { appendObj(makeMenuArg()) }),
 			new Button('text', function():void { appendObj(makeTextField('')) })
 		];
 
@@ -246,6 +254,14 @@ public class ProcedureSpecEditor extends Sprite {
 		icon = new BlockShape(BlockShape.BooleanShape, lightGray);
 		icon.setWidthAndTopHeight(25, 14, true);
 		buttons[2].setIcon(icon);
+
+		icon = new BlockShape(BlockShape.RectShape, lightGray);
+		icon.setWidthAndTopHeight(14, 14, true);
+		buttons[3].setIcon(icon);
+
+		icon = new BlockShape(BlockShape.RectShape, lightGray);
+		icon.setWidthAndTopHeight(25, 14, true);
+		buttons[4].setIcon(icon);
 	}
 
 	private function addwarpCheckbox():void {
@@ -339,6 +355,18 @@ public class ProcedureSpecEditor extends Sprite {
 	private function makeStringArg():BlockArg {
 		var result:BlockArg = new BlockArg('s', 0xFFFFFF, true);
 		result.setArgValue(unusedArgName('string'));
+		return result;
+	}
+
+		private function makeColorArg():BlockArg {
+		var result:BlockArg = new BlockArg('c', 0xFFFFFF, true);
+		result.setArgValue(unusedArgName('color'));
+		return result;
+	}
+
+		private function makeMenuArg():BlockArg {
+		var result:BlockArg = new BlockArg('m', 0xFFFFFF, true);
+		result.setArgValue(unusedArgName('menu'));
 		return result;
 	}
 

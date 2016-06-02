@@ -150,7 +150,7 @@ public class Interpreter {
 				b = new Block("%s", "", -1);
 				b.opFunction = function(b:Array):void {
 					var p:Point = reporter.localToGlobal(new Point(0, 0));
-					app.showBubble(String(b[0]), p.x, p.y, reporter.getRect(app.stage).width);
+					app.showBubble(b[0], p.x, p.y, reporter.getRect(app.stage).width);
 				};
 				b.args[0] = reporter;
 			}

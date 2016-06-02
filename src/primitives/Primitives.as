@@ -73,6 +73,7 @@ public class Primitives {
 		primTable["-"]				= function(b:*):* { return interp.numarg(b[0]) - interp.numarg(b[1]) };
 		primTable["*"]				= function(b:*):* { return interp.numarg(b[0]) * interp.numarg(b[1]) };
 		primTable["/"]				= function(b:*):* { return interp.numarg(b[0]) / interp.numarg(b[1]) };
+		primTable["computeBitwiseFunction:of:"] = primBitwiseFunction;
 		primTable["≥"]				= function(b:*):* { return interp.numarg(b[0]) >= interp.numarg(b[1]) };
 		primTable["≤"]				= function(b:*):* { return interp.numarg(b[0]) <= interp.numarg(b[1]) };
 		primTable["≠"]				= function(b:*):* { return compare(b[0], b[1]) != 0 };
@@ -144,6 +145,7 @@ public class Primitives {
 			}
 			return strReplace(str, search, replace);
 		}
+
 		primTable["replaceBetween"]		= function(b:*):* {
 			//First, grab the text between the two numbers
 			var s:String = b[2];
@@ -276,27 +278,62 @@ public class Primitives {
 		primTable["maxCloneCount"] = function(b:*):* {
 			return (app.MaxCloneCount + 2);
 		}
-		primTable["dialogNotify"] = function(b:*):* {
-			app.primDialogNotify(b[0], b[1])
+		specialTable["dialogNotify"] = function(b:*):* {
+		if (interp.activeThread.firstTime) {
+			var d:DialogBox = new DialogBox();
+			d.leftJustify = false;
+			d.addTitle(b[0]);
+			d.addText(b[1]);
+			d.addButton('OK', finish);
+			d.showOnStage(app.stage);
+			interp.activeThread.firstTime = false;
 		}
-		primTable["dialogConfirm"] = function(b:*):* {
-			if (b.requestState == 2) {
-				b.requestState = 0;
-				return b.response;
-			}
-			b.requestState = 1;
-			var bool:Boolean;
-			bool = app.primDialogConfirm(b[0], b[1]);
-			b.requestState = 1;
-			setTimeout(function():* {
-				return bool;
-				b.requestState = 2;
-				b.response = bool;
-			}, 500);
+		function finish():void {
+				interp.activeThread.popState();
+				interp.activeThread.firstTime = true;
 		}
-/*		primTable["dialogAsk"] = function(b:*):* {
-			app.primDialogAsk(interp.arg(b, 0), interp.arg(b, 1))
-		}*/
+		interp.doYield();
+		}
+		specialTable["dialogConfirm"] = function(b:*):* {
+		if (interp.activeThread.firstTime) {
+			var d:DialogBox = new DialogBox();
+			d.addTitle(b[0]);
+			d.addText(b[1]);
+			d.addButton('Yes', retTrue);
+			d.addButton('No', retFalse); //Change this to cancel if you wish
+			d.showOnStage(app.stage);
+			interp.activeThread.firstTime = false;
+		};
+			function retTrue():void {
+				interp.activeThread.popState();
+				interp.activeThread.values.push(true);
+				interp.activeThread.firstTime = true;
+			};
+			function retFalse():void {
+				interp.activeThread.popState();
+				interp.activeThread.values.push(false);
+				interp.activeThread.firstTime = true;
+			};
+			interp.doYield();
+		}
+		specialTable["dialogAsk"] = function(b:*):* {
+
+		function done():void {
+			interp.activeThread.popState();
+			interp.activeThread.values.push(d.fields['answer'].text);
+			interp.activeThread.firstTime = true;
+		}
+		if (interp.activeThread.firstTime) {
+		var d:DialogBox = new DialogBox(done);
+		d.addTitle(b[0]);
+		d.addField('answer', 120, '', false);
+		d.addText(b[1]);
+		d.addButton('OK', d.accept);
+		d.showOnStage(app.stage);
+		interp.activeThread.firstTime = false;
+		}
+		interp.doYield();
+		}
 		primTable["customDialogNewLine"] = function(b:*):* {
 			return b[0] + "\n" + b[1]
 		}
@@ -535,6 +572,20 @@ public class Primitives {
 		}
 	}
 	
+	private function primBitwiseFunction(b:Array):Number {
+			var operand1:Number = interp.numarg(b[0]);
+			var op:* = b[1];
+			var operand2:Number = interp.numarg(b[2]);
+			switch(op) {
+				case "and": return operand1 & operand2;
+				case "or": return operand1 | operand2;
+				case "xor": return operand1 ^ operand2;
+				case "shift left": return operand1 << operand2;
+				case "shift right": return operand1 >> operand2;
+			}
+			return 0;
+		}
+
 	private function primAsBoolean(b:Array):Boolean {
 		return interp.boolarg(b[0]) //Easier way to convert to boolean through the scratch interpreter
 	}

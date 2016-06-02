@@ -21,6 +21,8 @@ package scratch {
 	import flash.display.*;
 	import flash.text.*;
 
+	import blocks.*;
+
 public class TalkBubble extends Sprite {
 
 	public var pointsLeft:Boolean;
@@ -28,7 +30,7 @@ public class TalkBubble extends Sprite {
 	private var type:String; // 'say' or 'think'
 	private var style:String; // 'say' or 'ask' or 'result'
 	private var shape:Shape;
-	private var text:TextField;
+	private var text:*;
 	private var source:Object;
 	private static var textFormat:TextFormat = new TextFormat(CSS.font, 14, 0, true, null, null, null, null, TextFormatAlign.CENTER);
 	private static var resultFormat:TextFormat = new TextFormat(CSS.font, 12, CSS.textColor, null, null, null, null, null, TextFormatAlign.CENTER);
@@ -43,7 +45,7 @@ public class TalkBubble extends Sprite {
 	private var pDropX:int = 8;
 	private var lineWidth:Number = 3;
 
-	public function TalkBubble(s:String, type:String, style:String, source:Object) {
+	public function TalkBubble(s:*, type:String, style:String, source:Object) {
 		this.type = type;
 		this.style = style;
 		this.source = source;
@@ -63,7 +65,7 @@ public class TalkBubble extends Sprite {
 		pointsLeft = true;
 		shape = new Shape();
 		addChild(shape);
-		text = makeText();
+		text = makeText(s);
 		addChild(text);
 		setText(s);
 	}
@@ -77,11 +79,15 @@ public class TalkBubble extends Sprite {
 		setWidthHeight(text.width + padding * 2, text.height + padding * 2);
 	}
 
-	public function getText():String { return text.text }
+	public function getText():* { 
+		if (text is BlockArg) return text.color;
+		return text.text;
+	}
 
 	public function getSource():Object { return source; }
 
-	private function setText(s:String):void {
+	private function setText(s:*):void {
+		if (s is ScratchColor) return setWidthHeight(19, 19);
 		var desiredWidth:int = 135;
 		text.width = desiredWidth + 100; // wider than desiredWidth
 		text.text = s;
@@ -98,16 +104,23 @@ public class TalkBubble extends Sprite {
 		else drawTalk(w, h);
 	}
 
-	private function makeText():TextField {
-		var result:TextField = new TextField();
-		result.autoSize = TextFieldAutoSize.LEFT;
-		result.defaultTextFormat = style == 'result' ? resultFormat : textFormat;
-		result.selectable = false;  // not selectable
-		result.type = 'dynamic';  // not editable
-		result.wordWrap = true;
-		result.x = padding;
-		result.y = padding;
-		return result;
+	private function makeText(s:*):* {
+		if (s is ScratchColor) {
+			var result:* = new BlockArg('c', s);
+			result.x = padding;
+			result.y = padding;
+			return result;
+		} else {
+			var result:* = new TextField();
+			result.autoSize = TextFieldAutoSize.LEFT;
+			result.defaultTextFormat = style == 'result' ? resultFormat : textFormat;
+			result.selectable = false;  // not selectable
+			result.type = 'dynamic';  // not editable
+			result.wordWrap = true;
+			result.x = padding;
+			result.y = padding;
+			return result;
+		}
 	}
 
 	private function drawTalk(w:int, h:int):void {
