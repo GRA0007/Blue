@@ -120,7 +120,7 @@ public class TopBarPart extends UIPart {
 		var logoClicked:Function = null;
 		logoClicked = function(param1:*):void {
 			//TODO: Get a new website :P
-			navigateToURL(new URLRequest("http://bluemod.webatu.com/"), "_self");
+			navigateToURL(new URLRequest("http://blue.gwiddle.co.uk"), "_self");
 			trace("REDIRECTING");
 		};
 		logo = new IconButton(logoClicked, "scratchlogo");
