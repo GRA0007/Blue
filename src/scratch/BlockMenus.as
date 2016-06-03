@@ -63,10 +63,10 @@ public class BlockMenus implements DragClient {
 		if ((basicMathOps.indexOf(op)) > -1) { menuHandler.changeOpMenu(evt, basicMathOps); return; }
 		if ((comparisonOps.indexOf(op)) > -1) { menuHandler.changeOpMenu(evt, comparisonOps); return; }
 		if (menuName == null) { 
-			menuHandler.genericBlockMenu(evt); return;
 			if (menuItems) {
 				menuHandler.customMenu(evt,menuItems);
 				return;
+			menuHandler.genericBlockMenu(evt); return;
 			}
 		}
 		if (ExtensionManager.hasExtensionPrefix(op) && menuHandler.extensionMenu(evt, menuName)) return;
