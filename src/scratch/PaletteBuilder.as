@@ -338,7 +338,9 @@ public class PaletteBuilder {
 			'xpos', 'ypos', 'heading', 'costumeIndex', 'scale', 'volume', 'timeAndDate',
 			'backgroundIndex', 'sceneName', 'tempo', 'answer', 'timer', 'soundLevel', 'isLoud',
 			'sensor:', 'sensorPressed:', 'senseVideoMotion', 'xScroll', 'yScroll',
-			'getDistance', 'getTilt', /*':effect', */'cloneCount', 'fileContents', 'rotationStyle', 'visible', 'isPenDown', 'penHue', 'penShade', 'penSize', 'maxCloneCount'];
+			'getDistance', 'getTilt', ':effect', 'cloneCount', 'fileContents',
+			'rotationStyle', 'visible', 'isPenDown', 'penHue', 'penShade', 'penSize',
+			'maxCloneCount'];
 		return checkboxReporters.indexOf(op) > -1;
 	}
 
@@ -381,6 +383,7 @@ public class PaletteBuilder {
 					data.targetObj = getBlockArg(data.block, 1) == 'Stage' ? app.stagePane : app.viewedObj();
 				case 'sensor:':
 				case 'sensorPressed:':
+				case ':effect':
 				case 'timeAndDate':
 					data.param = getBlockArg(data.block, 0);
 					break;

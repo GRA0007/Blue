@@ -226,7 +226,7 @@ public class Specs {
 		["tempo",								"r", 3,  "tempo"],
 		["-"],
 		["internal volume",						"r", 3, "internalVolume"],
-		["length of sound %m.sound",			"r", 3, "lengthOfSound:",					"pop"],
+		["length of sound %m.sound in seconds",	"r", 3, "lengthOfSound:",					"pop"],
 
 		// pen
 		["clear",								" ", 4, "clearPenTrails"],

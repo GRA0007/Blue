@@ -49,6 +49,7 @@ public class MotionAndPenPrims {
 		primTable["turnLeft:"]			= primTurnLeft;
 		primTable["heading:"]			= primSetDirection;
 		primTable["pointTowards:"]		= primPointTowards;
+		primTable["pointTowardsX:y:"]	= primPointTo;
 		primTable["gotoX:y:"]			= primGoTo;
 		primTable["gotoSpriteOrMouse:"]	= primGoToSpriteOrMouse;
 		specialTable["glideSecs:toX:y:elapsed:from:"] = primGlide;
@@ -60,9 +61,14 @@ public class MotionAndPenPrims {
 
 		primTable["bounceOffEdge"]		= primBounceOffEdge;
 
+		primTable["setRotationStyle"]	= primSetRotationStyle;
+		primTable["makeDraggable"]		= primMakeDraggable;
+		primTable["draggable"]			= primGetDraggable;
+
 		primTable["xpos"]				= primXPosition;
 		primTable["ypos"]				= primYPosition;
 		primTable["heading"]			= primDirection;
+		primTable["rotationStyle"]		= primRotationStyle;
 
 		primTable["clearPenTrails"]		= primClear;
 		primTable["putPenDown"]			= primPenDown;
@@ -97,6 +103,26 @@ public class MotionAndPenPrims {
 		}
 	}
 
+	private function primMakeDraggable(b:Array):void {
+		var s:ScratchSprite = interp.targetSprite();
+		var draggable:Boolean = b[0] == "draggable";
+		if (s == null) return;
+		s.isDraggable = draggable;
+	}
+
+	private function primGetDraggable(b:Array):Boolean {
+		var s:ScratchSprite = interp.targetSprite();
+		return (s == null) ? false : s.isDraggable;
+	}
+
+	private function primSetRotationStyle(b:Array):void {
+		var s:ScratchSprite = interp.targetSprite();
+		var newStyle:String = b[0] as String;
+		if ((s == null) || (newStyle == null)) return;
+		s.setRotationStyle(newStyle);
+	}
+
+
 	private function primTurnLeft(b:Array):void {
 		var s:ScratchSprite = interp.targetSprite();
 		if (s != null) {
@@ -119,6 +145,16 @@ public class MotionAndPenPrims {
 		if ((s == null) || (p == null)) return;
 		var dx:Number = p.x - s.scratchX;
 		var dy:Number = p.y - s.scratchY;
+		var angle:Number = 90 - ((Math.atan2(dy, dx) * 180) / Math.PI);
+		s.setDirection(angle);
+		if (s.visible) interp.redraw();
+	}
+
+	private function primPointTo(b:Array):void {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s == null) return;
+		var dx:Number = interp.numarg(b[0]) - s.scratchX;
+		var dy:Number = interp.numarg(b[1]) - s.scratchY;
 		var angle:Number = 90 - ((Math.atan2(dy, dx) * 180) / Math.PI);
 		s.setDirection(angle);
 		if (s.visible) interp.redraw();
@@ -226,10 +262,11 @@ public class MotionAndPenPrims {
 		return (s != null) ? snapToInteger(s.direction) : 0;
 	}
 
-/*	private function primRotationStyle(b:Block):Number {
+	private function primRotationStyle(b:Array):* {
 		var s:ScratchSprite = interp.targetSprite();
-		return ScratchSprite(target).rotationStyle;
-	}*/
+		return (s != null) ? s.rotationStyle: 0;
+	}
+
 	private function snapToInteger(n:Number):Number {
 		var rounded:Number = Math.round(n);
 		var delta:Number = n - rounded;

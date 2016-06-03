@@ -82,8 +82,6 @@ public class LooksPrims {
 		primTable['scrollUp']				= primScrollUp;
 		primTable['xScroll']				= function(b:*):* { return app.stagePane.xScroll };
 		primTable['yScroll']				= function(b:*):* { return app.stagePane.yScroll };
-
-		primTable['setRotationStyle']		= primSetRotationStyle;
 	}
 
 	private function primNextCostume(b:Array):void {
@@ -228,13 +226,6 @@ public class LooksPrims {
 		var oldScale:Number = s.scaleX;
 		s.setSize(s.getSize() + interp.numarg(b[0]));
 		if (s.visible && (s.scaleX != oldScale)) interp.redraw();
-	}
-
-	private function primSetRotationStyle(b:Array):void {
-		var s:ScratchSprite = interp.targetSprite();
-		var newStyle:String = b[0] as String;
-		if ((s == null) || (newStyle == null)) return;
-		s.setRotationStyle(newStyle);
 	}
 
 	private function primSetSize(b:Array):void {

@@ -46,8 +46,10 @@ public class SensingPrims {
 		primTable['touchingColor:']		= primTouchingColor;
 		primTable['color:sees:']		= primColorSees;
 
-		specialTable['doAsk']				= primAsk;
+		specialTable['doAsk']			= primAsk;
 		primTable['answer']				= function(b:*):* { return app.runtime.lastAnswer };
+
+		primTable['spriteName']			= primSpriteName;
 
 		primTable['mousePressed']		= function(b:*):* { return app.gh.mouseIsDown };
 		primTable['mouseX']				= function(b:*):* { return app.stagePane.scratchMouseX() };
@@ -56,6 +58,7 @@ public class SensingPrims {
 		primTable['timerReset']			= function(b:*):* { app.runtime.timerReset() };
 		primTable['keyPressed:']		= primKeyPressed;
 		primTable['distanceTo:']		= primDistanceTo;
+		primTable['distanceToX:y:']		= primDistanceToPosition;
 		primTable['getAttribute:of:']	= primGetAttribute;
 		primTable['soundLevel']			= function(b:*):* { return app.runtime.soundLevel() };
 		primTable['isLoud']				= function(b:*):* { return app.runtime.isLoud() };
@@ -242,12 +245,25 @@ public class SensingPrims {
 		return app.runtime.keyIsDown[ch];
 	}
 
+	private function primSpriteName(b:Array):String {
+		var s:ScratchSprite = interp.targetSprite();
+		return (s == null) ? "" : s.objName as String;
+	}
+
 	private function primDistanceTo(b:Array):Number {
 		var s:ScratchSprite = interp.targetSprite();
 		var p:Point = mouseOrSpritePosition(b[0]);
 		if ((s == null) || (p == null)) return 10000;
 		var dx:Number = p.x - s.scratchX;
 		var dy:Number = p.y - s.scratchY;
+		return Math.sqrt((dx * dx) + (dy * dy));
+	}
+
+	private function primDistanceToPosition(b:Array):Number {
+		var s:ScratchSprite = interp.targetSprite();
+		if ((s == null)) return 10000;
+		var dx:Number = interp.numarg(b[0]) - s.scratchX;
+		var dy:Number = interp.numarg(b[1]) - s.scratchY;
 		return Math.sqrt((dx * dx) + (dy * dy));
 	}
 

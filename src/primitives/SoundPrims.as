@@ -59,11 +59,19 @@ public class SoundPrims {
 		primTable["changeTempoBy:"]		= function(b:*):* { app.stagePane.setTempo(app.stagePane.tempoBPM + interp.numarg(b[0])) };
 		primTable["setTempoTo:"]		= function(b:*):* { app.stagePane.setTempo(interp.numarg(b[0])) };
 		primTable["tempo"]				= function(b:*):* { return app.stagePane.tempoBPM };
+
+		primTable["lengthOfSound:"]		= primLengthOfSound;
 	}
 
 	private function primPlaySound(b:Array):void {
 		var snd:ScratchSound = interp.targetObj().findSound(b[0]);
 		if (snd != null) playSound(snd, interp.targetObj());
+	}
+
+	private function primLengthOfSound(b:Array):Number {
+		var snd:ScratchSound = interp.targetObj().findSound(b[0]);
+		if (snd == null) return 0
+		return (Math.round(snd.getLengthInSecs() * 100)) / 100;
 	}
 
 	private function primPlaySoundUntilDone(b:Array):void {

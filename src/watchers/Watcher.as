@@ -184,7 +184,7 @@ public class Watcher extends Sprite implements DragClient {
 		else if (cmd == 'timeAndDate')
 			setLabel(Translator.map(param));
 		else if (cmd == ':effect')
-			setLabel(Translator.map(param));
+			setLabel(Translator.map(param) + ' effect');
 		else if (cmd == 'senseVideoMotion')
 			setLabel((target.isStage ? '' : target.objName + ': ') + Translator.map('video ' + param));
 		else
@@ -236,6 +236,7 @@ public class Watcher extends Sprite implements DragClient {
 				case "penHue": return ScratchSprite(target).penHue;
 				case "penShade": return ScratchSprite(target).penShade;
 				case "penSize": return ScratchSprite(target).penWidth;
+				case ":effect": return ScratchSprite(target).filterPack.getFilterSetting(param);
 			}
 		}
 		switch(cmd) {
@@ -252,7 +253,7 @@ public class Watcher extends Sprite implements DragClient {
 			case "timeAndDate": return runtime.getTimeString(param);
 			case "xScroll": return app.stagePane.xScroll;
 			case "yScroll": return app.stagePane.yScroll;
-//			case ":effect": return ScratchObj.filterPack.getFilterSetting(param);
+			case ":effect": return app.stagePane.filterPack.getFilterSetting(param);
 			case "cloneCount": return runtime.cloneCount;
 			case "fileContents": return runtime.ba;
 			case "maxCloneCount": return (app.MaxCloneCount + 2);

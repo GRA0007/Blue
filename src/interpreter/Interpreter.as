@@ -84,6 +84,7 @@ public class Interpreter {
 	private var startTime:int;				// start time for stepThreads()
 	private var doRedraw:Boolean;
 	private var isWaiting:Boolean;
+	private var lastBroadcast:String;		// the last broadcast that was sent; reset after every cycle
 
 	private const warpMSecs:int = 500;		// max time to run during warp
 	private var warpThread:Thread;			// thread that is in warp mode
@@ -459,6 +460,14 @@ public class Interpreter {
 				yield = true;
 			}
 		};
+		specialTable["waitUntilIReceive:"]		= function(b:*):* {
+			if (lastBroadcast == b[0]) {
+				activeThread.popState();
+				if (this.nextBlock) activeThread.pushStateForBlock(this.nextBlock);
+			} else {
+				yield = true;
+			}
+		};
 		specialTable["doWhile"]			= function(b:*):* {
 			if (boolarg(b[0])) {
 				activeThread.values.pop();
@@ -474,6 +483,14 @@ public class Interpreter {
 				if (this.nextBlock) activeThread.pushStateForBlock(this.nextBlock);
 			} else {
 				activeThread.values.pop();
+				startCmdList(this.subStack1, true);
+			}
+		};
+		specialTable["repeatUntilIReceive:"]			= function(b:*):* {
+			if (lastBroadcast == b[0]) {
+				activeThread.popState();
+				if (this.nextBlock) activeThread.pushStateForBlock(this.nextBlock);
+			} else {
 				startCmdList(this.subStack1, true);
 			}
 		};
@@ -636,6 +653,7 @@ public class Interpreter {
 			app.runtime.allStacksAndOwnersDo(findReceivers);
 			// (re)start all receivers
 			for each (pair in receivers) newThreads.push(restartThread(pair[0], pair[1]));
+			lastBroadcast = msg;
 			if (!waitFlag) return;
 			activeThread.tmpObj = newThreads;
 			activeThread.firstTime = false;
@@ -687,8 +705,6 @@ public class Interpreter {
 		var block:Block = activeThread.block;
 
 		// Lookup the procedure and cache for future use
-		if (activeThread.firstTime) {
-		pushedReporterValue = false;
 		var obj:ScratchObj = activeThread.target;
 		var insideLoop:* = null;
 		var spec:String = block.spec;
@@ -716,16 +732,10 @@ public class Interpreter {
 				yield = true;
 			}
 		}
-		activeThread.pushStateForBlock(report0Block);
 		activeThread.args = b;
 		activeThread.loopBlock = insideLoop;
-		startCmdList(proc)} else {
-		activeThread.popState();
-		if (!pushedReporterValue && block.isReporter) activeThread.values.push(0);
-		activeThread.firstTime = true;
-		return;
-		}
-		activeThread.firstTime = false;
+		activeThread.pushStateForBlock(report0Block);
+		startCmdList(proc);
 	}
 
 	private function primGetLoop(b:Array):void {
@@ -735,11 +745,11 @@ public class Interpreter {
 		if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
 		if (activeThread.loopBlock) activeThread.pushStateForBlock(activeThread.loopBlock);
 		activeThread.firstTime = true;
-		pushedReporterValue = true;
 	}
 
 	private function primReturn(b:Array):void {
 		// Return from the innermost procedure. If not in a procedure, stop the thread.
+		pushedReporterValue = true;
 		var call:Block = activeThread.returnFromProcedure();
 		if (call) {
 			if (call.isReporter) {

@@ -184,6 +184,8 @@ public class ScratchSound {
 
 	public function getLengthInMsec():Number { return (1000.0 * sampleCount) / rate};
 
+	public function getLengthInSecs():Number { return (sampleCount) / rate};
+
 	public function toString():String {
 		var secs:Number = Math.ceil(getLengthInMsec() / 1000);
 		var result:String = 'ScratchSound(' + secs + ' secs, ' + rate;
