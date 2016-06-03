@@ -56,25 +56,18 @@ public class BlockMenus implements DragClient {
 	public static function BlockMenuHandler(evt:MouseEvent, block:Block, blockArg:BlockArg = null, menuName:String = null, menuItems:Array = null):void {
 		var menuHandler:BlockMenus = new BlockMenus(block, blockArg);
 		var op:String = block.op;
+		if (op == Specs.GET_LIST) menuName = 'list';
+		if (op == Specs.GET_VAR) menuName = 'var';
+		if ((op == Specs.PROCEDURE_DEF) || (op == Specs.CALL)) menuName = 'procMenu';
+		if ((op == 'broadcast:') || (op == 'doBroadcastAndWait') || (op == 'whenIReceive')) menuName = 'broadcastInfoMenu';
+		if ((basicMathOps.indexOf(op)) > -1) { menuHandler.changeOpMenu(evt, basicMathOps); return; }
+		if ((comparisonOps.indexOf(op)) > -1) { menuHandler.changeOpMenu(evt, comparisonOps); return; }
 		if (menuName == null) { 
-			if (menuItems == null) {
-			// menu gesture on a block (vs. an arg)
-			if (op == Specs.GET_LIST) menuName = 'list';
-			if (op == Specs.GET_VAR) menuName = 'var';
-			if ((op == Specs.PROCEDURE_DEF) || (op == Specs.CALL)) menuName = 'procMenu';
-			if ((op == 'broadcast:') || (op == 'doBroadcastAndWait') || (op == 'whenIReceive')) menuName = 'broadcastInfoMenu';
-			if ((basicMathOps.indexOf(op)) > -1) { menuHandler.changeOpMenu(evt, basicMathOps); return; }
-			if ((comparisonOps.indexOf(op)) > -1) { menuHandler.changeOpMenu(evt, comparisonOps); return; }
+			menuHandler.genericBlockMenu(evt); return;
 			if (menuItems) {
 				menuHandler.customMenu(evt,menuItems);
 				return;
 			}
-			menuHandler.genericBlockMenu(evt); return;
-			}
-		}
-		if (menuItems) {
-				menuHandler.customMenu(evt,menuItems);
-				return;
 		}
 		if (ExtensionManager.hasExtensionPrefix(op) && menuHandler.extensionMenu(evt, menuName)) return;
 		if (menuName == 'attribute') menuHandler.attributeMenu(evt);

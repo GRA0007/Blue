@@ -88,6 +88,7 @@ public class Interpreter {
 	private const warpMSecs:int = 500;		// max time to run during warp
 	private var warpThread:Thread;			// thread that is in warp mode
 	private var warpBlock:Block;			// proc call block that entered warp mode
+	private var pushedReporterValue:Boolean = false; // if a value has been pushed to the custom reporter
 
 	private var bubbleThread:Thread;			// thread for reporter bubble
 	public var askThread:Thread;				// thread that opened the ask prompt
@@ -686,6 +687,8 @@ public class Interpreter {
 		var block:Block = activeThread.block;
 
 		// Lookup the procedure and cache for future use
+		if (activeThread.firstTime) {
+		pushedReporterValue = false;
 		var obj:ScratchObj = activeThread.target;
 		var insideLoop:* = null;
 		var spec:String = block.spec;
@@ -696,7 +699,7 @@ public class Interpreter {
 			obj.procCache[spec] = proc;
 		}
 		if (!proc) {
-			if (activeThread.block.type == 'o ') activeThread.values.push(0);
+			if (activeThread.block.type == 'r' || activeThread.block.type == 'b') activeThread.values.push(0);
 			activeThread.popState();
 			if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
 			return;
@@ -716,7 +719,13 @@ public class Interpreter {
 		activeThread.pushStateForBlock(report0Block);
 		activeThread.args = b;
 		activeThread.loopBlock = insideLoop;
-		startCmdList(proc);
+		startCmdList(proc)} else {
+		activeThread.popState();
+		if (!pushedReporterValue && block.isReporter) activeThread.values.push(0);
+		activeThread.firstTime = true;
+		return;
+		}
+		activeThread.firstTime = false;
 	}
 
 	private function primGetLoop(b:Array):void {
@@ -726,7 +735,7 @@ public class Interpreter {
 		if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
 		if (activeThread.loopBlock) activeThread.pushStateForBlock(activeThread.loopBlock);
 		activeThread.firstTime = true;
-
+		pushedReporterValue = true;
 	}
 
 	private function primReturn(b:Array):void {

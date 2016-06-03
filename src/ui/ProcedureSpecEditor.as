@@ -59,7 +59,7 @@ public class ProcedureSpecEditor extends Sprite {
 		addChild(base = new Shape());
 		setWidthHeight(350, 10);
 
-		shape = type == "b" ? BlockShape.BooleanShape : type == "r" ? BlockShape.NumberShape : BlockShape.CmdShape;
+		shape = type == "b" ? BlockShape.BooleanShape : type == "r" ? BlockShape.NumberShape : type == "c" ? BlockShape.LoopShape : BlockShape.CmdShape;
 		blockShape = new BlockShape(shape, Specs.procedureColor);
 		blockShape.setWidthAndTopHeight(100, 25, true);
 		addChild(blockShape);
