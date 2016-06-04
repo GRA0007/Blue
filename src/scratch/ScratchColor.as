@@ -18,24 +18,31 @@
  */
 
 // ScratchColor.as
-// John Maloney, August 2009
+// NoMod-Programming, June 2016
+// Uses code from DjDolphin's Jackalope mod (https://github.com/djdolphin/jackalope/)
 //
 // A ScratchColor is a return type (and variable type) used in scratch to 
 // represent a number that is a color
 
-package {
+package scratch {
+	import blocks.BlockShape;
+	import blocks.BlockArg;
 
-public class ScratchColor {
-
-	public var color:uint = 0xFFFFFFFF;
-
-	public function ScratchColor(newColor:uint) {
-			color = newColor;
+public class ScratchColor extends BlockShape {
+		public function ScratchColor(color:int) {
+			this.color = color;
+			this.shape = RectShape;
+			setShape(shape);
+			//filters = BlockArg.blockArgFilters();
+			setWidthAndTopHeight(13, 13, true);
 		}
-
-	public function toString():String {
-      return "Foo";
-    }
-
+		
+		override public function toString():String {
+			return String(color);
+		}
+		
+		public function toJSON():Object {
+			return {type: 'ScratchColor', color: color};
+		}
 	}
 }

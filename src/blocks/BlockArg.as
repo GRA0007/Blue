@@ -195,7 +195,7 @@ public class BlockArg extends Sprite {
 		field.selectable = false;
 	}
 
-	private function blockArgFilters():Array {
+	public static function blockArgFilters():Array {
 		// filters for BlockArg outlines
 		var f:BevelFilter = new BevelFilter(1);
 		f.blurX = f.blurY = 2;

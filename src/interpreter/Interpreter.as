@@ -144,7 +144,7 @@ public class Interpreter {
 			var topBlock:Block = b;
 			if (b.isReporter) {
 				// click on reporter shows value in bubble
-				if (bubbleThread) {
+				if (bubbleThread && threads.indexOf(bubbleThread) > -1) {
 					toggleThread(bubbleThread.topBlock, bubbleThread.target);
 				}
 				var reporter:Block = b;
@@ -619,11 +619,8 @@ public class Interpreter {
 		var type:String = b[0];
 		if (type == 'all') { app.runtime.stopAll(); yield = true }
 		if (type == 'all and press green flag') {
-			app.runtime.stopAll(); yield = true
-/*			runButtonOnTicks = 0;
-			runButton.turnOn();
-			stopButton.turnOff();
-			if (playButton) hidePlayButton();*/
+			app.runtime.stopAll(); 
+			app.runtime.startGreenFlags(); 
 		}
 		if (type == 'this script') primReturn([]);
 		if (type == 'other scripts in sprite') stopThreadsFor(activeThread.target, true);

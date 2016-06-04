@@ -21,6 +21,7 @@ package watchers {
 	import flash.display.Sprite;
 	import flash.text.*;
 	import uiwidgets.ResizeableFrame;
+	import scratch.ScratchColor;
 
 public class WatcherReadout extends Sprite {
 
@@ -28,7 +29,7 @@ public class WatcherReadout extends Sprite {
 	private var largeFont:TextFormat = new TextFormat(CSS.font, 15, 0xFFFFFF, true);
 
 	private var frame:ResizeableFrame;
-	private var tf:TextField;
+	private var tf:*;
 	private var isLarge:Boolean;
 
 	public function WatcherReadout() {
@@ -41,12 +42,24 @@ public class WatcherReadout extends Sprite {
 	public function getColor():int { return frame.getColor() }
 	public function setColor(color:int):void { frame.setColor(color) }
 
-	public function get contents():String { return tf.text }
+	public function get contents():* { return (tf is ScratchColor) ? tf : tf.text }
 
-	public function setContents(s:String):void {
+	public function setContents(s:*):void {
+		if (s is ScratchColor) {
+			removeChild(tf);
+			tf = s;
+			addChild(s);
+			return fixLayout();
+			} else {
+		if (tf is ScratchColor) {
+			removeChild(tf);
+			addTextField();
+			beLarge(isLarge);
+		}
 		if (s == tf.text) return; // no change
 		tf.text = s;
 		fixLayout();
+		}
 	}
 
 	public function beLarge(newValue:Boolean):void {
@@ -62,11 +75,20 @@ public class WatcherReadout extends Sprite {
 		var w:int = isLarge ? 48 : 40;
 		var h:int = isLarge ? 20 : 14;
 		var hPad:int = isLarge ? 12 : 5;
+		if (tf is ScratchColor) {
+		w = Math.max(w, tf.width + hPad);
+			} else {
 		w = Math.max(w, tf.textWidth + hPad);
 		tf.width = w;
 		tf.height = h;
 		tf.y = isLarge ? 0 : -1;
+		}
 		if ((w != frame.w) || (h != frame.h)) frame.setWidthHeight(w, h);
+		if (tf is ScratchColor) {
+			tf.x = frame.x + (frame.width / 2) - (tf.width / 2);
+			tf.y = frame.y + (frame.height / 2) - (tf.height / 2);
+
+		}
 	}
 
 	private function addTextField():void {

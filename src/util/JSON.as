@@ -29,6 +29,7 @@
 package util {
 	import flash.display.BitmapData;
 	import flash.utils.*;
+	import scratch.ScratchColor;
 
 public class JSON {
 
@@ -280,6 +281,7 @@ public class JSON {
 		else if (value is ByteArray) buf += '"' + encodeString(value.toString()) + '"';
 		else if (value == null) buf += "null";
 		else if (value is Array) writeArray(value);
+		else if (value is ScratchColor) writeObject(value.toJSON());
 		else if (value is BitmapData) buf += "null"; // bitmaps sometimes appear in old project info objects
 		else writeObject(value);
 	}

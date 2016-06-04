@@ -64,7 +64,7 @@ public class BlockShape extends Shape {
 	public var color:uint;
 	public var hasLoopArrow:Boolean;
 
-	private var shape:int;
+	protected var shape:int;
 	private var w:int;
 	private var topH:int;
 	private var substack1H:int = EmptySubstackH;
@@ -181,7 +181,7 @@ public class BlockShape extends Shape {
 		return [f];
 	}
 
-	private function setShape(shape:int):void {
+	protected function setShape(shape:int):void {
 		this.shape = shape;
 		switch(shape) {
 		case RectShape:				drawFunction = drawRectShape; break;

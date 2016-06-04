@@ -21,8 +21,6 @@ package scratch {
 	import flash.display.*;
 	import flash.text.*;
 
-	import blocks.*;
-
 public class TalkBubble extends Sprite {
 
 	public var pointsLeft:Boolean;
@@ -30,9 +28,11 @@ public class TalkBubble extends Sprite {
 	private var type:String; // 'say' or 'think'
 	private var style:String; // 'say' or 'ask' or 'result'
 	private var shape:Shape;
-	private var text:*;
+	private var contents:DisplayObject;
 	private var source:Object;
 	private static var textFormat:TextFormat = new TextFormat(CSS.font, 14, 0, true, null, null, null, null, TextFormatAlign.CENTER);
+	private static var shoutFormat:TextFormat = new TextFormat(CSS.font, 28, 0, true, null, null, null, null, TextFormatAlign.CENTER);
+	private static var whisperFormat:TextFormat = new TextFormat(CSS.font, 13, 0, false, true, null, null, null, TextFormatAlign.CENTER);
 	private static var resultFormat:TextFormat = new TextFormat(CSS.font, 12, CSS.textColor, null, null, null, null, null, TextFormatAlign.CENTER);
 	private var outlineColor:int = 0xA0A0A0;
 	private var radius:int = 8;  // corner radius
@@ -45,7 +45,7 @@ public class TalkBubble extends Sprite {
 	private var pDropX:int = 8;
 	private var lineWidth:Number = 3;
 
-	public function TalkBubble(s:*, type:String, style:String, source:Object) {
+	public function TalkBubble(c:*, type:String, style:String, source:Object) {
 		this.type = type;
 		this.style = style;
 		this.source = source;
@@ -65,9 +65,17 @@ public class TalkBubble extends Sprite {
 		pointsLeft = true;
 		shape = new Shape();
 		addChild(shape);
-		text = makeText(s);
-		addChild(text);
-		setText(s);
+		if (c is DisplayObject) {
+			contents = c;
+			contents.x = padding;
+			contents.y = padding;
+			addChild(contents);
+			setWidthHeight(Math.max(minWidth, contents.width + padding * 2), contents.height + padding * 2);
+		} else {
+			contents = makeText();
+			addChild(contents);
+			setText(String(c) || ' ');
+		}
 	}
 
 	public function setDirection(dir:String):void {
@@ -76,52 +84,41 @@ public class TalkBubble extends Sprite {
 		var newValue:Boolean = (dir == 'left');
 		if (pointsLeft == newValue) return;
 		pointsLeft = newValue;
-		setWidthHeight(text.width + padding * 2, text.height + padding * 2);
+		setWidthHeight(contents.width + padding * 2, contents.height + padding * 2);
 	}
 
-	public function getText():* { 
-		if (text is BlockArg) return text.color;
-		return text.text;
-	}
+	public function getText():* { return contents is TextField ? TextField(contents).text : contents; }
 
 	public function getSource():Object { return source; }
 
-	private function setText(s:*):void {
-		if (s is ScratchColor) return setWidthHeight(19, 19);
+	private function setText(s:String):void {
+		if (!(contents is TextField)) return;
 		var desiredWidth:int = 135;
-		text.width = desiredWidth + 100; // wider than desiredWidth
-		text.text = s;
-		text.width = Math.max(minWidth, Math.min(text.textWidth + 8, desiredWidth)); // fix word wrap
-		setWidthHeight(text.width + padding * 2, text.height + padding * 2);
+		contents.width = desiredWidth + 100; // wider than desiredWidth
+		TextField(contents).text = s;
+		contents.width = Math.max(minWidth, Math.min(TextField(contents).textWidth + 8, desiredWidth)); // fix word wrap
+		setWidthHeight(contents.width + padding * 2, contents.height + padding * 2);
 	}
 
 	private function setWidthHeight(w:int, h:int):void {
 		var g:Graphics = shape.graphics;
 		g.clear();
 		g.beginFill(0xFFFFFF);
-		g.lineStyle(lineWidth, outlineColor, 1, true);
+		g.lineStyle(lineWidth, outlineColor);
 		if (type == 'think') drawThink(w, h);
 		else drawTalk(w, h);
 	}
 
-	private function makeText(s:*):* {
-		var result:*;
-		if (s is ScratchColor) {
-			result = new BlockArg('c', s);
-			result.x = padding;
-			result.y = padding;
-			return result;
-		} else {
-			result = new TextField();
-			result.autoSize = TextFieldAutoSize.LEFT;
-			result.defaultTextFormat = style == 'result' ? resultFormat : textFormat;
-			result.selectable = false;  // not selectable
-			result.type = 'dynamic';  // not editable
-			result.wordWrap = true;
-			result.x = padding;
-			result.y = padding;
-			return result;
-		}
+	private function makeText():TextField {
+		var result:TextField = new TextField();
+		result.autoSize = TextFieldAutoSize.LEFT;
+		result.defaultTextFormat = style == 'result' ? resultFormat : type == 'shout' ? shoutFormat : type == 'whisper' ? whisperFormat : textFormat;
+		result.selectable = false;  // not selectable
+		result.type = 'dynamic';  // not editable
+		result.wordWrap = true;
+		result.x = padding;
+		result.y = padding;
+		return result;
 	}
 
 	private function drawTalk(w:int, h:int):void {

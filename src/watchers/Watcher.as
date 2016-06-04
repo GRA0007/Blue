@@ -48,7 +48,8 @@ import primitives.*;
 public class Watcher extends Sprite implements DragClient {
 
 	private static const decimalPlaces:uint = 6;
-	public static function formatValue(value:*):String {
+	public static function formatValue(value:*):* {
+		if (value is DisplayObject) return value;
 		if (value is Number || (value is String && String(parseFloat(value)) === value)) {
 			// show at most N digits after the decimal point
 			value = Number(Number(value).toFixed(decimalPlaces));
