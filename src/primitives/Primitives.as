@@ -240,9 +240,20 @@ public class Primitives {
 		primTable[":mode"] = function(b:*):* {
 			var mod:* = b[0];
 			switch(mod) {
-				case "fullscreen": app.activateTurboMode();
-				case "normal": app.setSmallStageMode(false);
-				case "small stage": app.setSmallStageMode(true);
+				case "small stage": {
+					app.setPresentationMode(false);
+					if (!app.stageIsContracted) app.toggleSmallStage();
+					break;
+				}
+				case "fullscreen": {
+					app.setPresentationMode(true);
+					break;
+				}
+				case "normal": {
+					app.setPresentationMode(false);
+					app.setSmallStageMode(false);
+					break;
+				}
 			}
 			return;
 		}
