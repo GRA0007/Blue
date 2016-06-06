@@ -129,7 +129,7 @@ public class Scratch extends Sprite {
 	// UI Parts
 	public var libraryPart:LibraryPart;
 	protected var topBarPart:TopBarPart;
-	protected var stagePart:StagePart;
+	public var stagePart:StagePart;
 	private var tabsPart:TabsPart;
 	protected var scriptsPart:ScriptsPart;
 	public var imagesPart:ImagesPart;

@@ -263,9 +263,21 @@ public class Primitives {
 		primTable["toggleTurboMode"] = function(b:*):void {
 			var ac:* = b[0];
 			switch(ac) {
-				case "activate": app.activateTurboMode();
-				case "deactivate": app.deactivateTurboMode();
-				case "toggle": app.toggleTurboMode();
+				case "deactivate": {
+					interp.turboMode =  false;
+					Scratch.app.stagePart.refresh();
+					break;
+				};
+				case "activate": {
+					interp.turboMode = true;
+					Scratch.app.stagePart.refresh();
+					break;
+				};
+				case "toggle": {
+					interp.turboMode = !interp.turboMode;
+					Scratch.app.stagePart.refresh();
+					break;
+				};
 			}
 		}
 		primTable["turboMode"] = function(b:*):Boolean {
