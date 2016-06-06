@@ -61,7 +61,7 @@ public class Thread {
 		pushStateForBlock(b);
 	}
 
-	public function pushStateForBlock(b:Block):void {
+	public function pushStateForBlock(b:*):void {
 		if (sp >= (stack.length - 1)) growStack();
 		var old:StackFrame = stack[sp++];
 		old.block = block;

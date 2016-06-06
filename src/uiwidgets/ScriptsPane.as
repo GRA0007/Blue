@@ -226,7 +226,11 @@ public class ScriptsPane extends ScrollFrameContents {
 			if(app.editMode) b.hideRunFeedback();
 			b.cacheAsBitmap = false;
 			if (b.isReporter) {
+				//if (nearestTarget[1].parent is MultiBlockArg) {
+				//MultiBlockArg(nearestTarget[1].parent).replaceArgWithBlock(nearestTarget[1], b, this);
+				//	} else {
 				Block(nearestTarget[1].parent).replaceArgWithBlock(nearestTarget[1], b, this);
+				//}
 			} else {
 				var targetCmd:Block = nearestTarget[1];
 				switch (nearestTarget[2]) {
@@ -325,7 +329,14 @@ return true; // xxx disable this check for now; it was causing confusion at Scra
 				var o:DisplayObject = b.args[i];
 				if ((o is Block) || (o is BlockArg)) {
 					var p:Point = o.localToGlobal(new Point(0, 0));
-					possibleTargets.push([p, o, INSERT_NORMAL]);
+					if (o is MultiBlockArg) {
+						//for each (var field:* in (o as MultiBlockArg).fields) {
+						//	if (field is Block) findReporterTargetsIn(Block(field));
+						//	if (field is BlockArg) possibleTargets.push([field.localToGlobal(new Point(0, 0)), field, INSERT_NORMAL]);
+						//}
+					} else {
+						if (o is BlockArg) possibleTargets.push([p, o, INSERT_NORMAL]);
+					}
 					if (o is Block) findReporterTargetsIn(Block(o));
 				}
 			}
@@ -380,6 +391,7 @@ return true; // xxx disable this check for now; it was causing confusion at Scra
 			if (Block(target.parent).type == 'h') return false;
 			return menusThatAcceptReporters.indexOf(BlockArg(target).menuName) > -1;
 		}
+		if (targetType == 'q') return false;
 		if (targetType == 'b') return dropType == 'b';
 		return true;
 	}

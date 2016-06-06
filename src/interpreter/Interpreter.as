@@ -337,7 +337,7 @@ public class Interpreter {
 		if (b.rightToLeft) { i = args.length - i - 1; }
 		var a:* = b.args[i];
 		if (a is BlockArg) {
- 			activeThread.values.push((a as BlockArg).argValue);
+ 			activeThread.values.push((a as BlockArg).getArgValue());
  			return false;
 		}
 		activeThread.pushStateForBlock(a as Block);
@@ -834,7 +834,7 @@ public class Interpreter {
 	private function primDefineVars(b:Array):void {
 		var block:Block = activeThread.block;
 		var tempVarsDict:Dictionary = activeThread.tempVars;
-		var newTempVars:Array=b[0].split(",");
+		var newTempVars:Array=b[0]
 		var i:int = -1;
 		if (activeThread.firstTime) {
 			// Add temporary variables

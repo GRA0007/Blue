@@ -180,7 +180,7 @@ public class BlockArg extends Sprite {
 		base.redraw();
 	}
 
-	public function startEditing():void {
+	public function startEditing(evt:*):void {
 		if (isEditable) {
 			field.type = TextFieldType.INPUT;
 			field.selectable = true;
@@ -190,7 +190,7 @@ public class BlockArg extends Sprite {
 		}
 	}
 
-	private function stopEditing(ignore:*):void {
+	protected function stopEditing(ignore:*):void {
 		field.type = TextFieldType.DYNAMIC;
 		field.selectable = false;
 	}
@@ -205,7 +205,11 @@ public class BlockArg extends Sprite {
 		return [f];
 	}
 
-	private function makeTextField():TextField {
+	public function getArgValue():* {
+		return argValue;
+	}
+
+	protected function makeTextField():TextField {
 		var tf:TextField = new TextField();
 		var offsets:Array = argTextInsets(type);
 		tf.x = offsets[0];
@@ -217,7 +221,7 @@ public class BlockArg extends Sprite {
 		return tf;
 	}
 
-	private function argTextInsets(type:String = ''):Array {
+	protected function argTextInsets(type:String = ''):Array {
 		if (type == 'b') return [5, 0];
 		return numberType ? [3, 0] : [2, -1];
 	}
@@ -245,6 +249,7 @@ public class BlockArg extends Sprite {
 		base.setWidth(w);
 		base.redraw();
 		if (parent is Block) Block(parent).fixExpressionLayout();
+		if (parent is MultiBlockArg) MultiBlockArg(parent).fixLayout();
 
 		if (evt && Scratch.app) Scratch.app.setSaveNeeded();
 	}
@@ -258,7 +263,7 @@ public class BlockArg extends Sprite {
 		}
 	}
 
-	private function chooseMenuItems():void {
+	protected function chooseMenuItems():void {
 		var d:DialogBox = new DialogBox(chooseMenuItems2);
 		d.addTitle('Edit Menu Items');
 		d.addWidget(new ListWatcher('', (type.length == 1) ? [] : (type.slice(3,type.length - 1)).split(",") ));
@@ -266,7 +271,7 @@ public class BlockArg extends Sprite {
 		d.showOnStage(Scratch.app.stage, true);
 	}
 
-	private function chooseMenuItems2(dialog:DialogBox):void {
+	protected function chooseMenuItems2(dialog:DialogBox):void {
 		var listItems:Array = ListWatcher(dialog.widget).contents;
 		if (listItems.length == 0) {
 			type = 'm';

@@ -481,7 +481,7 @@ public class ProcedureSpecEditor extends Sprite {
 
 	private function editArg(evt:MouseEvent):void {
 		var arg:BlockArg = evt.target.parent as BlockArg;
-		if (arg && arg.isEditable) arg.startEditing();
+		if (arg && arg.isEditable) arg.startEditing(evt);
 	}
 
 	private function mouseDown(evt:MouseEvent):void {

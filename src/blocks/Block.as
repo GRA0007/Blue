@@ -617,7 +617,7 @@ public class Block extends Sprite {
 			var argToCopy:* = srcArgs[i];
 			if (argToCopy is BlockArg) {
 				var arg:BlockArg = argToCopy;
-				BlockArg(args[i]).setArgValue(arg.argValue, arg.labelOrNull());
+				BlockArg(args[i]).setArgValue(arg.getArgValue(), arg.labelOrNull());
 			}
 			if (argToCopy is Block) {
 				var newArg:Block = Block(argToCopy).duplicate(false);
@@ -693,6 +693,7 @@ public class Block extends Sprite {
 		if (oldNext != null) b.appendBlock(oldNext);
 
 		topBlock().fixStackLayout();
+		if (parent is MultiBlockArg) MultiBlockArg(parent).fixLayout();
 	}
 
 	public function insertBlockAbove(b:Block):void {
@@ -763,7 +764,7 @@ public class Block extends Sprite {
 		}
 	}
 
-	private function owningBlock():Block {
+	public function owningBlock():Block {
 		var b:Block = this;
 		while (true) {
 			if (b.parent is Block) {
@@ -803,7 +804,7 @@ public class Block extends Sprite {
 			if (argSpec == "m") return new BlockArg("m", c, false, s.slice(3));
 			if (argSpec == "n") return new BlockArg("n", c, true);
 			if (argSpec == "s") return new BlockArg("s", c, true);
-			if (argSpec == "q") return new MultiBlockArg("s", c);
+			if (argSpec == "q") return new MultiBlockArg("q", c);
 		} else if (s.length >= 2 && s.charAt(0) == "@") { // icon spec
 			var icon:* = Specs.IconNamed(s.slice(1));
 			return (icon) ? icon : makeLabel(s);
@@ -953,7 +954,7 @@ public class Block extends Sprite {
 		var arg:BlockArg = evt.target as BlockArg;
 		if (!arg) arg = evt.target.parent as BlockArg;
 		if (arg && arg.isEditable && (arg.parent == this)) {
-			arg.startEditing();
+			arg.startEditing(evt);
 			return true;
 		}
 		return false;
@@ -1030,7 +1031,7 @@ public class Block extends Sprite {
 				} else {
 					var a:BlockArg = target.args[i] as BlockArg;
 					if (a && a.field && a.isEditable) {
-						a.startEditing();
+						a.startEditing(evt);
 						return;
 					}
 					i += delta;

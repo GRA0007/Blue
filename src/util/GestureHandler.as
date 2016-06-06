@@ -486,6 +486,7 @@ public class GestureHandler {
 			var b:Block = Block(obj);
 			b.saveOriginalState();
 			if (b.parent is Block) Block(b.parent).removeBlock(b);
+			if (b.parent is MultiBlockArg) MultiBlockArg(b.parent).removeBlock(b);
 			if (b.parent != null) b.parent.removeChild(b);
 			app.scriptsPane.prepareToDrag(b);
 		} else if (obj is ScratchComment) {

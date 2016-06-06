@@ -65,8 +65,8 @@ public class BlockShape extends Shape {
 	public var hasLoopArrow:Boolean;
 
 	protected var shape:int;
-	private var w:int;
-	private var topH:int;
+	public var w:int;
+	public var topH:int;
 	private var substack1H:int = EmptySubstackH;
 	private var substack2H:int = EmptySubstackH;
 	private var drawFunction:Function = drawRectShape;
@@ -94,6 +94,12 @@ public class BlockShape extends Shape {
 	public function setWidth(newW:int):void {
 		if (newW == w) return;
 		w = newW;
+		redrawNeeded = true;
+	}
+
+	public function setTopHeight(newTopH:int):void {
+		if (newTopH == topH) return;
+		topH = newTopH;
 		redrawNeeded = true;
 	}
 

@@ -415,7 +415,7 @@ public class Specs {
 		//More Blocks 10
 		["report %s",							"f", 10, "report",				""],
 		["yield",								" ", 10, "yield"],
-		["define temporary variables %s",		"c", 10, "doDefineVars",		"foo,bar,baz"],
+		["define temporary variables %q",		"c", 10, "doDefineVars",		["foo", "bar", "baz"]],
 		["get temporary variable %s",			"r", 10, "getDefinedVars",		"foo"],
 		["set temporary variable %s to %s",		" ", 10, "setDefinedVars",		"foo", "0"],
 

@@ -81,10 +81,15 @@ public class BlockIO {
 			// Note: arguments are always saved in normalized (i.e. left-to-right) order
 			if (a is Block) result.push(blockToArray(a));
 			if (a is BlockArg) {
-				var argVal:* = BlockArg(a).argValue;
-				if (argVal is ScratchObj) {
-					// convert a Scratch sprite/stage reference to a name string
-					argVal = ScratchObj(argVal).objName;
+				var argVal:*;
+				if (a is MultiBlockArg) {
+					argVal = ["multi",MultiBlockArg(a).getArgValue()];
+					} else {
+					argVal = BlockArg(a).getArgValue();
+					if (argVal is ScratchObj) {
+						// convert a Scratch sprite/stage reference to a name string
+						argVal = ScratchObj(argVal).objName;
+					}
 				}
 				result.push(argVal);
 			}
@@ -94,7 +99,7 @@ public class BlockIO {
 		return result;
 	}
 
-	private static function arrayToBlock(cmd:Array, undefinedBlockType:String, forStage:Boolean = false):Block {
+	private static function arrayToBlock(cmd:Array, undefinedBlockType:String, forStage:Boolean = false):* {
 		// Make a block from an array of form: <op><arg>*
 
 		if (cmd[0] == 'getUserName') Scratch.app.usesUserNameBlock = true;
@@ -105,6 +110,10 @@ public class BlockIO {
 		var b:Block;
 		b = convertOldCmd(cmd);
 		if (b) { b.fixArgLayout(); return b }
+
+		if (cmd[0] == 'multi') {
+			return cmd[1];
+		}
 
 		if (cmd[0] == Specs.CALL || cmd[0] == Specs.CALL_BOOLEAN || cmd[0] == Specs.CALL_NUMBER || cmd[0] == Specs.CALL_C)  {
 			b = new Block(cmd[1], cmd[0] == Specs.CALL_BOOLEAN ? 'b' : cmd[0] == Specs.CALL_NUMBER ? 'r' : cmd[0] == Specs.CALL_C ? 'c' : '', Specs.procedureColor, Specs.CALL);
