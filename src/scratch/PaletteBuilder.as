@@ -345,7 +345,7 @@ public class PaletteBuilder {
 	}
 
 	private function isSpriteSpecific(op:String):Boolean {
-		const spriteSpecific:Array = ['costumeIndex', 'xpos', 'ypos', 'heading', 'scale', 'volume', 'rotationStyle', 'visible', 'isPenDown', 'penHue', 'penShade', 'penSize', 'costumeName'/*, ':effect'*/];
+		const spriteSpecific:Array = ['costumeIndex', 'xpos', 'ypos', 'heading', 'scale', 'volume', 'rotationStyle', 'visible', 'isPenDown', 'penHue', 'penShade', 'penSize', 'costumeName', ':effect'];
 		return spriteSpecific.indexOf(op) > -1;
 	}
 

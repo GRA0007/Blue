@@ -185,7 +185,7 @@ public class Watcher extends Sprite implements DragClient {
 		else if (cmd == 'timeAndDate')
 			setLabel(Translator.map(param));
 		else if (cmd == ':effect')
-			setLabel(Translator.map(param) + ' effect');
+			setLabel((target.isStage ? '' : target.objName + ': ') + Translator.map(param) + ' effect');
 		else if (cmd == 'senseVideoMotion')
 			setLabel((target.isStage ? '' : target.objName + ': ') + Translator.map('video ' + param));
 		else
