@@ -1112,7 +1112,7 @@ public class Scratch extends Sprite {
 		m.addItem('Small stage layout', toggleSmallStage, true, stageIsContracted);
 		m.addLine();
 		m.addItem('Turbo mode', toggleTurboMode, true, interp.turboMode);
-		m.addItem('Normal Stepping Speed', toggleSingleSteppingStop);
+		m.addItem('Normal Stepping Speed', toggleSingleSteppingStop, true, !(interp.turboMode || interp.singleSteppingFast || interp.singleSteppingSlow));
 		m.addItem('Single Stepping Fast', toggleSingleSteppingFast, true, interp.singleSteppingFast);
 		m.addItem('Single Stepping Slow', toggleSingleSteppingSlow, true, interp.singleSteppingSlow);
 		addEditMenuItems(b, m);
@@ -1369,8 +1369,8 @@ public class Scratch extends Sprite {
 	}
 
 	public function toggleTurboMode():void {
-		interp.turboMode = true;
 		toggleSingleSteppingStop();
+		interp.turboMode = true;
 		stagePart.refresh();
 	}
 	
