@@ -298,7 +298,7 @@ public class Interpreter {
 
 
 	private function needsTimeToHighlight():Boolean {
-		if (singleSteppingFast || singleSteppingSlow) return timeLeftToHighlight() > 0;
+		if (singleSteppingFast || singleSteppingSlow) return (timeLeftToHighlight() > 0) && activeThread.block.canHighlight();
 		return false;
 	}
 
