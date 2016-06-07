@@ -385,6 +385,26 @@ public class Block extends Sprite {
 		return [f];
 	}
 
+	public function showBlockHighlight():void {
+		base.showHighlightFilters()
+	}
+
+	public function hideBlockHighlight():void {
+		base.hideHighlightFilters()
+	}
+
+	public function hasHighlight():Boolean {
+		return base.hasHighlightFilters()
+	}
+
+	public function fullBlockHighlight():void {
+		base.dimHighlightFilters(false)
+	}
+
+	public function dimBlockHighlight():void {
+		base.dimHighlightFilters(true)
+	}
+
 	public function saveOriginalState():void {
 		originalParent = parent;
 		if (parent) {

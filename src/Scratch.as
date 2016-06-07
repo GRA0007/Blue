@@ -1110,7 +1110,11 @@ public class Scratch extends Sprite {
 		m.addItem('Undelete', runtime.undelete, runtime.canUndelete());
 		m.addLine();
 		m.addItem('Small stage layout', toggleSmallStage, true, stageIsContracted);
+		m.addLine();
 		m.addItem('Turbo mode', toggleTurboMode, true, interp.turboMode);
+		m.addItem('Normal Stepping Speed', toggleSingleSteppingStop);
+		m.addItem('Single Stepping Fast', toggleSingleSteppingFast, true, interp.singleSteppingFast);
+		m.addItem('Single Stepping Slow', toggleSingleSteppingSlow, true, interp.singleSteppingSlow);
 		addEditMenuItems(b, m);
 		var p:Point = b.localToGlobal(new Point(0, 0));
 		m.showOnStage(stage, b.x, topBarPart.bottom() - 1);
@@ -1365,7 +1369,29 @@ public class Scratch extends Sprite {
 	}
 
 	public function toggleTurboMode():void {
-		interp.turboMode = !interp.turboMode;
+		interp.turboMode = true;
+		toggleSingleSteppingStop();
+		stagePart.refresh();
+	}
+	
+	public function toggleSingleSteppingFast():void {
+		interp.singleSteppingFast = true;
+		interp.singleSteppingSlow = false;
+		interp.turboMode = false;
+		stagePart.refresh();
+	}
+
+	public function toggleSingleSteppingSlow():void {
+		interp.singleSteppingSlow = true;
+		interp.singleSteppingFast = false;
+		interp.turboMode = false;
+		stagePart.refresh();
+	}
+	
+	public function toggleSingleSteppingStop():void {
+		interp.singleSteppingFast = false;
+		interp.singleSteppingSlow = false;	
+		interp.turboMode = false;
 		stagePart.refresh();
 	}
 

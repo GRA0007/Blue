@@ -74,7 +74,12 @@ public class Interpreter {
 
 	public var activeThread:Thread;				// current thread
 	public var currentMSecs:int = getTimer();	// millisecond clock for the current step
+
+	// Variables for interpreter speed
 	public var turboMode:Boolean = false;
+	public var singleSteppingFast:Boolean = false;
+	public var singleSteppingSlow:Boolean = false;
+	private var beginStepTime:int = getTimer();
 
 	private var app:Scratch;
 	private var primTable:Dictionary;		// maps opcodes to functions
@@ -285,6 +290,18 @@ public class Interpreter {
 				yield = false;
 			}
 		}
+	}
+
+
+	private function needsTimeToHighlight():Boolean {
+		if (singleSteppingFast || singleSteppingSlow) return timeLeftToHighlight() > 0;
+		return false;
+	}
+
+	private function timeLeftToHighlight():int {
+		if (singleSteppingFast) return -1 * (getTimer() - (beginStepTime + 30));
+		if (singleSteppingSlow) return -1 * (getTimer() + - (beginStepTime + 200));
+		return 0;
 	}
 
 	private function clearWarpBlock():void {
