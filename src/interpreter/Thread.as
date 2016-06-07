@@ -48,11 +48,14 @@ public class Thread {
 	private var stack:Vector.<StackFrame>;
 	private var sp:int;
 
-	public function Thread(b:Block, targetObj:*, startupDelay:int = 0) {
+	private var interp:*;
+
+	public function Thread(b:Block, targetObj:*, interpreter:*, startupDelay:int = 0) {
 		target = targetObj;
 		stop();
 		topBlock = b;
 		startDelayCount = startupDelay;
+		interp = interpreter;
 		// initForBlock
 		block = null;
 		firstTime = true;
@@ -72,6 +75,7 @@ public class Thread {
 		old.loopBlock = loopBlock;
 		// initForBlock
 		block = b;
+		if (block && block is Block && !interp.isNormalSpeed()) block.fullBlockHighlight();
 		firstTime = true;
 		tmp = 0;
 		values = [];
@@ -80,18 +84,21 @@ public class Thread {
 	public function popState():Boolean {
 		if (sp == 0) return false;
 		var old:StackFrame = stack[--sp];
+		if (block && block is Block) block.hideBlockHighlight();
 		block		= old.block;
 		firstTime	= old.firstTime;
 		tmp			= old.tmp;
 		values		= old.values;
 		args		= old.args;
 		loopBlock	= old.loopBlock;
+		if (block && block is Block && !interp.isNormalSpeed()) block.fullBlockHighlight();
 		return true;
 	}
 
 	public function stackEmpty():Boolean { return sp == 0 }
 
 	public function stop():void {
+		if (block && block is Block) block.hideBlockHighlight();
 		block = null;
 		values = [];
 		stack = new Vector.<StackFrame>(4);
@@ -136,6 +143,7 @@ public class Thread {
 
 	private function initForBlock(b:Block):void {
 		block = b;
+		if (block && block is Block && !interp.isNormalSpeed()) block.fullBlockHighlight();
 		firstTime = true;
 		tmp = 0;
 		loopBlock = null;

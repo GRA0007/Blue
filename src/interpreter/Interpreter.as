@@ -74,7 +74,12 @@ public class Interpreter {
 
 	public var activeThread:Thread;				// current thread
 	public var currentMSecs:int = getTimer();	// millisecond clock for the current step
+
+	// Variables for interpreter speed
 	public var turboMode:Boolean = false;
+	public var singleSteppingFast:Boolean = false;
+	public var singleSteppingSlow:Boolean = false;
+	private var beginStepTime:Number = getTimer();
 
 	private var app:Scratch;
 	private var primTable:Dictionary;		// maps opcodes to functions
@@ -157,7 +162,7 @@ public class Interpreter {
 				b.args[0] = reporter;
 			}
 			if (app.editMode && ! isBackground) topBlock.showRunFeedback();
-			var t:Thread = new Thread(b, targetObj, startupDelay);
+			var t:Thread = new Thread(b, targetObj, this, startupDelay);
 			if (topBlock.isReporter) bubbleThread = t;
 			t.topBlock = topBlock;
 			threads.push(t);
@@ -179,7 +184,7 @@ public class Interpreter {
 	}
 
 	public function startThreadForClone(b:Block, clone:*):void {
-		threads.push(new Thread(b, clone));
+		threads.push(new Thread(b, clone, this));
 	}
 
 	public function stopThreadsFor(target:*, skipActiveThread:Boolean = false):void {
@@ -199,7 +204,7 @@ public class Interpreter {
 	public function restartThread(b:Block, targetObj:*):Thread {
 		// used by broadcast, click hats, and when key pressed hats
 		// stop any thread running on b, then start a new thread on b
-		var newThread:Thread = new Thread(b, targetObj);
+		var newThread:Thread = new Thread(b, targetObj, this);
 		var wasRunning:Boolean = false;
 		for (var i:int = 0; i < threads.length; i++) {
 			if ((threads[i].topBlock == b) && (threads[i].target == targetObj)) {
@@ -231,12 +236,13 @@ public class Interpreter {
 		currentMSecs = getTimer();
 		if (threads.length == 0) return;
 		while ((currentMSecs - startTime) < workTime) {
+			if (activeThread && needsTimeToHighlight()) return;
 			if (warpThread && (warpThread.block == null)) clearWarpBlock();
 			var threadStopped:Boolean = false;
 			var runnableCount:int = 0;
 			for each (activeThread in threads) {
 				isWaiting = false;
-				stepActiveThread();
+				if (stepActiveThread()) return; // if we need more time to single-step, return
 				if (activeThread.block == null) threadStopped = true;
 				if (!isWaiting) runnableCount++;
 			}
@@ -257,34 +263,53 @@ public class Interpreter {
 		}
 	}
 
-	private function stepActiveThread():void {
-		if (activeThread.block == null) return;
-		if (activeThread.startDelayCount > 0) { activeThread.startDelayCount--; doRedraw = true; return; }
+	private function stepActiveThread():Boolean {
+		if (activeThread.block == null) return false;
+		if (activeThread.startDelayCount > 0) { activeThread.startDelayCount--; doRedraw = true; return false; }
 		if (!(activeThread.target.isStage || (activeThread.target.parent is ScratchStage))) {
 			// sprite is being dragged
 			if (app.editMode) {
 				// don't run scripts of a sprite that is being dragged in edit mode, but do update the screen
 				doRedraw = true;
-				return;
+				return false; // don't stop other scripts
 			}
 		}
 
 		yield = false;
 		while (true) {
 			if (activeThread == warpThread) currentMSecs = getTimer();
-			evalCmd(activeThread.block);
+			beginStepTime = getTimer();
+			if (evalCmd(activeThread.block)) return true;
 			if (activeThread.block == null) {
 				//click on reporter shows value in log
 				if (activeThread.values.length) {
 					app.jsThrowError(activeThread.values[0]);
 				}
-				return;
+				return needsTimeToHighlight();
 			}
 			if (yield) {
-				if (activeThread != warpThread || currentMSecs - startTime > warpMSecs) return;
+				if (activeThread != warpThread || currentMSecs - startTime > warpMSecs) return needsTimeToHighlight();
 				yield = false;
 			}
+			if (needsTimeToHighlight()) return true; // if this is a reporter block and we need to wait for a highlight
 		}
+		return false; // Never gets here
+	}
+
+
+	private function needsTimeToHighlight():Boolean {
+		if (singleSteppingFast || singleSteppingSlow) return (timeLeftToHighlight() > 0) && activeThread.block.canHighlight();
+		return false;
+	}
+
+	private function timeLeftToHighlight():Number {
+		if (singleSteppingFast) return ((beginStepTime + 30) - getTimer());
+		if (singleSteppingSlow) return ((beginStepTime + 200) - getTimer());
+		return 0;
+	}
+
+	public function isNormalSpeed():Boolean {
+		return !(singleSteppingSlow || singleSteppingFast);
 	}
 
 	private function clearWarpBlock():void {
@@ -293,7 +318,7 @@ public class Interpreter {
 	}
 
 	/* Evaluation */
-	public function evalCmd(b:Block):void {
+	public function evalCmd(b:Block):Boolean {
 
 		var op:String = b.op;
 		if (b.opFunction == null) {
@@ -317,11 +342,14 @@ public class Interpreter {
 			// kludge: don't evaluate args for primNoop because procDef has weird ones
 			activeThread.popState();
 			if (b.nextBlock) activeThread.pushStateForBlock(b.nextBlock);
-			return;
+			return false; // don't start a wait for hat blocks
 		}
 
 		while (activeThread.values.length < b.args.length) {
-			if (evalArg(b, activeThread.values.length)) return;
+			if (evalArg(b, activeThread.values.length)) {
+				beginStepTime = getTimer();
+				return needsTimeToHighlight();
+			}
 		}
 		var v:Array = activeThread.values;
 		if (!b.isSpecialOp) {
@@ -330,6 +358,8 @@ public class Interpreter {
 			}
 		var r:* = b.opFunction(v);
 		if (!b.isSpecialOp && b.isReporter) activeThread.values.push(r);
+		beginStepTime = getTimer();
+		return needsTimeToHighlight();
 	}
 
 	public function evalArg(b:Block, i:int):Boolean {
@@ -341,6 +371,7 @@ public class Interpreter {
  			return false;
 		}
 		activeThread.pushStateForBlock(a as Block);
+		beginStepTime = getTimer();
 		return true;
 	}
 

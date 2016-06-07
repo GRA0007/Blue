@@ -114,7 +114,7 @@ public class Block extends Sprite {
 
 	private var originalParent:DisplayObjectContainer, originalRole:int, originalIndex:int, originalPosition:Point;
 
-	public function Block(spec:String, type:String = " ", color:int = 0xD00000, op:* = 0, defaultArgs:Array = null) {
+	public function Block(spec:String, type:String = " ", color:int = 0xD00000, op:* = "", defaultArgs:Array = null) {
 		this.spec = Translator.map(spec);
 		this.type = type;
 		this.op = op;
@@ -383,6 +383,31 @@ public class Block extends Sprite {
 		f.blurX = f.blurY = 12;
 		f.quality = 3;
 		return [f];
+	}
+
+	public function showBlockHighlight():void {
+		if (base is BlockShape) base.showHighlightFilters()
+	}
+
+	public function hideBlockHighlight():void {
+		if (base is BlockShape) base.hideHighlightFilters()
+	}
+
+	public function hasHighlight():Boolean {
+		if (base is BlockShape) return base.hasHighlightFilters();
+		return false;
+	}
+
+	public function fullBlockHighlight():void {
+		if (base is BlockShape) base.dimHighlightFilters(false)
+	}
+
+	public function dimBlockHighlight():void {
+		if (base is BlockShape) base.dimHighlightFilters(true)
+	}
+
+	public function canHighlight():Boolean {
+		return (base is BlockShape && !(op == "0" || op == "" || op == "yield")); // This is the base for other possible options in the future
 	}
 
 	public function saveOriginalState():void {

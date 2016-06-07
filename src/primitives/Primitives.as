@@ -275,16 +275,22 @@ public class Primitives {
 			var ac:* = b[0];
 			switch(ac) {
 				case "deactivate": {
-					interp.turboMode =  false;
+						interp.singleSteppingFast = false;
+					interp.singleSteppingSlow = false;	
+					interp.turboMode = false;
 					Scratch.app.stagePart.refresh();
 					break;
 				};
 				case "activate": {
+						interp.singleSteppingFast = false;
+					interp.singleSteppingSlow = false;	
 					interp.turboMode = true;
 					Scratch.app.stagePart.refresh();
 					break;
 				};
 				case "toggle": {
+						interp.singleSteppingFast = false;
+					interp.singleSteppingSlow = false;	
 					interp.turboMode = !interp.turboMode;
 					Scratch.app.stagePart.refresh();
 					break;
