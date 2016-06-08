@@ -28,13 +28,14 @@ import util.Color;
 public class ListCell extends Sprite {
 
 	private const format:TextFormat = new TextFormat(CSS.font, 11, 0xFFFFFF, true);
-	private static var normalColor:int = Specs.listColor;
-	private static var focusedColor:int = Color.mixRGB(Color.scaleBrightness(Specs.listColor, 2), 0xEEEEEE, 0.6);
+	private var normalColor:int = Specs.listColor;
+	private var focusedColor:int = Color.mixRGB(Color.scaleBrightness(Specs.listColor, 2), 0xEEEEEE, 0.6);
 
 	public var tf:TextField;
 	private var frame:ResizeableFrame;
 	private var deleteButton:IconButton;
 	private var deleteItem:Function;
+	private var hasFocus:Boolean;
 
 	public function ListCell(s:String, width:int, whenChanged:Function, keyPress:Function, deleteItem:Function) {
 		frame = new ResizeableFrame(0xFFFFFF, normalColor, 6, true);
@@ -43,6 +44,29 @@ public class ListCell extends Sprite {
 		tf.text = s;
 		deleteButton = new IconButton(deleteItem, 'deleteItem');
 		setWidth(width);
+	}
+
+	private function determineBrightness(colour:uint):Number {
+    var rgb:Array = HexToRGB(colour);
+    return Math.sqrt((rgb[0] * rgb[0] * 0.241) + (rgb[1] * rgb[1] * 0.691) + (rgb[2] * rgb[2] * 0.068) ) / 255;
+	}
+
+	function HexToRGB(hex:uint):Array {
+    var rgb:Array = [];
+            
+    var r:uint = hex >> 16 & 0xFF;
+    var g:uint = hex >> 8 & 0xFF;
+    var b:uint = hex & 0xFF;
+            
+    rgb.push(r, g, b);
+    return rgb;
+	}
+
+	public function setColor(c:int):void {
+		normalColor = c;
+		focusedColor = Color.mixRGB(Color.scaleBrightness(c, 2), 0xEEEEEE, 0.6);
+		frame.setColor(hasFocus ? focusedColor : normalColor);
+		tf.textColor = (determineBrightness(hasFocus ? focusedColor : normalColor) > 50) ? 0 : 0xFFFFFF;
 	}
 
 	public function setText(s:String, w:int = 0):void {
@@ -88,9 +112,9 @@ public class ListCell extends Sprite {
 	}
 
 	private function focusChange(e:FocusEvent):void {
-		var hasFocus:Boolean = e.type == FocusEvent.FOCUS_IN && tf.type == 'input';
+		hasFocus = e.type == FocusEvent.FOCUS_IN && tf.type == 'input';
 		frame.setColor(hasFocus ? focusedColor : normalColor);
-		tf.textColor = hasFocus ? 0 : 0xFFFFFF;
+		tf.textColor = (determineBrightness(hasFocus ? focusedColor : normalColor) > 50) ? 0 : 0xFFFFFF;
 		setTimeout(hasFocus ? addDeleteButton : removeDeleteButton, 1);
 	}
 

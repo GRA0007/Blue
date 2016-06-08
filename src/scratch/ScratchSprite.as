@@ -72,6 +72,7 @@ public class ScratchSprite extends ScratchObj {
 	private var geomShape:Shape;
 
 	public function ScratchSprite(name:String = null) {
+		skipNoChange = false; // TLF: should be false anyway, right?
 		objName = Scratch.app.stagePane.unusedSpriteName(name || Translator.map('Sprite1'));
 		filterPack = new FilterPack(this);
 		initMedia();
@@ -83,6 +84,7 @@ public class ScratchSprite extends ScratchObj {
 		img.addChild(geomShape);
 		showCostume(0);
 		setScratchXY(0, 0);
+		skipNoChange = true; // TLF: now that the costume was set up above
 	}
 
 	private function initMedia():void {
@@ -93,16 +95,21 @@ public class ScratchSprite extends ScratchObj {
 	}
 
 	public function setInitialCostume(c:ScratchCostume):void {
+		currentCostumeIndex = -999; // TLF: bit of a hack to ensure it does switch below...
 		costumes = [c];
 		showCostume(0);
 	}
 
 	public function setRotationStyle(newRotationStyle:String):void {
 		var oldDir:Number = direction;
-		setDirection(90);
-		if ('all around' == newRotationStyle) rotationStyle = 'normal';
-		if ('left-right' == newRotationStyle) rotationStyle = 'leftRight';
-		if ("don't rotate" == newRotationStyle) rotationStyle = "none";
+		var newRotStyle:String = newRotationStyle;
+		if ('all around' == newRotationStyle) newRotStyle = 'normal';
+		if ('left-right' == newRotationStyle) newRotStyle = 'leftRight';
+		if ("don't rotate" == newRotationStyle) newRotStyle = "none";
+		// TLF: avoid making 'non-changes' to rotation style:
+		if (skipNoChange && newRotStyle == rotationStyle) return;
+		rotationStyle = newRotStyle;
+		setDirection(90); // TLF: what does this do? -really needed...?
 		setDirection(oldDir);
 	}
 
@@ -116,6 +123,8 @@ public class ScratchSprite extends ScratchObj {
 		// Copy all the state from the given sprite. Used by both
 		// the clone block and duplicate().
 		var i:int;
+
+		skipNoChange = false; // TLF: ensure looks changes below are really made...
 
 		// Copy variables and lists.
 		for (i = 0; i < spr.variables.length; i++) {
@@ -168,6 +177,7 @@ public class ScratchSprite extends ScratchObj {
 		setScratchXY(spr.scratchX, spr.scratchY);
 		setSize(spr.getSize());
 		applyFilters();
+		skipNoChange = true; // TLF: sprite shown above, so can be inited now?
 	}
 
 	override protected function updateImage():void {
@@ -228,7 +238,9 @@ public class ScratchSprite extends ScratchObj {
 		var wasFlipped:Boolean = isCostumeFlipped();
 		d = d % 360;
 		if (d < 0) d += 360;
-		direction = (d > 180) ? d - 360 : d;
+		d = (d > 180) ? d - 360 : d;
+		if (skipNoChange && d == direction) return; // TLF: nothing changed
+		direction = d;
 		if ('normal' == rotationStyle) {
 			rotation = (direction - 90) % 360;
 		} else {
@@ -241,6 +253,10 @@ public class ScratchSprite extends ScratchObj {
 		adjustForRotationCenter();
 		if(wasFlipped != isCostumeFlipped())
 			updateRenderDetails(1);
+
+		// TLF: hopefully, this makes touching checks work for rotated sprites...
+		clearCachedBitmap();
+		updateBubble();
 	}
 
 	protected override function adjustForRotationCenter():void {
@@ -255,7 +271,10 @@ public class ScratchSprite extends ScratchObj {
 		var origH:int = img.height;
 		var minScale:Number = Math.min(1, Math.max(5 / origW, 5 / origH));
 		var maxScale:Number = Math.min((1.5 * 480) / origW, (1.5 * 360) / origH);
-		scaleX = scaleY = Math.max(minScale, Math.min(percent / 100.0, maxScale));
+		var newScale:Number = Math.max(minScale, Math.min(percent / 100.0, maxScale));
+		// TLF: do nothing if scale hasn't changed:
+		if (skipNoChange && newScale == scaleX && newScale == scaleY) return;
+		scaleX = scaleY = newScale;
 		clearCachedBitmap();
 		updateBubble();
 	}
@@ -490,6 +509,7 @@ public class ScratchSprite extends ScratchObj {
 	public function duplicateSprite(grab:Boolean = false):void {
 		var dup:ScratchSprite = duplicate();
 		dup.objName = unusedSpriteName(objName);
+		dup.skipNoChange = false; // TLF: just to be on safe side...
 		if (!grab) {
 			dup.setScratchXY(
 				int(Math.random() * 400) - 200,
@@ -504,6 +524,8 @@ public class ScratchSprite extends ScratchObj {
 				if (grab) app.gh.grabOnMouseUp(dup);
 			}
 		}
+		// TLF: should this do showCostume before it's allowed to skip?
+		dup.skipNoChange = true;
 	}
 
 	public function showDetails():void {

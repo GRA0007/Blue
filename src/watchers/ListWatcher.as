@@ -62,6 +62,8 @@ public class ListWatcher extends Sprite {
 	private var isIdle:Boolean;
 	private var limitedView:Boolean;
 
+	public var cellColor:int = Specs.listColor;
+
 	public function ListWatcher(listName:String = 'List Title', contents:Array = null, target:ScratchObj = null, limitView:Boolean = false) {
 		this.listName = listName;
 		this.target = target;
@@ -415,6 +417,11 @@ public class ListWatcher extends Sprite {
 		scrollbar.update(frac, visibleCells.length / contents.length);
 	}
 
+	public function setCellColor(newColor:int):void {
+		cellColor = newColor;
+		updateContents();
+	}
+
 	public function updateContents():void {
 //		var limitedCloudView:Boolean = isPersistent;
 //		if (limitedCloudView &&
@@ -439,6 +446,7 @@ public class ListWatcher extends Sprite {
 			cell.x = cellX;
 			cell.y = nextY;
 			cell.setEditable(isEditable);
+			cell.setColor(cellColor);
 			visibleCells.push(cell);
 			cellPane.addChild(cell);
 
@@ -588,6 +596,7 @@ public class ListWatcher extends Sprite {
 		json.writeKeyValue('width', width);
 		json.writeKeyValue('height', height);
 		json.writeKeyValue('visible', visible && (parent != null));
+		json.writeKeyValue('cellColor', cellColor)
 	}
 
 	public function readJSON(obj:Object):void {
@@ -596,6 +605,7 @@ public class ListWatcher extends Sprite {
 		isPersistent = (obj.isPersistent == undefined) ? false : obj.isPersistent; // handle old projects gracefully
 		x = obj.x;
 		y = obj.y;
+		if (obj.hasOwnProperty('cellColor')) cellColor = obj.cellColor;
 		setWidthHeight(obj.width, obj.height);
 		visible = obj.visible;
 		updateTitleAndContents();

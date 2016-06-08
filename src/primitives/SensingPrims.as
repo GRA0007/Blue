@@ -48,6 +48,7 @@ public class SensingPrims {
 
 		specialTable['doAsk']			= primAsk;
 		primTable['answer']				= function(b:*):* { return app.runtime.lastAnswer };
+		primTable['clearAnswer']		= function(b:*):* { app.runtime.lastAnswer = ''}
 
 		primTable['spriteName']			= primSpriteName;
 

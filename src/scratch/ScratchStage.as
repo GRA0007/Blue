@@ -86,6 +86,16 @@ public class ScratchStage extends ScratchObj {
 		addPenLayer();
 		initMedia();
 		showCostume(0);
+		skipNoChange = true; // TLF: stage shown above, so can be inited now?
+	}
+
+	// TLF: switches on the costume/size/rotation optimisations for Sprites
+	public function setSkipNoChange():void {
+		for(var i:int=0; i<this.numChildren; ++i) {
+			var spr:ScratchSprite = (getChildAt(i) as ScratchSprite);
+			if(spr) spr.skipNoChange = true;
+		}
+		skipNoChange = true;
 	}
 
 	public function setTempo(bpm:Number):void {

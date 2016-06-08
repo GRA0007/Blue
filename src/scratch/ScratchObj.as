@@ -65,6 +65,8 @@ public class ScratchObj extends Sprite {
 	public var instrument:int = 0;
 	public var filterPack:FilterPack;
 	public var isClone:Boolean;
+	// TLF: allows optimisation of 'non-changes' to costume, size, rotation:
+	public var skipNoChange:Boolean = false;
 
 	public var img:Sprite; // holds a bitmap or svg object, after applying image filters, scale, and rotation
 	private var lastCostume:ScratchCostume;
@@ -113,7 +115,11 @@ public class ScratchObj extends Sprite {
 
 	public function showCostume(costumeIndex:Number):void {
 		if (isNaNOrInfinity(costumeIndex)) costumeIndex = 0;
-		currentCostumeIndex = costumeIndex % costumes.length;
+		// TLF: check if nothing has changed...
+		var newIndex:Number = costumeIndex % costumes.length;
+		if (newIndex < 0) newIndex += costumes.length;
+		if (skipNoChange && newIndex == currentCostumeIndex) return;
+		currentCostumeIndex = newIndex;
 		if (currentCostumeIndex < 0) currentCostumeIndex += costumes.length;
 		var c:ScratchCostume = currentCostume();
 		if (c == lastCostume) return; // optimization: already showing that costume
@@ -347,6 +353,7 @@ public class ScratchObj extends Sprite {
 		if ('list:contains:' == op) return [defaultListName(), 'thing'];
 		if ('showList:' == op) return [defaultListName()];
 		if ('hideList:' == op) return [defaultListName()];
+		if ('listSet:colorTo:' == op) return [defaultListName()]
 
 		return specDefaults;
 	}
@@ -625,6 +632,8 @@ public class ScratchObj extends Sprite {
 	public function instantiateFromJSON(newStage:ScratchStage):void {
 		var i:int, jsonObj:Object;
 
+		skipNoChange = false; // TLF: should be false anyway, right?
+		
 		// lists
 		for (i = 0; i < lists.length; i++) {
 			jsonObj = lists[i];

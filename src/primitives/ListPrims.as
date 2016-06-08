@@ -48,6 +48,7 @@ public class ListPrims {
 		primTable['getLine:ofList:']	= primGetItem;
 		primTable['lineCountOfList:']	= primLength;
 		primTable['list:contains:']		= primContains;
+		primTable['listSet:colorTo:']	= primSetColor;
 	}
 
 	private function primContents(b:Array):String {
@@ -61,6 +62,12 @@ public class ListPrims {
 			}
 		}
 		return (list.contents.join(allSingleLetters ? '' : ' '));
+	}
+
+	private function primSetColor(b:Array):void {
+		var list:ListWatcher = listarg(b[0]);
+		if (!list) return;
+		list.setCellColor(interp.numarg(b[1]));
 	}
 
 	private function primAppend(b:Array):void {

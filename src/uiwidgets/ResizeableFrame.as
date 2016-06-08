@@ -33,7 +33,7 @@ public class ResizeableFrame extends Sprite implements DragClient {
 
 	private var borderColor:int;
 	private var borderWidth:int;
-	private var fillColor:int;
+	public var fillColor:int;
 	private var cornerRadius:int;
 
 	private var box:Shape;
