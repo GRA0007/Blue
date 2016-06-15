@@ -733,37 +733,46 @@ public class Interpreter {
 		var block:Block = activeThread.block;
 
 		// Lookup the procedure and cache for future use
-		var obj:ScratchObj = activeThread.target;
-		var insideLoop:* = null;
-		var spec:String = block.spec;
-		if (block.type.indexOf("c") >= 0) insideLoop = block.subStack1;
-		var proc:Block = obj.procCache[spec];
-		if (!proc) {
-			proc = obj.lookupProcedure(spec);
-			obj.procCache[spec] = proc;
-		}
-		if (!proc) {
-			if (activeThread.block.type == 'r' || activeThread.block.type == 'b') activeThread.values.push(0);
-			activeThread.popState();
-			if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
-			return;
-		}
-
-		if (warpThread) {
-			if (currentMSecs - startTime > warpMSecs) yield = true;
-		} else {
-			if (proc.warpProcFlag) {
-				// Start running in warp mode.
-				warpBlock = block;
-				warpThread = activeThread;
-			} else if (activeThread.isRecursiveCall(block, proc)) {
-				yield = true;
+		if (activeThread.firstTime) {
+			var obj:ScratchObj = activeThread.target;
+			activeThread.firstTime = false;
+			var insideLoop:* = null;
+			var spec:String = block.spec;
+			if (block.type.indexOf("c") >= 0) insideLoop = block.subStack1;
+			var proc:Block = obj.procCache[spec];
+			if (!proc) {
+				proc = obj.lookupProcedure(spec);
+				obj.procCache[spec] = proc;
 			}
+			if (!proc) {
+				if (activeThread.block.type == 'r' || activeThread.block.type == 'b') activeThread.values.push(0);
+				activeThread.popState();
+				if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
+				return;
+			}
+
+			if (warpThread) {
+				if (currentMSecs - startTime > warpMSecs) yield = true;
+			} else {
+				if (proc.warpProcFlag) {
+					// Start running in warp mode.
+					warpBlock = block;
+					warpThread = activeThread;
+				} else if (activeThread.isRecursiveCall(block, proc)) {
+					yield = true;
+				}
+			}
+			activeThread.args = b;
+			activeThread.loopBlock = insideLoop;
+			activeThread.pushStateForBlock(report0Block);
+			startCmdList(proc);
+		} else {
+			activeThread.firstTime = true;
+			if (!pushedReporterValue) {
+				if (activeThread.block.isReporter) activeThread.values.push(0);
+			}
+			pushedReporterValue = false;
 		}
-		activeThread.args = b;
-		activeThread.loopBlock = insideLoop;
-		activeThread.pushStateForBlock(report0Block);
-		startCmdList(proc);
 	}
 
 	private function primGetLoop(b:Array):void {

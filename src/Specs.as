@@ -82,7 +82,8 @@ public class Specs {
 		[15,  "Program",	0x026f2e],
 		[16,  "Strings",	0x949400],
 		[17,  "Websockets",	0x39bf93],
-		[18,  "Color",		0x2e2e2e]
+		[18,  "Color",		0x2e2e2e],
+		[19,  "Lambda",		0xff0000]
 	];
 
 	public static function blockColor(categoryID:int):int {
@@ -545,6 +546,9 @@ public class Specs {
 		["-"],
 		["%c as hex",							"r", 18, "colorAsHex"],
 		["hex %s as color",						"r", 18, "colorHexAsColor",		"#0099ff"],
+
+		//Lambda 19
+		["the block %o",						"r", 19, "returnBlock"],
 
 		// obsolete blocks from Scratch 1.4 that may be used in older projects
 		["play drum %n for %n beats",			" ", 98, "drum:duration:elapsed:from:", 1, 0.25], // Scratch 1.4 MIDI drum

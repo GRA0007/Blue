@@ -487,6 +487,7 @@ public class GestureHandler {
 			b.saveOriginalState();
 			if (b.parent is Block) Block(b.parent).removeBlock(b);
 			if (b.parent is MultiBlockArg) MultiBlockArg(b.parent).removeBlock(b);
+			if (b.parent is LambdaBlockArg) LambdaBlockArg(b.parent).removeBlock(b);
 			if (b.parent != null) b.parent.removeChild(b);
 			app.scriptsPane.prepareToDrag(b);
 		} else if (obj is ScratchComment) {
