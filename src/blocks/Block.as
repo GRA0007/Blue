@@ -527,7 +527,7 @@ public class Block extends Sprite {
 		for (i = 0; i < labelsAndArgs.length; i++) {
 			item = labelsAndArgs[i];
 			item.y = indentTop + ((maxH - item.height) / 2) + vOffset;
-			if ((item is BlockArg) && (!BlockArg(item).numberType)) item.y += 1;
+			if ((item is BlockArg && !(item is LambdaBlockArg)) && (!BlockArg(item).numberType)) item.y += 1;
 		}
 
 		if ([' ', '', 'o', 'o '].indexOf(type) >= 0) x = Math.max(x, minCommandWidth); // minimum width for command blocks
@@ -603,7 +603,7 @@ public class Block extends Sprite {
 	public function duplicate(forClone:Boolean, forStage:Boolean = false):Block {
 		var newSpec:String = spec;
 		if (op == 'whenClicked') newSpec = forStage ? 'when Stage clicked' : 'when this sprite clicked';
-		var dup:Block = new Block(newSpec, procedureType ? procedureType : type, (int)(forClone ? -1 : base.color), op);
+		var dup:Block = new Block(newSpec, type , (int)(forClone ? -1 : base.color), op);
 		dup.isRequester = isRequester;
 		dup.forceAsync = forceAsync;
 		dup.parameterNames = parameterNames;
@@ -830,6 +830,7 @@ public class Block extends Sprite {
 			if (argSpec == "n") return new BlockArg("n", c, true);
 			if (argSpec == "s") return new BlockArg("s", c, true);
 			if (argSpec == "q") return new MultiBlockArg("q", c);
+			if (argSpec == "o") return new LambdaBlockArg("o", c);
 		} else if (s.length >= 2 && s.charAt(0) == "@") { // icon spec
 			var icon:* = Specs.IconNamed(s.slice(1));
 			return (icon) ? icon : makeLabel(s);

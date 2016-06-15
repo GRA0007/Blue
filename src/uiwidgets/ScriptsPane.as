@@ -129,6 +129,7 @@ public class ScriptsPane extends ScrollFrameContents {
 	}
 
 	public function prepareToDrag(b:Block):void {
+		if (b.parent is LambdaBlockArg) LambdaBlockArg(b.parent).removeBlock(b);
 		findTargetsFor(b);
 		nearestTarget = null;
 		b.scaleX = b.scaleY = scaleX;
@@ -229,7 +230,11 @@ public class ScriptsPane extends ScrollFrameContents {
 				//if (nearestTarget[1].parent is MultiBlockArg) {
 				//MultiBlockArg(nearestTarget[1].parent).replaceArgWithBlock(nearestTarget[1], b, this);
 				//	} else {
+				if (nearestTarget[1] is LambdaBlockArg) {
+					nearestTarget[1].setLambda(b);
+				} else {
 				Block(nearestTarget[1].parent).replaceArgWithBlock(nearestTarget[1], b, this);
+				}
 				//}
 			} else {
 				var targetCmd:Block = nearestTarget[1];
@@ -318,6 +323,10 @@ return true; // xxx disable this check for now; it was causing confusion at Scra
 			}
 			if (target.subStack1 != null) findCommandTargetsIn(target.subStack1, endsWithTerminal);
 			if (target.subStack2 != null) findCommandTargetsIn(target.subStack2, endsWithTerminal);
+			for (var i:int = 0; i < target.args.length; i++) {
+				var o:DisplayObject = target.args[i];
+				if (o is LambdaBlockArg) possibleTargets.push([p, o, INSERT_NORMAL]);
+			}
 			target = target.nextBlock;
 		}
 	}
