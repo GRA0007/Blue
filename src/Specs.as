@@ -436,6 +436,11 @@ public class Specs {
 		["-"],
 		["@cookie set cookie variable %s to %s",			" ", 9, "cookieSetVariable"],
 		["@cookie change cookie variable %s by %n",			" ", 9, "cookieChangeVariable"],
+		["--"],
+		["☁ %s",											"r", 29, "getCloud"],
+		["-"],
+		["set ☁ variable %s to %s",							" ", 29, "cloudSet"],
+		["change ☁ variable %s by %n",							" ", 29, "cloudChange"],
 
 		// lists
 		["add %s to %m.list",								" ", 12, "append:toList:"],

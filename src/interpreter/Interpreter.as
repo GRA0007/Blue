@@ -63,6 +63,8 @@ import extensions.ExtensionManager;
 import flash.geom.Point;
 import flash.utils.Dictionary;
 import flash.utils.getTimer;
+import flash.net.*;
+import flash.events.Event;
 
 import primitives.*;
 
@@ -104,6 +106,8 @@ public class Interpreter {
 	static private var yieldBlock:Block = new Block('', '', 0, 'yield');
 	static private var returnBlock:Block = new Block('', '', 0, 'doReturn', [0]);
 	static private var report0Block:Block = new Block('%s', '', 0, 'report', [0]);
+
+	private var cloudServerUrl:String = "http://blueapi.gwiddle.co.uk/cloud.php/";
 
 	public function Interpreter(app:Scratch) {
 		this.app = app;
@@ -547,6 +551,9 @@ public class Interpreter {
 		primTable["getDefinedVars"]		= primGetDefinedVars;
 		primTable["setDefinedVars"]		= primSetDefinedVars;
 //		primTable["varSet:colorTo:"]	= primVarSetColor;
+		specialTable["getCloud"]		= primGetCloud;
+		specialTable["cloudSet"]		= primSetCloud;
+		specialTable["cloudChange"]		= primChangeCloud;
 
 		// edge-trigger hat blocks
 		primTable["whenDistanceLessThan"]	= primNoop;
@@ -896,6 +903,59 @@ public class Interpreter {
 		if (tempVarsDict[b[0]] != null) {
 				tempVarsDict[b[0]] = b[1];
 		}
+	}
+
+	private function primGetCloud(b:Array):void {
+		if (activeThread.firstTime) {
+			activeThread.firstTime = false;
+			var request:URLRequest = new URLRequest((cloudServerUrl + "get/" + (b[0]).toString()));
+			var loader:URLLoader = new URLLoader();
+			loader.addEventListener(Event.COMPLETE, dataGet);
+			loader.dataFormat = URLLoaderDataFormat.TEXT;
+			loader.load(request);
+			function dataGet(event:Event):void {
+				activeThread.popState();
+				activeThread.values.push(event.target.data.toString());
+				activeThread.firstTime = true;
+			}
+		}
+		doYield();
+	}
+
+	private function primSetCloud(b:Array):void {
+		if (activeThread.firstTime) {
+			var request:URLRequest = new URLRequest((cloudServerUrl + "set/" + (b[0]).toString() + "/" + (b[1].toString())));
+				var loader:URLLoader = new URLLoader();
+				loader.addEventListener(Event.COMPLETE, dataGet);
+				loader.dataFormat = URLLoaderDataFormat.TEXT;
+				loader.load(request);
+			activeThread.firstTime = false;
+			function dataGet(event:Event):void {
+				var block = activeThread.block;
+				activeThread.popState();
+				if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
+				activeThread.firstTime = true;
+			}
+		}
+		doYield();
+	}
+
+	private function primChangeCloud(b:Array):void {
+		if (activeThread.firstTime) {
+			var request:URLRequest = new URLRequest((cloudServerUrl + "change/" + (b[0]).toString() + "/" + (b[1].toString())));
+				var loader:URLLoader = new URLLoader();
+				loader.addEventListener(Event.COMPLETE, dataGet);
+				loader.dataFormat = URLLoaderDataFormat.TEXT;
+				loader.load(request);
+			activeThread.firstTime = false;
+			function dataGet(event:Event):void {
+				var block = activeThread.block;
+				activeThread.popState();
+				if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
+				activeThread.firstTime = true;
+			}
+		}
+		doYield();
 	}
 
 }}

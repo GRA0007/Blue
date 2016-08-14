@@ -177,6 +177,7 @@ public class PaletteBuilder {
 			addBlocksForCategory(Specs.dataCategory, catColor);
 			nextY += 15;
 		}
+		addBlocksForCategory(29, catColor);
 
 		// lists
 		catColor = Specs.listColor;
@@ -221,7 +222,6 @@ public class PaletteBuilder {
 		d.addTitle('New Variable');
 		d.addField('Variable name', 150);
 		d.addWidget(varSettings);
-		d.addText('Cloud data coming soon');
 		d.addAcceptCancelButtons('OK');
 		d.showOnStage(app.stage);
 	}
@@ -239,7 +239,7 @@ public class PaletteBuilder {
 		d.addTitle('New List');
 		d.addField('List name', 150);
 		d.addWidget(varSettings);
-		d.addText('Cloud data coming soon');
+		d.addText('Cloud lists coming soon');
 		d.addAcceptCancelButtons('OK');
 		d.showOnStage(app.stage);
 	}
