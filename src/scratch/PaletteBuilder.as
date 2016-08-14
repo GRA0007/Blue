@@ -192,6 +192,7 @@ public class PaletteBuilder {
 			nextY += 10;
 			addBlocksForCategory(Specs.listCategory, catColor);
 		}
+		addBlocksForCategory(32, catColor);
 		updateCheckboxes();
 	}
 
