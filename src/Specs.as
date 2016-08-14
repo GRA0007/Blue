@@ -82,7 +82,9 @@ public class Specs {
 		[15,  "Program",	0x026f2e],
 		[16,  "Strings",	0x949400],
 		[17,  "Websockets",	0x39bf93],
-		[18,  "Color",		0x2e2e2e]
+		[18,  "Color",		0x2e2e2e],
+		[29,  "Data",		variableColor],
+		[32, "List",		listColor],
 	];
 
 	public static function blockColor(categoryID:int):int {
@@ -436,6 +438,11 @@ public class Specs {
 		["-"],
 		["@cookie set cookie variable %s to %s",			" ", 9, "cookieSetVariable"],
 		["@cookie change cookie variable %s by %n",			" ", 9, "cookieChangeVariable"],
+		["--"],
+		["☁ %s",											"r", 29, "getCloud"],
+		["-"],
+		["set ☁ variable %s to %s",							" ", 29, "cloudSet"],
+		["change ☁ variable %s by %n",							" ", 29, "cloudChange"],
 
 		// lists
 		["add %s to %m.list",								" ", 12, "append:toList:"],
@@ -451,6 +458,16 @@ public class Specs {
 		["show list %m.list",								" ", 12, "showList:"],
 		["hide list %m.list",								" ", 12, "hideList:"],
 		["set %m.list color to %c",							" ", 12, "listSet:colorTo:"],
+		["--"],
+		["add %s to ☁ list %s",								" ", 32, "cloudAdd"],
+		["-"],
+		["delete %d.listDeleteItem of ☁ list %s",			" ", 32, "cloudDelete"],
+		["insert %s at %d.listItem of ☁ list %s",			" ", 32, "cloudInsert"],
+		["replace item %d.listItem of ☁ list %s with %s",	" ", 32, "cloudReplace"],
+		["-"],
+		["item %d.listItem of ☁ list %s",					"r", 32, "cloudGetItem"],
+		["length of ☁ list %s",								"r", 32, "cloudLength"],
+		["☁ list %s contains %s",							"b", 32, "cloudContains"],
 		
 		//System 13
 		["save %s to file %s",					" ", 13, "save:toFile:", "hello world", "file.txt"],

@@ -63,6 +63,8 @@ import extensions.ExtensionManager;
 import flash.geom.Point;
 import flash.utils.Dictionary;
 import flash.utils.getTimer;
+import flash.net.*;
+import flash.events.Event;
 
 import primitives.*;
 
@@ -104,6 +106,8 @@ public class Interpreter {
 	static private var yieldBlock:Block = new Block('', '', 0, 'yield');
 	static private var returnBlock:Block = new Block('', '', 0, 'doReturn', [0]);
 	static private var report0Block:Block = new Block('%s', '', 0, 'report', [0]);
+
+	private var cloudServerUrl:String = "http://blueapi.gwiddle.co.uk/cloud.php/";
 
 	public function Interpreter(app:Scratch) {
 		this.app = app;
@@ -547,6 +551,18 @@ public class Interpreter {
 		primTable["getDefinedVars"]		= primGetDefinedVars;
 		primTable["setDefinedVars"]		= primSetDefinedVars;
 //		primTable["varSet:colorTo:"]	= primVarSetColor;
+		specialTable["getCloud"]		= primGetCloud;
+		specialTable["cloudSet"]		= primSetCloud;
+		specialTable["cloudChange"]		= primChangeCloud;
+
+		// cloud lists
+		specialTable["cloudAdd"]		= primCloudAdd;
+		specialTable["cloudDelete"]		= primCloudDelete;
+		specialTable["cloudInsert"]		= primCloudInsert;
+		specialTable["cloudReplace"]	= primCloudReplace;
+		specialTable["cloudGetItem"]	= primCloudGetItem;
+		specialTable["cloudLength"]		= primCloudLength;
+		specialTable["cloudContains"]	= primCloudContains;
 
 		// edge-trigger hat blocks
 		primTable["whenDistanceLessThan"]	= primNoop;
@@ -898,4 +914,180 @@ public class Interpreter {
 		}
 	}
 
+	private function primGetCloud(b:Array):void {
+		if (activeThread.firstTime) {
+			activeThread.firstTime = false;
+			var request:URLRequest = new URLRequest((cloudServerUrl + "get/" + escape(encodeURIComponent((b[0]).toString()))));
+			var loader:URLLoader = new URLLoader();
+			loader.addEventListener(Event.COMPLETE, dataGet);
+			loader.dataFormat = URLLoaderDataFormat.TEXT;
+			loader.load(request);
+			function dataGet(event:Event):void {
+				activeThread.popState();
+				activeThread.values.push(event.target.data.toString());
+				activeThread.firstTime = true;
+			}
+		}
+		doYield();
+	}
+
+	private function primSetCloud(b:Array):void {
+		if (activeThread.firstTime) {
+			var request:URLRequest = new URLRequest((cloudServerUrl + "set/" + escape(encodeURIComponent((b[0]).toString())) + "/" + escape(encodeURIComponent((b[1].toString())))));
+				var loader:URLLoader = new URLLoader();
+				loader.addEventListener(Event.COMPLETE, dataGet);
+				loader.dataFormat = URLLoaderDataFormat.TEXT;
+				loader.load(request);
+			activeThread.firstTime = false;
+			function dataGet(event:Event):void {
+				var block = activeThread.block;
+				activeThread.popState();
+				if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
+				activeThread.firstTime = true;
+			}
+		}
+		doYield();
+	}
+
+	private function primChangeCloud(b:Array):void {
+		if (activeThread.firstTime) {
+			var request:URLRequest = new URLRequest((cloudServerUrl + "change/" + escape(encodeURIComponent((b[0]).toString())) + "/" + escape(encodeURIComponent((b[1].toString())))));
+				var loader:URLLoader = new URLLoader();
+				loader.addEventListener(Event.COMPLETE, dataGet);
+				loader.dataFormat = URLLoaderDataFormat.TEXT;
+				loader.load(request);
+			activeThread.firstTime = false;
+			function dataGet(event:Event):void {
+				var block = activeThread.block;
+				activeThread.popState();
+				if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
+				activeThread.firstTime = true;
+			}
+		}
+		doYield();
+	}
+
+	private function primCloudAdd(b:Array):void {
+		if (activeThread.firstTime) {
+			var request:URLRequest = new URLRequest((cloudServerUrl + "listadd/" + escape(encodeURIComponent((b[0]).toString())) + "/" + escape(encodeURIComponent((b[1]).toString()))));
+				var loader:URLLoader = new URLLoader();
+				loader.addEventListener(Event.COMPLETE, dataGet);
+				loader.dataFormat = URLLoaderDataFormat.TEXT;
+				loader.load(request);
+			activeThread.firstTime = false;
+			function dataGet(event:Event):void {
+				var block = activeThread.block;
+				activeThread.popState();
+				if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
+				activeThread.firstTime = true;
+			}
+		}
+		doYield();
+	}
+
+	private function primCloudDelete(b:Array):void {
+		if (activeThread.firstTime) {
+			var request:URLRequest = new URLRequest((cloudServerUrl + "listdelete/" + escape(encodeURIComponent((b[0]).toString())) + "/" + escape(encodeURIComponent((b[1]).toString()))));
+				var loader:URLLoader = new URLLoader();
+				loader.addEventListener(Event.COMPLETE, dataGet);
+				loader.dataFormat = URLLoaderDataFormat.TEXT;
+				loader.load(request);
+			activeThread.firstTime = false;
+			function dataGet(event:Event):void {
+				var block = activeThread.block;
+				activeThread.popState();
+				if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
+				activeThread.firstTime = true;
+			}
+		}
+		doYield();
+	}
+
+
+	private function primCloudInsert(b:Array):void {
+		if (activeThread.firstTime) {
+			var request:URLRequest = new URLRequest((cloudServerUrl + "listinsert/" + escape(encodeURIComponent((b[0]).toString())) + "/" + escape(encodeURIComponent((b[1]).toString())) + "/" + (escape(encodeURIComponent((b[2]).toString())))));
+				var loader:URLLoader = new URLLoader();
+				loader.addEventListener(Event.COMPLETE, dataGet);
+				loader.dataFormat = URLLoaderDataFormat.TEXT;
+				loader.load(request);
+			activeThread.firstTime = false;
+			function dataGet(event:Event):void {
+				var block = activeThread.block;
+				activeThread.popState();
+				if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
+				activeThread.firstTime = true;
+			}
+		}
+		doYield();
+	}
+
+	private function primCloudReplace(b:Array):void {
+		if (activeThread.firstTime) {
+			var request:URLRequest = new URLRequest((cloudServerUrl + "listreplace/" + escape(encodeURIComponent((b[0]).toString())) + "/" + escape(encodeURIComponent((b[1]).toString())) + "/" + escape(encodeURIComponent((b[2]).toString()))));
+				var loader:URLLoader = new URLLoader();
+				loader.addEventListener(Event.COMPLETE, dataGet);
+				loader.dataFormat = URLLoaderDataFormat.TEXT;
+				loader.load(request);
+			activeThread.firstTime = false;
+			function dataGet(event:Event):void {
+				var block = activeThread.block;
+				activeThread.popState();
+				if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
+				activeThread.firstTime = true;
+			}
+		}
+		doYield();
+	}
+	
+	private function primCloudGetItem(b:Array):void {
+		if (activeThread.firstTime) {
+			var request:URLRequest = new URLRequest((cloudServerUrl + "listgetitem/" + escape(encodeURIComponent((b[0]).toString())) + "/" + escape(encodeURIComponent((b[1]).toString()))));
+				var loader:URLLoader = new URLLoader();
+				loader.addEventListener(Event.COMPLETE, dataGet);
+				loader.dataFormat = URLLoaderDataFormat.TEXT;
+				loader.load(request);
+			activeThread.firstTime = false;
+			function dataGet(event:Event):void {
+				activeThread.popState();
+				activeThread.values.push(event.target.data.toString());
+				activeThread.firstTime = true;
+			}
+		}
+		doYield();
+	}
+	
+	private function primCloudLength(b:Array):void {
+		if (activeThread.firstTime) {
+			var request:URLRequest = new URLRequest((cloudServerUrl + "listlength/" + escape(encodeURIComponent((b[0]).toString()))));
+				var loader:URLLoader = new URLLoader();
+				loader.addEventListener(Event.COMPLETE, dataGet);
+				loader.dataFormat = URLLoaderDataFormat.TEXT;
+				loader.load(request);
+			activeThread.firstTime = false;
+			function dataGet(event:Event):void {
+				activeThread.popState();
+				activeThread.values.push(event.target.data.toString());
+				activeThread.firstTime = true;
+			}
+		}
+		doYield();
+	}
+	
+	private function primCloudContains(b:Array):void {
+		if (activeThread.firstTime) {
+			var request:URLRequest = new URLRequest((cloudServerUrl + "listcontains/" + escape(encodeURIComponent((b[0]).toString())) + "/" + escape(encodeURIComponent((b[1]).toString()))));
+				var loader:URLLoader = new URLLoader();
+				loader.addEventListener(Event.COMPLETE, dataGet);
+				loader.dataFormat = URLLoaderDataFormat.TEXT;
+				loader.load(request);
+			activeThread.firstTime = false;
+			function dataGet(event:Event):void {
+				activeThread.popState();
+				activeThread.values.push(event.target.data.toString() == '1');
+				activeThread.firstTime = true;
+			}
+		}
+		doYield();
+	}
 }}
