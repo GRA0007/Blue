@@ -61,6 +61,7 @@ import uiwidgets.DialogBox;
 import util.*;
 
 import watchers.*;
+import assets.Resources;
 
 public class ScratchRuntime {
 
@@ -80,6 +81,12 @@ public class ScratchRuntime {
 
 	protected var projectToInstall:ScratchStage;
 	protected var saveAfterInstall:Boolean;
+
+	[Embed(source='../assets/pop.wav', mimeType='application/octet-stream')] protected static var Pop:Class;
+	[Embed(source='../assets/TeraA.svg', mimeType='application/octet-stream')] protected static var TeraA:Class;
+	[Embed(source='../assets/TeraB.svg', mimeType='application/octet-stream')] protected static var TeraB:Class;
+	[Embed(source='../assets/TeraC.svg', mimeType='application/octet-stream')] protected static var TeraC:Class;
+	[Embed(source='../assets/TeraD.svg', mimeType='application/octet-stream')] protected static var TeraD:Class;
 
 	public function ScratchRuntime(app:Scratch, interp:Interpreter) {
 		this.app = app;
@@ -777,7 +784,19 @@ public class ScratchRuntime {
 	}
 
 	public function installNewProject():void {
-		installEmptyProject();
+		var newStage:ScratchStage = new ScratchStage();
+        var sprite:ScratchSprite = new ScratchSprite('Sprite1');
+        var costume1:ScratchCostume = new ScratchCostume(Translator.map('costume1'), new TeraA());
+        var costume2:ScratchCostume = new ScratchCostume(Translator.map('costume2'), new TeraB(), 63, 83); // Fixes odd issue with TeraB.svg...
+        var costume3:ScratchCostume = new ScratchCostume(Translator.map('costume3'), new TeraC());
+        var costume4:ScratchCostume = new ScratchCostume(Translator.map('costume4'), new TeraD());
+        sprite.costumes = [costume1, costume2, costume3, costume4];
+        sprite.showCostume(1); //To fix odd bug
+        sprite.showCostume(0);
+        newStage.addChild(sprite);
+        app.saveForRevert(new ProjectIO(app).encodeProjectAsZipFile(newStage),true);
+        app.oldWebsiteURL = "";
+        installProject(newStage);
 	}
 
 	public function selectProjectFile():void {
