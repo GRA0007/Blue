@@ -64,6 +64,13 @@ public class ListWatcher extends Sprite {
 
 	public var cellColor:int = Specs.listColor;
 
+	// Linking lists
+	public var linkedList:String = null; // No cloud list to update from
+	private var linkButton:IconButton;
+	private var removeLinkButton:IconButton;
+	private var lastUpdateTime:int = 0;
+	private var inListGet:Boolean = false;
+
 	public function ListWatcher(listName:String = 'List Title', contents:Array = null, target:ScratchObj = null, limitView:Boolean = false) {
 		this.listName = listName;
 		this.target = target;
@@ -90,6 +97,9 @@ public class ListWatcher extends Sprite {
 
 		addItemButton = new IconButton(addItem, 'addItem');
 		addChild(addItemButton);
+		linkButton = new IconButton(linkList, 'addItem');
+		addChild(linkButton);
+		removeLinkButton = new IconButton(unlinkList, 'addItem');
 
 		elementCount = createTextField(Translator.map('length') + ': 0', cellNumFont);
 		frame.addChild(elementCount);
@@ -97,6 +107,7 @@ public class ListWatcher extends Sprite {
 		setWidthHeight(100, 200);
 		addEventListener(flash.events.FocusEvent.FOCUS_IN, gotFocus);
 		addEventListener(flash.events.FocusEvent.FOCUS_OUT, lostFocus);
+		downloadNewContents(); // Start loop
 	}
 
 	public static function strings():Array {
@@ -111,7 +122,6 @@ public class ListWatcher extends Sprite {
 	public function updateTitleAndContents():void {
 		// Called when opening a project.
 		updateTitle();
-		scrollToIndex(0);
 	}
 
 	public function updateTranslation():void { updateElementCount() }
@@ -120,12 +130,45 @@ public class ListWatcher extends Sprite {
 
 	public function objToGrab(evt:MouseEvent):ListWatcher { return this } // allow dragging
 
+	/* List "Linking" Support */
+
+	public function linkList(b:IconButton = null):void {
+		DialogBox.ask("Link List Name?", "test", null, finishLinkList);
+		function finishLinkList(linkName):void {
+			linkedList = linkName;
+			updateTitle();
+			addChild(removeLinkButton);
+		}
+	}
+
+	public function unlinkList(b:IconButton = null):void {
+		linkedList = null;
+		updateTitle();
+		addChild(linkButton);
+	}
+
+	public function prepareToUpdateContents():void {
+		setTimeout(uploadContents, 1);
+		function uploadContents():void {
+			if (linkedList) {
+				var request:URLRequest = new URLRequest(( "http://blueapi.gwiddle.co.uk/cloud.php/setlistcontents/" + escape( encodeURIComponent( (linkedList).toString() ) ) + "/" + escape( encodeURIComponent( util.JSON.stringify(contents, false) ) ) ));
+				var loader:URLLoader = new URLLoader();
+				loader.load(request);
+			}
+		}
+	}
+
 	/* Menu */
 
 	public function menu(evt:MouseEvent):Menu {
 		var m:Menu = new Menu();
 		m.addItem('import', importList);
 		m.addItem('export', exportList);
+		if (linkedList) {
+			m.addItem('unlink cloud list', unlinkList);
+		} else {
+			m.addItem('link cloud list', linkList);
+		}
 		m.addLine();
 		m.addItem('hide', hide);
 		return m;
@@ -138,6 +181,7 @@ public class ListWatcher extends Sprite {
 			var file:FileReference = FileReference(event.target);
 			var s:String = file.data.readUTFBytes(file.data.length);
 			importLines(removeTrailingEmptyLines(s.split(/\r\n|[\r\n]/)));
+			prepareToUpdateContents();
 		}
 
 		Scratch.loadSingleFile(fileLoaded);
@@ -237,8 +281,38 @@ public class ListWatcher extends Sprite {
 		step();
 	}
 
+	public function downloadNewContents():void {
+		if (!inListGet && linkedList) {
+			try {
+				inListGet = true;
+				var request:URLRequest = new URLRequest(( "http://blueapi.gwiddle.co.uk/cloud.php/listcontentsforwatcher/" + escape( encodeURIComponent( (linkedList).toString() ) ) ));
+				var loader:URLLoader = new URLLoader();
+				loader.addEventListener(Event.COMPLETE, dataGet);
+				loader.dataFormat = URLLoaderDataFormat.TEXT;
+				loader.load(request);
+			} catch (ignore:*) {
+				inListGet = false;
+			}
+			function dataGet(event:Event):void {
+				inListGet = false;
+				var newArray = util.JSON.parse(unescape(decodeURIComponent(event.target.data.toString())));
+				if (!newArray) return;
+				if (!(contents == newArray)) {
+					contents = newArray;
+					updateContents();
+					updateScrollbar();
+					setTimeout(downloadNewContents, 500);
+				}
+			}
+		}
+		if (!inListGet) {
+			setTimeout(downloadNewContents, 500);
+		}
+	}
+
 	public function step():void {
 		// Update index highlights and contents if they have changed.
+
 		if (isIdle) return;
 		if (contentsChanged) {
 			updateContents();
@@ -251,6 +325,7 @@ public class ListWatcher extends Sprite {
 		}
 		ensureVisible();
 		updateIndexHighlights();
+
 	}
 
 	private function ensureVisible():void {
@@ -308,6 +383,7 @@ public class ListWatcher extends Sprite {
 		updateContents();
 		updateScrollbar();
 		selectCell(insertionIndex);
+		prepareToUpdateContents();
 	}
 
 	private function gotFocus(e:FocusEvent):void {
@@ -316,6 +392,7 @@ public class ListWatcher extends Sprite {
 		// Note: focus is lost when the addItem button is clicked.
 		var newFocus:DisplayObject = e.target as DisplayObject;
 		if (newFocus == null) return;
+		inListGet = true;
 		insertionIndex = -1;
 		for (var i:int = 0; i < visibleCells.length; i++) {
 			if (visibleCells[i] == newFocus.parent) {
@@ -328,6 +405,8 @@ public class ListWatcher extends Sprite {
 	private function lostFocus(e:FocusEvent):void {
 		// If another object is getting focus, clear insertionIndex.
 		if (e.relatedObject != null) insertionIndex = -1;
+		prepareToUpdateContents();
+		inListGet = false;
 	}
 
 	// -----------------------------
@@ -351,6 +430,7 @@ public class ListWatcher extends Sprite {
 				if (visibleCells.length) {
 					selectCell(Math.min(j, contents.length - 1));
 				}
+				prepareToUpdateContents();
 				return;
 			}
 		}
@@ -378,6 +458,8 @@ public class ListWatcher extends Sprite {
 
 		addItemButton.x = 2;
 		addItemButton.y = frame.h - addItemButton.height - 2;
+		removeLinkButton.x = linkButton.x = addItemButton.x + addItemButton.width + 2;
+		removeLinkButton.y = linkButton.y = frame.h - linkButton.height - 2;
 
 		var g:Graphics = (cellPane.mask as Shape).graphics;
 		g.clear();
@@ -423,12 +505,6 @@ public class ListWatcher extends Sprite {
 	}
 
 	public function updateContents():void {
-//		var limitedCloudView:Boolean = isPersistent;
-//		if (limitedCloudView &&
-//			Scratch.app.isLoggedIn() && Scratch.app.editMode &&
-//			(Scratch.app.projectOwner == Scratch.app.userName)) {
-//				limitedCloudView = false; // only project owner can view cloud list contents
-//		}
 		var isEditable:Boolean = Scratch.app.editMode && !limitedView;
 		updateElementCount();
 		removeAllCells();
@@ -521,7 +597,7 @@ public class ListWatcher extends Sprite {
 	}
 
 	public function updateTitle():void {
-		title.text = ((target == null) || (target.isStage)) ? listName : target.objName + ': ' + listName;
+		title.text = (((target == null) || (target.isStage)) ? listName : target.objName + ': ' + listName) + ((linkedList == null) ? '' : ' (cloud: ' + linkedList.toString() + ')');
 		title.width = title.textWidth + 5;
 		title.x = Math.floor((frame.w - title.width) / 2);
 	}
@@ -596,7 +672,8 @@ public class ListWatcher extends Sprite {
 		json.writeKeyValue('width', width);
 		json.writeKeyValue('height', height);
 		json.writeKeyValue('visible', visible && (parent != null));
-		json.writeKeyValue('cellColor', cellColor)
+		json.writeKeyValue('cellColor', cellColor);
+		json.writeKeyValue('linkedList', linkedList);
 	}
 
 	public function readJSON(obj:Object):void {
@@ -606,6 +683,7 @@ public class ListWatcher extends Sprite {
 		x = obj.x;
 		y = obj.y;
 		if (obj.hasOwnProperty('cellColor')) cellColor = obj.cellColor;
+		if (obj.hasOwnProperty('linkedList')) linkedList = obj.linkedList;
 		setWidthHeight(obj.width, obj.height);
 		visible = obj.visible;
 		updateTitleAndContents();

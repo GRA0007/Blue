@@ -40,7 +40,7 @@ public class ListPrims {
 	}
 
 	public function addPrimsTo(primTable:Dictionary, specialTable:Dictionary):void {
-		primTable[Specs.GET_LIST]		= primContents;
+		specialTable[Specs.GET_LIST]		= primContents;
 		primTable['append:toList:']		= primAppend;
 		primTable['deleteLine:ofList:']	= primDelete;
 		primTable['insert:at:ofList:']	= primInsert;
@@ -51,9 +51,14 @@ public class ListPrims {
 		primTable['listSet:colorTo:']	= primSetColor;
 	}
 
-	private function primContents(b:Array):String {
-		var list:ListWatcher = interp.targetObj().lookupOrCreateList(b.spec);
-		if (!list) return '';
+	private function primContents(b:Array):void {
+		var block:Block = interp.activeThread.block;
+		interp.activeThread.popState();
+		var list:ListWatcher = interp.targetObj().lookupOrCreateList(block.spec);
+		if (!list) {
+			interp.activeThread.values.push('');
+			return;
+		}
 		var allSingleLetters:Boolean = true;
 		for each (var el:* in list.contents) {
 			if (!((el is String) && (el.length == 1))) {
@@ -61,7 +66,7 @@ public class ListPrims {
 				break;
 			}
 		}
-		return (list.contents.join(allSingleLetters ? '' : ' '));
+		interp.activeThread.values.push(list.contents.join(allSingleLetters ? '' : ' '));
 	}
 
 	private function primSetColor(b:Array):void {
@@ -78,6 +83,7 @@ public class ListPrims {
 	}
 
 	protected function listAppend(list:ListWatcher, item:*):void {
+		list.prepareToUpdateContents();
 		list.contents.push(item);
 	}
 
@@ -93,12 +99,14 @@ public class ListPrims {
 		var n:Number = (which == 'last') ? len : Number(which);
 		if (isNaN(n)) return;
 		var i:int = Math.round(n);
+		list.prepareToUpdateContents();
 		if ((i < 1) || (i > len)) return;
 		listDelete(list, i);
 		if (list.visible) list.updateWatcher(((i == len) ? i - 1 : i), false, interp);
 	}
 
 	protected function listSet(list:ListWatcher, newValue:Array):void {
+		list.prepareToUpdateContents();
 		list.contents = newValue;
 	}
 
@@ -123,6 +131,7 @@ public class ListPrims {
 	}
 
 	protected function listInsert(list:ListWatcher, i:int, item:*):void {
+		list.prepareToUpdateContents();
 		list.contents.splice(i - 1, 0, item);
 	}
 
@@ -136,6 +145,7 @@ public class ListPrims {
 	}
 
 	protected function listReplace(list:ListWatcher, i:int, item:*):void {
+		list.prepareToUpdateContents();
 		list.contents[i - 1] = item;
 	}
 

@@ -924,7 +924,7 @@ public class Interpreter {
 			loader.load(request);
 			function dataGet(event:Event):void {
 				activeThread.popState();
-				activeThread.values.push(event.target.data.toString());
+				activeThread.values.push(unescape(decodeURIComponent(event.target.data.toString())));
 				activeThread.firstTime = true;
 			}
 		}
@@ -1050,7 +1050,7 @@ public class Interpreter {
 			activeThread.firstTime = false;
 			function dataGet(event:Event):void {
 				activeThread.popState();
-				activeThread.values.push(event.target.data.toString());
+				activeThread.values.push(unescape(decodeURIComponent(event.target.data.toString())));
 				activeThread.firstTime = true;
 			}
 		}
@@ -1067,7 +1067,7 @@ public class Interpreter {
 			activeThread.firstTime = false;
 			function dataGet(event:Event):void {
 				activeThread.popState();
-				activeThread.values.push(event.target.data.toString());
+				activeThread.values.push(unescape(decodeURIComponent(event.target.data.toString())));
 				activeThread.firstTime = true;
 			}
 		}
@@ -1084,7 +1084,7 @@ public class Interpreter {
 			activeThread.firstTime = false;
 			function dataGet(event:Event):void {
 				activeThread.popState();
-				activeThread.values.push(event.target.data.toString() == '1');
+				activeThread.values.push(unescape(decodeURIComponent(event.target.data.toString())) == '1');
 				activeThread.firstTime = true;
 			}
 		}
