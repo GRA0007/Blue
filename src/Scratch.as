@@ -71,7 +71,7 @@ import uiwidgets.*;
 import util.*;
 
 import watchers.ListWatcher;
-
+import flash.filters.DropShadowFilter;
 public class Scratch extends Sprite {
 	// Version
 	public static const versionString:String = '1.4β';
@@ -91,9 +91,10 @@ public class Scratch extends Sprite {
 	public var ignoreResize:Boolean = false; // If true, temporarily ignore resize events.
 	public var isExtensionDevMode:Boolean = false; // If true, run in extension development mode (as on ScratchX)
 	public var isMicroworld:Boolean = false;
+    public var tabsAndPane:Sprite=new Sprite();
 
 	public var presentationScale:Number;
-	
+
 	// Runtime
 	public var runtime:ScratchRuntime;
 	public var interp:Interpreter;
@@ -107,7 +108,7 @@ public class Scratch extends Sprite {
 	public var loadInProgress:Boolean;
 	public var debugOps:Boolean = false;
 	public var debugOpCmd:String = '';
-	
+
 	public var MaxCloneCount:int = 300;
 
 	protected var autostart:Boolean;
@@ -224,6 +225,14 @@ public class Scratch extends Sprite {
 		//Analyze.countMissingAssets();
 
 		handleStartupParameters();
+        var shadow:DropShadowFilter = new DropShadowFilter();
+		shadow.distance = 1;
+		shadow.alpha=1;
+		shadow.blurX=2;
+		shadow.blurY=2;
+		shadow.angle = 90;
+        tabsAndPane.filters=[shadow];
+        //this.add(TabsAndPane);
 	}
 
 	protected function handleStartupParameters():void {
@@ -656,7 +665,7 @@ public class Scratch extends Sprite {
 			if (isIn3D) render3D.onStageResize();
 		}
 	}
-	
+
 	public function isInPresentationMode() {
 		return stagePart.isInPresentationMode();
 	}
@@ -777,26 +786,32 @@ public class Scratch extends Sprite {
 		if (isShowing(imagesPart)) imagesPart.editor.shutdown();
 		if (isShowing(soundsPart)) soundsPart.editor.shutdown();
 		hide(scriptsPart);
+        //if(scriptsPart.parent) scriptsPart.parent.
 		hide(imagesPart);
 		hide(soundsPart);
 		if (!editMode) return;
 		if (tabName == 'images') {
-			show(imagesPart);
+			//show(imagesPart);
+            tabsAndPane.addChild(imagesPart);
 			imagesPart.refresh();
 		} else if (tabName == 'sounds') {
 			soundsPart.refresh();
-			show(soundsPart);
+			//show(soundsPart);
+            tabsAndPane.addChild(soundsPart);
 		} else if (tabName && (tabName.length > 0)) {
 			tabName = 'scripts';
 			scriptsPart.updatePalette();
 			scriptsPane.viewScriptsFor(viewedObject);
 			scriptsPart.updateSpriteWatermark();
-			show(scriptsPart);
+            tabsAndPane.addChild(scriptsPart);
+			//show(scriptsPart);
 		}
-		show(tabsPart);
+        tabsAndPane.addChild(tabsPart);
+		//show(tabsPart);
 		show(stagePart); // put stage in front
 		tabsPart.selectTab(tabName);
 		lastTab = tabName;
+        show(tabsAndPane);
 		if (saveNeeded) setSaveNeeded(true); // save project when switching tabs, if needed (but NOT while loading!)
 	}
 
@@ -825,7 +840,9 @@ public class Scratch extends Sprite {
 		addChild(topBarPart);
 		addChild(stagePart);
 		addChild(libraryPart);
-		addChild(tabsPart);
+		tabsAndPane.addChild(tabsPart);
+        tabsAndPane.addChild(scriptsPart);
+        //addChild(tabsAndPane);
 	}
 
 	protected function getStagePart():StagePart {
@@ -895,15 +912,15 @@ public class Scratch extends Sprite {
 
 		updateLayout(w, h);
 	}
-	
+
 	public function updateRecordingTools(t:Number):void {
 		stagePart.updateRecordingTools(t);
 	}
-	
+
 	public function removeRecordingTools():void {
 		stagePart.removeRecordingTools();
 	}
-	
+
 	public function refreshStagePart():void {
 		stagePart.refresh();
 	}
@@ -1063,7 +1080,7 @@ public class Scratch extends Sprite {
 
 		m.showOnStage(stage, b.x, topBarPart.bottom() - 1);
 	}
-	
+
 	public function stopVideo(b:*):void {
 		runtime.stopVideo();
 	}
@@ -1152,7 +1169,7 @@ public class Scratch extends Sprite {
 			'\nCopyright © 2012 MIT Media Laboratory' +
 			'\nAll rights reserved.', stage);
 	}
-	
+
 	public function secretDevLogoMenu():void {
 		var m:Menu = new Menu(null, 'Dev', CSS.topBarColor_default, 28);
 		m.addItem('About', aboutDev);
@@ -1161,11 +1178,11 @@ public class Scratch extends Sprite {
 		m.addItem('Change dev password', devChangePass);
 		m.showOnStage(stage, 1, 10);
 	}
-	
+
 	public function aboutDev(b:*):void {
 		DialogBox.notify('About Developer Mode', '\nComing soon...', stage)
 	}
-	
+
 	public function devChangePass(b:*):void {
 		DialogBox.notify('Change Password', '\nComing soon...', stage)
 	}
@@ -1201,7 +1218,7 @@ public class Scratch extends Sprite {
 			}
 		}
 	}*/
-	
+
 	//DIALOG FUNCTIONS (for primatives)
 /*	public function primCustomDialog(param1:Function, param2:Function, param3:Function, param4:Function, param5:Function, param6:Function, param7:Function, param8:Function, param9:Function):String {
 		var d:DialogBox = new DialogBox();
@@ -1217,7 +1234,7 @@ public class Scratch extends Sprite {
 		d.showOnStage(stage);
 		return "WIP";
 	}*/
-	
+
 	public function confirmCloneCountChange(param1:int):void {
 		function confirmChange():void {
 			MaxCloneCount = (param1 - 2);
@@ -1229,7 +1246,7 @@ public class Scratch extends Sprite {
 		d.addButton('Decline', d.cancel);
 		d.showOnStage(stage);
 	}
-	
+
 	public function devMode() : void
 		{
 		var babyCheck:Function = null;
@@ -1267,7 +1284,7 @@ public class Scratch extends Sprite {
 			DialogBox.notify('Developer Mode', '\nThe password "' + Password + '" is incorrect.', stage);
 		}
 	}
-	
+
 	protected function createNewProjectAndThen(callback:Function = null):void {
 		function clearProject():void {
 			startNewProject('', '');
@@ -1375,7 +1392,7 @@ public class Scratch extends Sprite {
 		interp.turboMode = true;
 		stagePart.refresh();
 	}
-	
+
 	public function toggleSingleSteppingFast():void {
 		interp.singleSteppingFast = true;
 		interp.singleSteppingSlow = false;
@@ -1389,10 +1406,10 @@ public class Scratch extends Sprite {
 		interp.turboMode = false;
 		stagePart.refresh();
 	}
-	
+
 	public function toggleSingleSteppingStop():void {
 		interp.singleSteppingFast = false;
-		interp.singleSteppingSlow = false;	
+		interp.singleSteppingSlow = false;
 		interp.turboMode = false;
 		stagePart.refresh();
 	}
@@ -1403,7 +1420,7 @@ public class Scratch extends Sprite {
 		interp.turboMode = true;
 		stagePart.refresh();
 	}
-	
+
 	public function deactivateTurboMode():void {
 		interp.turboMode = false;
 		stagePart.refresh();

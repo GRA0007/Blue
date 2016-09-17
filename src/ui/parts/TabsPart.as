@@ -27,7 +27,7 @@ package ui.parts {
 	import flash.text.*;
 	import translation.Translator;
 	import uiwidgets.IconButton;
-
+import flash.filters.DropShadowFilter;
 public class TabsPart extends UIPart {
 
 	private var scriptsTab:IconButton;
@@ -71,9 +71,9 @@ public class TabsPart extends UIPart {
 	public function fixLayout():void {
 		scriptsTab.x = 0;
 		scriptsTab.y = 0;
-		imagesTab.x = scriptsTab.x + scriptsTab.width + 1;
+		imagesTab.x = scriptsTab.x + scriptsTab.width + 0;
 		imagesTab.y = 0;
-		soundsTab.x = imagesTab.x + imagesTab.width + 1;
+		soundsTab.x = imagesTab.x + imagesTab.width + 0;
 		soundsTab.y = 0;
 		this.w = soundsTab.x + soundsTab.width;
 		this.h = scriptsTab.height;
@@ -103,9 +103,27 @@ public class TabsPart extends UIPart {
 		var g:Graphics = img.graphics;
 		var w:int = tf.width + 20;
 		var h:int = 28;
-		var r:int = 9;
-		if (isSelected) drawTopBar(g, CSS.titleBarColors, getTopBarPath(w, h), w, h);
-		else drawSelected(g, [0xB1E0FF, 0x0077FF], getTopBarPath(w, h), w, h);
+		var r:int = 0;//9
+        var pT:Array=[["m",0,h],["l",0,-h],["l",w,0],["l",0,h],["l",-w,0]];
+        if (isSelected){
+        g.clear();
+        g.beginFill(CSS.grey100);
+g.drawRect(0, 0, w,h);
+g.beginFill(0x2196F3);
+g.drawRect(0,h-4,w,4);
+		//drawBoxBkgGradientShape(g, Math.PI / 2, colors,[0x00, 0xFF], path, w, h);
+		//g.lineStyle(0.5, borderColor, 1, true);
+		//DrawPath.drawPath(path, g);
+        }else{
+        g.clear();
+        g.beginFill(CSS.grey100);
+g.drawRect(0,0,w,h);
+g.beginFill(0xB3C1CC);
+g.drawRect(0,h-4,w,4);
+        //drawSelected(g, [0xB1E0FF, 0x0077FF], pT, w, h);
+        }
+		//if (isSelected) drawTopBar(g, CSS.titleBarColors, pT, w, h);
+		//else drawSelected(g, [0xB1E0FF, 0x0077FF], pT, w, h);
 		return img;
 	}
 
