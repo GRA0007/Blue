@@ -201,6 +201,9 @@ public class ScriptsPane extends ScrollFrameContents {
 			if (b.base.canHaveSubstack1() && !b.subStack1) {
 				updateHeight();
 			}
+			if (b.base.substacks.length>0) {
+				updateHeight();
+			}
 		}
 		else {
 			nearestTarget = null;
@@ -249,6 +252,9 @@ public class ScriptsPane extends ScrollFrameContents {
 				case INSERT_WRAP:
 					targetCmd.insertBlockAround(b);
 					break;
+				}
+				if(nearestTarget[2]<0){
+					targetCmd.insertBlockSubSpecial(-1-nearestTarget[2],b);
 				}
 			}
 		}
@@ -318,6 +324,17 @@ return true; // xxx disable this check for now; it was causing confusion at Scra
 			}
 			if (target.subStack1 != null) findCommandTargetsIn(target.subStack1, endsWithTerminal);
 			if (target.subStack2 != null) findCommandTargetsIn(target.subStack2, endsWithTerminal);
+
+			if (target.substacks.length>0) {
+
+				for(var jim:int =0;jim<target.substacks.length;jim++){
+					if(!endsWithTerminal || target.substacks[jim] == null){
+						p = target.localToGlobal(new Point(15, target.base.substackYs[jim]));
+						possibleTargets.push([p, target, -1-jim]);
+					}
+					if (target.substacks[jim] != null) findCommandTargetsIn(target.substacks[jim], endsWithTerminal);
+				}
+			}
 			target = target.nextBlock;
 		}
 	}
@@ -342,6 +359,13 @@ return true; // xxx disable this check for now; it was causing confusion at Scra
 			}
 			if (b.subStack1 != null) findReporterTargetsIn(b.subStack1);
 			if (b.subStack2 != null) findReporterTargetsIn(b.subStack2);
+			if (b.substacks.length>0) {
+
+				for(var jim:int =0;jim<b.substacks.length;jim++){
+
+					if (b.substacks[jim] != null) findReporterTargetsIn(b.substacks[jim]);
+				}
+			}
 			b = b.nextBlock;
 		}
 	}

@@ -38,7 +38,7 @@ public class BlockPalette extends ScrollFrameContents {
 
 	public function BlockPalette():void {
 		super();
-		this.color = 0xB1E0FF;
+		this.color = 0xF5F5F5;//0xB1E0FF;
 	}
 
 	override public function clear(scrollToOrigin:Boolean = true):void {

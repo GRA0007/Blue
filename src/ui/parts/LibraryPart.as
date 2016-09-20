@@ -93,12 +93,12 @@ public class LibraryPart extends UIPart {
 		spriteDetails.visible = false;
 
 		updateTranslation();
-        var shadow:DropShadowFilter = new DropShadowFilter();
-shadow.distance = 1;
-shadow.alpha=1;
-shadow.blurX=2;
-shadow.blurY=2;
-shadow.angle = 90;
+		var shadow:DropShadowFilter = new DropShadowFilter();
+shadow.distance = 2;
+shadow.alpha=0.3;
+shadow.blurX=6;
+shadow.blurY=6;
+shadow.angle = 70;
         this.filters=[shadow];
 	}
 

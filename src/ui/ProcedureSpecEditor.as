@@ -130,6 +130,7 @@ public class ProcedureSpecEditor extends Sprite {
 				if (argSpec == 's') arg = makeStringArg();
 				if (argSpec == 'c') arg = makeColorArg();
 				if (argSpec == 'm') arg = makeMenuArg();
+				if (argSpec == 'k') arg = makeStackArg();
 				if (arg) {
 					arg.setArgValue(inputNames[i++]);
 					addElement(arg);
@@ -172,6 +173,7 @@ public class ProcedureSpecEditor extends Sprite {
 				if (arg.type == 's') v = '';
 				if (arg.type == 'm') v = '';
 				if (arg.type == 'c') v = 0xA0A0A0;
+				if (arg.type == 'k') v = null;
 				result.push(v);
 			}
 		}
@@ -196,13 +198,13 @@ public class ProcedureSpecEditor extends Sprite {
 			makeLabel("Doesn't report", 14),
 			makeLabel('Reports number or text', 14),
 			makeLabel('Reports true or false', 14),
-			makeLabel("Runs blocks inside it", 14),
+			//makeLabel("Runs blocks inside it", 14),
 		];
 		shapeButtons = [
 			new IconButton(function():void { setShape(BlockShape.CmdShape) }, null),
 			new IconButton(function():void { setShape(BlockShape.NumberShape) }, null),
-			new IconButton(function():void { setShape(BlockShape.BooleanShape) }, null),
-			new IconButton(function():void { setShape(BlockShape.LoopShape) }, null)
+			new IconButton(function():void { setShape(BlockShape.BooleanShape) }, null)//,
+			//new IconButton(function():void { setShape(BlockShape.LoopShape) }, null)
 		];
 		buttonLabels = [
 			makeLabel('Add number input:', 14),
@@ -210,6 +212,7 @@ public class ProcedureSpecEditor extends Sprite {
 			makeLabel('Add boolean input:', 14),
 			makeLabel('Add color input:', 14),
 			makeLabel('Add menu input:', 14),
+			makeLabel('Add stack input:', 14),
 			makeLabel('Add label text:', 14)
 		];
 		buttons = [
@@ -218,6 +221,7 @@ public class ProcedureSpecEditor extends Sprite {
 			new Button('', function():void { appendObj(makeBooleanArg()) }),
 			new Button('', function():void { appendObj(makeColorArg()) }),
 			new Button('', function():void { appendObj(makeMenuArg()) }),
+			new Button('', function():void { appendObj(makeStackArg()) }),
 			new Button('text', function():void { appendObj(makeTextField('')) })
 		];
 
@@ -241,7 +245,7 @@ public class ProcedureSpecEditor extends Sprite {
 
 		icon = new BlockShape(BlockShape.LoopShape, Specs.procedureColor);
 		icon.setWidthAndTopHeight(50, 18, true);
-		shapeIcons.push(icon);
+		//shapeIcons.push(icon);
 
 		icon = new BlockShape(BlockShape.NumberShape, lightGray);
 		icon.setWidthAndTopHeight(25, 14, true);
@@ -262,6 +266,9 @@ public class ProcedureSpecEditor extends Sprite {
 		icon = new BlockShape(BlockShape.RectShape, lightGray);
 		icon.setWidthAndTopHeight(25, 14, true);
 		buttons[4].setIcon(icon);
+		icon = new BlockShape(BlockShape.CmdShape, lightGray);
+		icon.setWidthAndTopHeight(34, 18, true);
+		buttons[5].setIcon(icon);
 	}
 
 	private function addwarpCheckbox():void {
@@ -363,6 +370,11 @@ public class ProcedureSpecEditor extends Sprite {
 		result.setArgValue(unusedArgName('color'));
 		return result;
 	}
+	private function makeStackArg():BlockArg {
+	var result:BlockArg = new BlockArg('k', 0xFFFFFF, true);
+	result.setArgValue(unusedArgName('stack'));
+	return result;
+}
 
 		private function makeMenuArg():BlockArg {
 		var result:BlockArg = new BlockArg('m', 0xFFFFFF, true);
@@ -424,19 +436,82 @@ public class ProcedureSpecEditor extends Sprite {
 		removeDeletedElementsFromRow();
 		blockShape.x = 10;
 		blockShape.y = 10;
+		var leftX:int = blockShape.x + (shape == BlockShape.BooleanShape ? 14 : shape == BlockShape.LoopShape ? 10 : 6);
 		var nextX:int = blockShape.x + (shape == BlockShape.BooleanShape ? 14 : shape == BlockShape.LoopShape ? 10 : 6);
 		var nextY:int = blockShape.y + 5;
-		var maxH:int = 0;
+		var maxH:int = 20;
+		var maxW:int=0;
+		var preWasStack:Boolean=false;
 		for each (var o:DisplayObject in row) maxH = Math.max(maxH, o.height);
 		for each (o in row) {
+			if ((o is BlockArg) && (BlockArg(o).type == 'k') && (!preWasStack)) {
+				nextX=leftX+0;
+				nextY+=30;
+			}
 			o.x = nextX;
-			o.y = nextY + int((maxH - o.height) / 2) + ((o is TextField) ? 1 : 1);
-			nextX += o.width + 4;
-			if ((o is BlockArg) && (BlockArg(o).type == 's')) nextX -= 2;
-		}
-		var blockW:int = Math.max(40, nextX + (shape == BlockShape.BooleanShape ? 12 : 4) - blockShape.x);
-		blockShape.setWidthAndTopHeight(blockW, maxH + 11, true);
 
+			o.y = nextY + int((20 - o.height) / 2) + ((o is TextField) ? 1 : 1);
+			nextX += o.width + 4;
+			maxW=Math.max(maxW, nextX);
+			maxH=Math.max(nextY, maxH);
+			if ((o is BlockArg) && (BlockArg(o).type == 's')) nextX -= 2;
+			if ((o is BlockArg) && (BlockArg(o).type == 'k')) {
+				nextX=leftX+0;
+				nextY+=30;
+				 preWasStack=true;
+			}else{
+				preWasStack=false;
+			}
+		}
+		if (preWasStack) {
+
+			maxH=maxH+6;
+		}
+		preWasStack=false;
+		leftX = blockShape.x + (shape == BlockShape.BooleanShape ? maxH/2+5 : shape == BlockShape.LoopShape ? 10 :  shape == BlockShape.CmdShape ?6:maxH/2);
+		nextX= leftX+0;
+		nextY= blockShape.y + 5;
+		for each (o in row) {
+			if ((o is BlockArg) && (BlockArg(o).type == 'k') && (!preWasStack)) {
+				nextX=leftX+0;
+				nextY+=30;
+			}
+			o.x = nextX;
+
+			o.y = nextY + int((20 - o.height) / 2) + ((o is TextField) ? 1 : 1);
+			nextX += o.width + 4;
+			maxW=Math.max(maxW, nextX);
+			maxH=Math.max(nextY, maxH);
+			if ((o is BlockArg) && (BlockArg(o).type == 's')) nextX -= 2;
+			if ((o is BlockArg) && (BlockArg(o).type == 'k')) {
+				nextX=leftX+0;
+				nextY+=30;
+				 preWasStack=true;
+			}else{
+				preWasStack=false;
+			}
+		}
+		var blockW:int = Math.max(40, maxW + leftX - blockShape.x-12);
+		blockShape.setWidthAndTopHeight(blockW, maxH +11, true);
+		if(shape == BlockShape.CmdShape){
+			var kI:int = 0;
+			if(blockShape.parent!=null) kI=getChildIndex(blockShape);
+
+			if(blockShape.parent!=null) blockShape.parent.removeChild(blockShape);
+			blockShape = new BlockShape(BlockShape.CmdShape, Specs.procedureColor);
+			//base.owner=this;
+			blockShape.setCrazyShape(row,BlockShape.CmdShape, Specs.procedureColor);
+			blockShape.args=row;
+			addChildAt(blockShape, kI);
+			blockShape.redraw();
+			for each (o in row) {
+				if ((o is BlockArg) && (BlockArg(o).type == 'k') ) {
+					o.x=15
+					if(o.parent==null) this.addChild(o);
+				}
+
+			}
+		}
 		moreButton.x = 0;
 		moreButton.y = blockShape.y + blockShape.height + (shape == BlockShape.CmdShape ? 12 : 15);
 

@@ -30,7 +30,7 @@ import flash.utils.getTimer;
 import scratch.*;
 
 import ui.*;
-
+import flash.filters.DropShadowFilter;
 import uiwidgets.*;
 
 public class ScriptsPart extends UIPart {
@@ -79,7 +79,15 @@ public class ScriptsPart extends UIPart {
 		scriptsFrame = new ScrollFrame();
 		scriptsFrame.setContents(scriptsPane);
 		addChild(scriptsFrame);
-		
+		var shadow:DropShadowFilter = new DropShadowFilter();
+shadow.distance = 2;
+shadow.alpha=0.3;
+shadow.blurX=6;
+shadow.blurY=6;
+shadow.angle = 70;
+shadow.inner=true;
+        //scriptsFrame.filters=[shadow];
+
 		return scriptsPane;
 	}
 
@@ -134,7 +142,7 @@ public class ScriptsPart extends UIPart {
 		for (var i:int = 0; i < app.palette.numChildren; i++) {
 			var indicator:IndicatorLight = app.palette.getChildAt(i) as IndicatorLight;
 			if (indicator) app.extensionManager.updateIndicator(indicator, indicator.target);
-		}		
+		}
 		lastUpdateTime = getTimer();
 	}
 
@@ -183,7 +191,7 @@ public class ScriptsPart extends UIPart {
 		var g:Graphics = shape.graphics;
 		g.clear();
 		g.lineStyle(1, CSS.borderColor, 1, true);
-		g.beginFill(CSS.tabColor);
+		g.beginFill(CSS.borderColor);
 		g.drawRect(0, 0, w, h);
 		g.endFill();
 

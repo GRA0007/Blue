@@ -71,6 +71,7 @@ import primitives.*;
 import scratch.*;
 
 import sound.*;
+import flash.text.*;
 
 public class Interpreter {
 
@@ -546,6 +547,7 @@ public class Interpreter {
 		primTable[Specs.SET_VAR]		= primVarSet;
 		primTable[Specs.CHANGE_VAR]		= primVarChange;
 		specialTable[Specs.GET_PARAM]	= primGetParam;
+		specialTable[Specs.GET_STACK]	= primGetStack;
 		specialTable[Specs.GET_LOOP]	= primGetLoop;
 		specialTable["doDefineVars"]	= primDefineVars;
 		primTable["getDefinedVars"]		= primGetDefinedVars;
@@ -753,8 +755,10 @@ public class Interpreter {
 		// Lookup the procedure and cache for future use
 		var obj:ScratchObj = activeThread.target;
 		var insideLoop:* = null;
+		var insideStacks:Array=[];
 		var spec:String = block.spec;
 		if (block.type.indexOf("c") >= 0) insideLoop = block.subStack1;
+		if (block.substacks.length>0 ) insideStacks = block.substacks;
 		var proc:Block = obj.procCache[spec];
 		if (!proc) {
 			proc = obj.lookupProcedure(spec);
@@ -779,6 +783,16 @@ public class Interpreter {
 			}
 		}
 		activeThread.args = b;
+		activeThread.stackArgs = insideStacks;
+		var stackCounter:TextField=new TextField();
+		stackCounter.autoSize = TextFieldAutoSize.LEFT;
+		stackCounter.selectable = false;
+		stackCounter.background = false;
+		stackCounter.defaultTextFormat = CSS.normalTextFormat;
+		stackCounter.textColor = CSS.white;
+		stackCounter.text=block.substacks.length+"";
+		//block.addChild(stackCounter);
+
 		activeThread.loopBlock = insideLoop;
 		activeThread.pushStateForBlock(report0Block);
 		startCmdList(proc);
@@ -909,6 +923,26 @@ public class Interpreter {
 			return;
 		}
 		activeThread.values.push(activeThread.args[block.parameterIndex]);
+	}
+	private function primGetStack(b:Array):void {
+		var block:Block = activeThread.block;
+
+		activeThread.popState();
+		if (block.stackIndex<0) {
+			/*var proc:Block = block.topBlock();
+			if (proc.parameterNames) block.parameterIndex = proc.parameterNames.indexOf(block.spec);
+			if (block.parameterIndex < 0) {
+				activeThread.values.push(0);
+				return;
+			}*/
+		}
+		if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
+		if (activeThread.stackArgs!=null){
+			if (activeThread.stackArgs[block.stackIndex]!=null){
+				activeThread.pushStateForBlock(activeThread.stackArgs[block.stackIndex]);
+			}
+		}
+		activeThread.firstTime = true;
 	}
 
 	private function primDefineVars(b:Array):void {

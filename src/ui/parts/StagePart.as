@@ -87,12 +87,12 @@ public class StagePart extends UIPart {
 		addStageSizeButton();
 		fixLayout();
 		addEventListener(MouseEvent.MOUSE_WHEEL, mouseWheel);
-        var shadow:DropShadowFilter = new DropShadowFilter();
-shadow.distance = 1;
-shadow.alpha=1;
-shadow.blurX=2;
-shadow.blurY=2;
-shadow.angle = 90;
+		var shadow:DropShadowFilter = new DropShadowFilter();
+shadow.distance = 2;
+shadow.alpha=0.3;
+shadow.blurX=6;
+shadow.blurY=6;
+shadow.angle = 70;
         this.filters=[shadow];
 	}
 
@@ -187,7 +187,7 @@ shadow.angle = 90;
 g.drawRect(0,0,w,h);
 g.lineStyle(1, CSS.borderColor, 1, true);
 		g.drawRect(0, topBarHeight - 1, w - 1, h - topBarHeight);
-		g.beginFill(0xFFFFFF);
+		g.beginFill(CSS.grey100);
 		g.lineStyle(1, CSS.borderColor, 1, true);
 g.drawRect(0,h-1,w-1,16);
 
@@ -343,7 +343,7 @@ g.drawRect(0,h-1,w-1,16);
 	}
 
 	private function addTitleAndInfo():void {
-		var fmt:TextFormat = app.isOffline ? new TextFormat(CSS.font, 16, 0xFFFFFF) : CSS.projectTitleFormat;
+		var fmt:TextFormat = app.isOffline ? new TextFormat(CSS.font, 16,  0x909090) : CSS.projectTitleFormat;
 		projectTitle = getProjectTitle(fmt);
 		addChild(projectTitle);
 
@@ -452,7 +452,9 @@ g.drawRect(0,h-1,w-1,16);
 	private function addFullScreenButton():void {
 		function toggleFullscreen(b:IconButton):void {
 			app.setPresentationMode(b.isOn());
+			fixLayout();
 			drawOutline();
+			fixLayout();
 		}
 		fullscreenButton = new IconButton(toggleFullscreen, 'fullscreen');
 		fullscreenButton.disableMouseover();

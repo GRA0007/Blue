@@ -22,11 +22,12 @@ import flash.display.*;
 import flash.events.MouseEvent;
 import flash.geom.Matrix;
 import flash.text.*;
+import flash.filters.DropShadowFilter;
 
 public class Button extends Sprite {
 
 	private var labelOrIcon:DisplayObject;
-	private var color:* = CSS.titleBarColors;
+	private var color:* = CSS.white;//CSS.titleBarColors;
 	private var minWidth:int = 50;
 	private var paddingX:Number = 5.5;
 	private var compact:Boolean;
@@ -45,7 +46,14 @@ public class Button extends Sprite {
 		addEventListener(MouseEvent.MOUSE_OUT, mouseOut);
 		addEventListener(MouseEvent.MOUSE_DOWN, mouseDown);
 		addEventListener(MouseEvent.MOUSE_UP, mouseUp);
-		setColor(CSS.titleBarColors);
+		setColor(CSS.white);//titleBarColors);
+		var shadow:DropShadowFilter = new DropShadowFilter();
+shadow.distance = 2;
+shadow.alpha=0.3;
+shadow.blurX=6;
+shadow.blurY=6;
+shadow.angle = 70;
+        this.filters=[shadow];
 	}
 
 	public function setLabel(s:String):void {
@@ -86,14 +94,14 @@ public class Button extends Sprite {
 		}
 		// outline
 		graphics.clear();
-		graphics.lineStyle(0.5, CSS.borderColor, 1, true);
+		//graphics.lineStyle(0.5, CSS.borderColor, 1, true);
 		if (color is Array) {
 			var matr:Matrix = new Matrix();
 			matr.createGradientBox(minW, minH, Math.PI / 2, 0, 0);
-			graphics.beginGradientFill(GradientType.LINEAR, CSS.titleBarColors, [100, 100], [0x00, 0xFF], matr);
+			graphics.beginGradientFill(GradientType.LINEAR, [0xFFFFFF,0xFFFFFF], [100, 100], [0x00, 0xFF], matr);
 		}
 		else graphics.beginFill(color);
-		graphics.drawRoundRect(0, 0, minW, minH, 12);
+		graphics.drawRoundRect(0, 0, minW, minH, 4);
 		graphics.endFill();
 	}
 

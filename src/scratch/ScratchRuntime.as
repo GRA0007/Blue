@@ -83,10 +83,10 @@ public class ScratchRuntime {
 	protected var saveAfterInstall:Boolean;
 
 	[Embed(source='../assets/pop.wav', mimeType='application/octet-stream')] protected static var Pop:Class;
-	[Embed(source='../assets/TeraA.svg', mimeType='application/octet-stream')] protected static var TeraA:Class;
-	[Embed(source='../assets/TeraB.svg', mimeType='application/octet-stream')] protected static var TeraB:Class;
-	[Embed(source='../assets/TeraC.svg', mimeType='application/octet-stream')] protected static var TeraC:Class;
-	[Embed(source='../assets/TeraD.svg', mimeType='application/octet-stream')] protected static var TeraD:Class;
+	[Embed(source='../assets/BlobA.svg', mimeType='application/octet-stream')] protected static var TeraA:Class;
+	[Embed(source='../assets/BlobB.svg', mimeType='application/octet-stream')] protected static var TeraB:Class;
+	[Embed(source='../assets/BlobC.svg', mimeType='application/octet-stream')] protected static var TeraC:Class;
+	[Embed(source='../assets/BlobD.svg', mimeType='application/octet-stream')] protected static var TeraD:Class;
 
 	public function ScratchRuntime(app:Scratch, interp:Interpreter) {
 		this.app = app;
@@ -787,7 +787,7 @@ public class ScratchRuntime {
 		var newStage:ScratchStage = new ScratchStage();
         var sprite:ScratchSprite = new ScratchSprite('Sprite1');
         var costume1:ScratchCostume = new ScratchCostume(Translator.map('costume1'), new TeraA());
-        var costume2:ScratchCostume = new ScratchCostume(Translator.map('costume2'), new TeraB(), 63, 83); // Fixes odd issue with TeraB.svg...
+        var costume2:ScratchCostume = new ScratchCostume(Translator.map('costume2'), new TeraB()); // Fixes odd issue with TeraB.svg...
         var costume3:ScratchCostume = new ScratchCostume(Translator.map('costume3'), new TeraC());
         var costume4:ScratchCostume = new ScratchCostume(Translator.map('costume4'), new TeraD());
         sprite.costumes = [costume1, costume2, costume3, costume4];
