@@ -333,7 +333,7 @@ base = new BlockShape(BlockShape.CmdShape, color);
 		var b:Block = new Block(spec, "" + procedureType, Specs.procedureColor, 'proc_declaration');
 
 
-		b.base.setCrazyShape(b.labelsAndArgs,BlockShape.CmdOutlineShape, Specs.procedureColor);
+		b.base.setCrazyShape(b.labelsAndArgs,(procedureType==''||procedureType==' ')?BlockShape.CmdOutlineShape:(procedureType=='r')?BlockShape.NumberOutlineShape:(procedureType=='b')?BlockShape.BooleanOutlineShape:BlockShape.CmdOutlineShape, Specs.procedureColor);
 		b.base.redraw();
 		if (!parameterNames) parameterNames = [];
 		var argNum:int=0;
@@ -781,19 +781,20 @@ base = new BlockShape(BlockShape.CmdShape, color);
 				}
 			}
 		}
+		for(var jim:int =0;jim<substacks.length;jim++){
+			if(substacks[jim] != null){
+				dup.insertBlockSubSpecial(jim,substacks[jim].duplicate(forClone, forStage));
+				//dup.addChild(dup.substacks[jim]);
+			}else{
+				substacks[jim]=null;
+			}
+		}
 		if (nextBlock != null) dup.addChild(dup.nextBlock = nextBlock.duplicate(forClone, forStage));
 		if (subStack1 != null) dup.addChild(dup.subStack1 = subStack1.duplicate(forClone, forStage));
 		if (subStack2 != null) dup.addChild(dup.subStack2 = subStack2.duplicate(forClone, forStage));
 		dup.base.redraw();
 		dup.fixArgLayout();
-		for(var jim:int =0;jim<substacks.length;jim++){
-			if(substacks[jim] != null){
-				dup.substacks[jim] = substacks[jim].duplicate(forClone, forStage);
-				dup.addChild(dup.substacks[jim]);
-			}else{
-				substacks[jim]=null;
-			}
-		}
+
 		if (!forClone) {
 			dup.x = x;
 			dup.y = y;
@@ -857,6 +858,9 @@ base = new BlockShape(BlockShape.CmdShape, color);
 
 	public function removeBlock(b:Block):void {
 		if (b.parent == this) removeChild(b);
+		if(substacks.indexOf(b)>-1){
+			substacks[substacks.indexOf(b)]=null;
+		}
 		if (b == nextBlock) {
 			nextBlock = null;
 		}

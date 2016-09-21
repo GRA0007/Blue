@@ -43,7 +43,7 @@ import translation.Translator;
 
 import uiwidgets.*;
 import util.*;
-
+import flash.filters.DropShadowFilter;
 public class TopBarPart extends UIPart {
 
 	private var shape:Shape;
@@ -75,6 +75,13 @@ public class TopBarPart extends UIPart {
 		addButtons();
 		addLogo();
 		refresh();
+		var shadow:DropShadowFilter = new DropShadowFilter();
+shadow.distance = 2;
+shadow.alpha=0.3;
+shadow.blurX=6;
+shadow.blurY=6;
+shadow.angle = 90;
+        //this.filters=[shadow];
 	}
 
 	protected function addButtons():void {
@@ -115,7 +122,7 @@ public class TopBarPart extends UIPart {
 			removeChild(aboutButton);
 		}
 	}
-	
+
 	private function addLogo() : void {
 		var logoClicked:Function = null;
 		logoClicked = function(param1:*):void {

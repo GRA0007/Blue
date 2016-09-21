@@ -129,6 +129,16 @@ public class ScriptsPane extends ScrollFrameContents {
 	}
 
 	public function prepareToDrag(b:Block):void {
+		if (b.parent is Block){
+			Block(b.parent).base.color=0x00FF00;
+			if (Block(b.parent).substacks.indexOf(b)>-1){
+				Block(b.parent).base.color=0xFF0000;
+			 	Block(b.parent).substacks[Block(b.parent).substacks.indexOf(b)]=null;
+			 	Block(b.parent).fixArgLayout();
+				//Block(b.parent).base.redraw();
+			}
+			Block(b.parent).base.redraw();
+		}
 		findTargetsFor(b);
 		nearestTarget = null;
 		b.scaleX = b.scaleY = scaleX;
@@ -202,7 +212,7 @@ public class ScriptsPane extends ScrollFrameContents {
 				updateHeight();
 			}
 			if (b.base.substacks.length>0) {
-				updateHeight();
+				//updateHeight();
 			}
 		}
 		else {
@@ -223,6 +233,11 @@ public class ScriptsPane extends ScrollFrameContents {
 	}
 
 	private function blockDropped(b:Block):void {
+		if(b.parent!=null){
+			if(b.parent is Block){
+				Block(b.parent).removeBlock(b);
+			}
+		}
 		if (nearestTarget == null) {
 			b.cacheAsBitmap = true;
 		} else {

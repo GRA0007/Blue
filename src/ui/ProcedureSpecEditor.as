@@ -221,7 +221,21 @@ public class ProcedureSpecEditor extends Sprite {
 			new Button('', function():void { appendObj(makeBooleanArg()) }),
 			new Button('', function():void { appendObj(makeColorArg()) }),
 			new Button('', function():void { appendObj(makeMenuArg()) }),
-			new Button('', function():void { appendObj(makeStackArg()) }),
+			new Button('', function():void { appendObj(makeStackArg());
+				if(shape!=BlockShape.CmdShape){
+			for(var i:int=0;i<row.length;i++){
+				if ((row[i] is BlockArg) && (BlockArg(row[i]).type == 'k')) {
+					var oldIndex:int = row.indexOf(row[i]) - 1;
+					removeChild(row[i]);
+					if (oldIndex > -1) setFocus(row[oldIndex]);
+					fixLayout();
+				}
+				if (row.length == 0) {
+					appendObj(makeTextField(''));
+					TextField(row[0]).width = 27;
+				}
+			}
+		}}),
 			new Button('text', function():void { appendObj(makeTextField('')) })
 		];
 
@@ -339,10 +353,25 @@ public class ProcedureSpecEditor extends Sprite {
 		for each (var ib:IconButton in shapeButtons) {
 			ib.setOn(ib == ob);
 		}
+
 		var k:int = getChildIndex(blockShape);
 		removeChildAt(k);
 		blockShape = new BlockShape(shape, Specs.procedureColor);
 		addChildAt(blockShape, k);
+		if(shape!=BlockShape.CmdShape){
+		for(var i:int=0;i<row.length;i++){
+			if ((row[i] is BlockArg) && (BlockArg(row[i]).type == 'k')) {
+				var oldIndex:int = row.indexOf(row[i]) - 1;
+				removeChild(row[i]);
+				if (oldIndex > -1) setFocus(row[oldIndex]);
+				fixLayout();
+			}
+			if (row.length == 0) {
+				appendObj(makeTextField(''));
+				TextField(row[0]).width = 27;
+			}
+		}
+	}
 		fixLayout();
 	}
 

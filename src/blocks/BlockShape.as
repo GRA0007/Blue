@@ -84,6 +84,7 @@ public class BlockShape extends Shape {
 		this.shape = shape;
 		setShape(shape);
 		filters = blockShapeFilters();
+
 	}
 
 
@@ -92,7 +93,7 @@ public class BlockShape extends Shape {
 		this.shape = shape;
 		this.args=args;
 		setSpecialShape(shape,args);
-		filters = blockShapeFilters();
+		//filters = blockShapeFilters();
 	}
 
 	public function setWidthAndTopHeight(newW:int, newTopH:int, doRedraw:Boolean = false):void {
@@ -375,6 +376,10 @@ public class BlockShape extends Shape {
 	   var fild:Boolean=false;
 	   var heightTot:int=10;
 	   this.w = Math.max(40, maxW +leftX);
+	   if(this.shape==BlockShape.CmdOutlineShape){
+	   g.endFill(); // do not fill
+	   g.lineStyle(2, 0xFFFFFF, 0.2);
+   }
 	   drawTop(g);
 
 	   for each (var o:DisplayObject in this.args) {
@@ -443,6 +448,17 @@ public class BlockShape extends Shape {
 	   }else{
 		   drawRightAndBottom(g, heightTot , true);
 	   }
+	   if(this.shape==BlockShape.CmdOutlineShape){
+	   g.lineTo(0, CornerInset);
+   }
+   if(this.shape==BlockShape.BooleanOutlineShape){
+g.clear();
+drawBooleanOutlineShape(g);
+   }
+   if(this.shape==BlockShape.NumberOutlineShape){
+g.clear();
+drawNumberOutlineShape(g);
+   }
 
 	 }
 

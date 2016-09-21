@@ -660,6 +660,11 @@ shadow.angle = 70;
 		for each (var o:ScratchObj in stagePane.allObjects()) o.applyFilters();
 
 		if (lp) fixLoadProgressLayout();
+		
+		fixLayout();
+		libraryPart.refresh();
+		tabsPart.refresh();
+		stagePane.applyFilters();
 		stagePane.updateCostume();
 		SCRATCH::allow3d {
 			if (isIn3D) render3D.onStageResize();

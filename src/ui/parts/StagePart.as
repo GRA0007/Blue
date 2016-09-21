@@ -245,6 +245,7 @@ g.drawRect(0,h-1,w-1,16);
 		stageSizeButton.y = h -1;
 
 		if (playButton) playButton.scaleX = playButton.scaleY = app.stagePane.scaleX;
+		//redraw();
 	}
 
 	private var lastTime:int=0;
@@ -455,6 +456,8 @@ g.drawRect(0,h-1,w-1,16);
 			fixLayout();
 			drawOutline();
 			fixLayout();
+			app.toggleSmallStage();
+			app.toggleSmallStage();
 		}
 		fullscreenButton = new IconButton(toggleFullscreen, 'fullscreen');
 		fullscreenButton.disableMouseover();

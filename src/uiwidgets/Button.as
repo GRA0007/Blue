@@ -47,8 +47,9 @@ public class Button extends Sprite {
 		addEventListener(MouseEvent.MOUSE_DOWN, mouseDown);
 		addEventListener(MouseEvent.MOUSE_UP, mouseUp);
 		setColor(CSS.white);//titleBarColors);
+		//setColor(0x4285f4);
 		var shadow:DropShadowFilter = new DropShadowFilter();
-shadow.distance = 2;
+shadow.distance = 1;
 shadow.alpha=0.3;
 shadow.blurX=6;
 shadow.blurY=6;
@@ -112,18 +113,36 @@ shadow.angle = 70;
 	}
 
 	private function mouseOver(evt:MouseEvent):void {
-		setColor(CSS.overColor)
+		//setColor(CSS.overColor)
+		//setColor(0x4285f4);
+		var shadow:DropShadowFilter = new DropShadowFilter();
+shadow.distance = 3;
+shadow.alpha=0.3;
+shadow.blurX=8;
+shadow.blurY=8;
+shadow.angle = 70;
+        this.filters=[shadow];
 	}
 
 	private function mouseOut(evt:MouseEvent):void {
 		setColor(CSS.titleBarColors)
+		//setColor(0x4285f4);
+		var shadow:DropShadowFilter = new DropShadowFilter();
+shadow.distance = 1;
+shadow.alpha=0.3;
+shadow.blurX=6;
+shadow.blurY=6;
+shadow.angle = 70;
+        this.filters=[shadow];
 	}
 
 	private function mouseDown(evt:MouseEvent):void {
+		setColor(0x4285f4);
 		Menu.removeMenusFrom(stage)
 	}
 
 	private function mouseUp(evt:MouseEvent):void {
+		setColor(CSS.titleBarColors);
 		if (action != null) action();
 		if (eventAction != null) eventAction(evt);
 		evt.stopImmediatePropagation();
