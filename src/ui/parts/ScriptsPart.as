@@ -79,15 +79,21 @@ public class ScriptsPart extends UIPart {
 		scriptsFrame = new ScrollFrame();
 		scriptsFrame.setContents(scriptsPane);
 		addChild(scriptsFrame);
+		/*var shadow:DropShadowFilter = new DropShadowFilter();
+shadow.distance = 2;
+shadow.alpha=0.3;
+shadow.blurX=6;
+shadow.blurY=6;
+shadow.angle = 70;
+shadow.inner=true;*/
+        //scriptsFrame.filters=[shadow];
 		var shadow:DropShadowFilter = new DropShadowFilter();
 shadow.distance = 2;
 shadow.alpha=0.3;
 shadow.blurX=6;
 shadow.blurY=6;
 shadow.angle = 70;
-shadow.inner=true;
-        //scriptsFrame.filters=[shadow];
-
+//this.filters=[shadow];
 		return scriptsPane;
 	}
 

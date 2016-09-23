@@ -127,7 +127,7 @@ public class PaletteBuilder {
 	private function showMyBlocksPalette(shiftKey:Boolean):void {
 		// show creation button, hat, and call blocks
 		var catColor:int = Specs.blockColor(Specs.procedureColor);
-		addItem(new Button(Translator.map('Make a Block'), makeNewBlock, false, '/help/studio/tips/blocks/make-a-block/'));
+		addItem(new Button(Translator.map('Make a Block'), makeNewBlock, false, '/help/studio/tips/blocks/make-a-block/').setRaised(false));
 		addBlocksForCategory(10, Specs.procedureColor);
 		var definitions:Array = app.viewedObj().procedureDefinitions();
 		if (definitions.length > 0) {
@@ -159,7 +159,7 @@ public class PaletteBuilder {
 	}
 
 	protected function addAddExtensionButton():void {
-		addItem(new Button(Translator.map('Add an Extension'), showAnExtension, false, '/help/studio/tips/blocks/add-an-extension/'));
+		addItem(new Button(Translator.map('Add an Extension'), showAnExtension, false, '/help/studio/tips/blocks/add-an-extension/').setRaised(false));
 	}
 
 	private function showDataCategory():void {
@@ -276,7 +276,7 @@ public class PaletteBuilder {
 		d.showOnStage(app.stage, true);
 		specEditor.setInitialFocus();
 	}
-	
+
 	private function makeNewReporter():void {
 /*		function addReporterHat(dialog:DialogBox):void {
 			var spec:String = specEditor.spec().replace(/^\s+|\s+$/g, '');

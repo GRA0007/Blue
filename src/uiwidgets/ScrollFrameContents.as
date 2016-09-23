@@ -33,8 +33,8 @@ package uiwidgets {
 
 public class ScrollFrameContents extends Sprite {
 
-	public var color:int = 0xF5F5F5;//0xE0E0E0;
-	public var texture:BitmapData;
+	public var color:int = CSS.white;//0xF5F5F5;//0xE0E0E0;
+	public var texture:BitmapData=null;
 
 	// extra padding using in updateSize
 	public var hExtra:int = 10;
@@ -48,8 +48,11 @@ public class ScrollFrameContents extends Sprite {
 	public function setWidthHeight(w:int, h:int):void {
 		// Draw myself using the texture bitmap, if available, or a solid gray color if not.
 		graphics.clear();
-		if (texture) graphics.beginBitmapFill(texture)
-		else graphics.beginFill(color);
+		if (texture!=null && (texture)) {
+			graphics.beginBitmapFill(texture);
+		}else {
+			graphics.beginFill(color);
+		}
 		graphics.drawRect(0, 0, w, h);
 		graphics.endFill();
 	}

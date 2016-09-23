@@ -93,7 +93,7 @@ shadow.alpha=0.3;
 shadow.blurX=6;
 shadow.blurY=6;
 shadow.angle = 70;
-        this.filters=[shadow];
+        //this.filters=[shadow];
 	}
 
 	public static function strings():Array {

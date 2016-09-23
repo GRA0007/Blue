@@ -45,7 +45,7 @@ public class CSS {
 	public static const panelColor:int = 0xF2F2F2;
 	public static const itemSelectedColor:int = 0xD0D0D0;
 	public static const borderColor:int =0xF5F5F5;// 0xD0D1D2;
-	public static const textColor:int = 0x5C5D5F; // 0x6C6D6F
+	public static const textColor:int = 0x424242; // 0x6C6D6F
 	public static const buttonLabelColor:int = textColor;
 	public static const buttonLabelOverColor:int = 0xFBA939;
 	public static const offColor:int = 0x8F9193; // 0x9FA1A3
@@ -54,7 +54,7 @@ public class CSS {
 	public static const arrowColor:int = 0xA6A8AC;
 
 	// Fonts
-	public static const font:String = Resources.chooseFont(['Arial', 'Verdana', 'DejaVu Sans']);
+	public static const font:String = Resources.chooseFont(['NotoSans','Arial', 'Verdana', 'DejaVu Sans']);
 	public static const menuFontSize:int = 12;
 	public static const normalTextFormat:TextFormat = new TextFormat(font, 12, textColor);
 	public static const topBarButtonFormat:TextFormat = new TextFormat(font, 12, white, true);

@@ -99,7 +99,7 @@ shadow.alpha=0.3;
 shadow.blurX=6;
 shadow.blurY=6;
 shadow.angle = 70;
-        this.filters=[shadow];
+        //this.filters=[shadow];
 	}
 
 	public static function strings():Array {
@@ -134,7 +134,7 @@ shadow.angle = 70;
 	}
 
 	public function setWidthHeight(w:int, h:int):void {
-    h=h-4;
+    //h=h-4;
 		this.w = w;
 		this.h = h;
 		var g:Graphics = shape.graphics;
@@ -153,7 +153,7 @@ g.drawRect(0,0,w-1,CSS.titleBarH-1);
 			g.lineTo(stageAreaWidth, h);
 			g.lineStyle();
 			g.beginFill(CSS.tabColor);
-			g.drawRect(1, CSS.titleBarH + 1, stageAreaWidth - 1, h - CSS.titleBarH - 1);
+			g.drawRect(1, CSS.titleBarH + 1, stageAreaWidth - 1, h - CSS.titleBarH-1 );
 			g.endFill();
 		}
 		fixLayout();
@@ -305,7 +305,7 @@ g.drawRect(0,0,w-1,CSS.titleBarH-1);
 
 	private function addSpritesArea():void {
 		spritesPane = new ScrollFrameContents();
-		spritesPane.color = bgColor;
+		spritesPane.color = CSS.white;//bgColor;
 		spritesPane.hExtra = spritesPane.vExtra = 0;
 		spritesFrame = new ScrollFrame();
 		spritesFrame.setContents(spritesPane);

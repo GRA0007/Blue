@@ -147,7 +147,7 @@ shadow.angle = 90;
 		this.h = h;
 		var g:Graphics = shape.graphics;
 		g.clear();
-		g.beginFill(CSS.topBarColor());
+		g.beginFill(false?0x448AFF:0x2962FF);
 		g.drawRect(0, 0, w, h);
 		g.endFill();
 		fixLayout();

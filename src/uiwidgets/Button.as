@@ -24,19 +24,23 @@ import flash.geom.Matrix;
 import flash.text.*;
 import flash.filters.DropShadowFilter;
 
+
 public class Button extends Sprite {
 
 	private var labelOrIcon:DisplayObject;
 	private var color:* = CSS.white;//CSS.titleBarColors;
 	private var minWidth:int = 50;
-	private var paddingX:Number = 5.5;
+	private var paddingX:Number = 5;
 	private var compact:Boolean;
 
 	private var action:Function; // takes no arguments
 	private var eventAction:Function; // like action, but takes the event as an argument
 	private var tipName:String;
+	public var state:int=0;
+	public var raised:Boolean=true;
+	public var textColor:int = 0x2962FF;
 
-	public function Button(label:String, action:Function = null, compact:Boolean = false, tipName:String = null) {
+	public function Button(label:String, action:Function = null, compact:Boolean = false, tipName:String = null,raised:Boolean = true) {
 		this.action = action;
 		this.compact = compact;
 		this.tipName = tipName;
@@ -55,6 +59,16 @@ shadow.blurX=6;
 shadow.blurY=6;
 shadow.angle = 70;
         this.filters=[shadow];
+		this.setRaised(raised);
+	}
+	public function dropShadow(e:Number):DropShadowFilter{
+		var shadow:DropShadowFilter = new DropShadowFilter();
+shadow.distance = 1+e;
+shadow.alpha=0.3;
+shadow.blurX=e*2+2;
+shadow.blurY=e*2+2;
+shadow.angle = 70;
+return shadow;
 	}
 
 	public function setLabel(s:String):void {
@@ -85,7 +99,7 @@ shadow.angle = 70;
 		if (labelOrIcon != null) {
 			if (labelOrIcon is TextField) {
 				minW = Math.max(minWidth, labelOrIcon.width + paddingX * 2);
-				minH = compact ? 20 : 25;
+				minH = compact ? 20 : 26;
 			} else {
 				minW = Math.max(minWidth, labelOrIcon.width + 12);
 				minH = Math.max(minH, labelOrIcon.height + 11);
@@ -101,8 +115,12 @@ shadow.angle = 70;
 			matr.createGradientBox(minW, minH, Math.PI / 2, 0, 0);
 			graphics.beginGradientFill(GradientType.LINEAR, [0xFFFFFF,0xFFFFFF], [100, 100], [0x00, 0xFF], matr);
 		}
-		else graphics.beginFill(color);
-		graphics.drawRoundRect(0, 0, minW, minH, 4);
+		else {graphics.beginFill(color);}
+		if(!raised){
+
+		graphics.beginFill(0,0);
+	}
+		graphics.drawRoundRect(0, 0, minW, minH, 3);
 		graphics.endFill();
 	}
 
@@ -115,29 +133,47 @@ shadow.angle = 70;
 	private function mouseOver(evt:MouseEvent):void {
 		//setColor(CSS.overColor)
 		//setColor(0x4285f4);
-		var shadow:DropShadowFilter = new DropShadowFilter();
-shadow.distance = 3;
-shadow.alpha=0.3;
-shadow.blurX=8;
-shadow.blurY=8;
-shadow.angle = 70;
-        this.filters=[shadow];
+		if(raised){
+        this.filters=[dropShadow(2)];
+	}else{
+		this.filters=[];
+		if (labelOrIcon is TextField) {
+			(labelOrIcon as TextField).textColor=textColor;
+		}
+	}
 	}
 
 	private function mouseOut(evt:MouseEvent):void {
 		setColor(CSS.titleBarColors)
 		//setColor(0x4285f4);
-		var shadow:DropShadowFilter = new DropShadowFilter();
-shadow.distance = 1;
-shadow.alpha=0.3;
-shadow.blurX=6;
-shadow.blurY=6;
-shadow.angle = 70;
-        this.filters=[shadow];
+		if(raised){
+		this.filters=[dropShadow(1)];
+	}else{
+		this.filters=[];
+		if (labelOrIcon is TextField) {
+			(labelOrIcon as TextField).textColor=0x424242;
+		}
+	}
+	}
+	public function setRaised(raised:Boolean):Button{
+		this.raised=raised;
+		if(raised){
+		this.filters=[dropShadow(1)];
+	}else{
+		this.filters=[];
+		if (labelOrIcon is TextField) {
+			(labelOrIcon as TextField).textColor=0x424242;
+		}
+		graphics.clear();
+		graphics.beginFill(0,0);
+		graphics.drawRoundRect(0, 0, this.height, this.width, 3);
+		graphics.endFill();
+	}
+	return this;
 	}
 
 	private function mouseDown(evt:MouseEvent):void {
-		setColor(0x4285f4);
+		//setColor(0x4285f4);
 		Menu.removeMenusFrom(stage)
 	}
 
@@ -156,6 +192,8 @@ shadow.angle = 70;
 		color = c;
 		if (labelOrIcon is TextField) {
 			(labelOrIcon as TextField).textColor = (c == CSS.overColor) ? CSS.white : CSS.buttonLabelColor;
+			//(labelOrIcon as TextField).textColor = textColor;//(state) ? CSS.white : CSS.buttonLabelColor;
+
 		}
 		setMinWidthHeight(5, 5);
 	}
@@ -165,8 +203,12 @@ shadow.angle = 70;
 		label.autoSize = TextFieldAutoSize.LEFT;
 		label.selectable = false;
 		label.background = false;
-		label.defaultTextFormat = CSS.normalTextFormat;
-		label.textColor = CSS.buttonLabelColor;
+		var tF:TextFormat=new TextFormat(CSS.font, 12, textColor);
+		tF.bold=true;
+		label.defaultTextFormat = tF;//CSS.normalTextFormat;
+		//label.defaultTextFormat.bold=true;
+
+		label.textColor=0x424242;// = textColor;//CSS.buttonLabelColor;
 		label.text = s;
 		labelOrIcon = label;
 		setMinWidthHeight(0, 0);

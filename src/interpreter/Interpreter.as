@@ -471,6 +471,7 @@ public class Interpreter {
 		primTable["whenKeyPressed"]		= primNoop;
 		primTable["whenClicked"]		= primNoop;
 		primTable["whenSceneStarts"]	= primNoop;
+		//primTable["run:"]	= primRun;
 		specialTable["wait:elapsed:from:"]	= primWait;
 		specialTable["doForever"]			= function(b:*):* { startCmdList(this.subStack1, true); };
 		specialTable["doRepeat"]			= primRepeat;
@@ -598,6 +599,10 @@ public class Interpreter {
 	}
 
 	public function primNoop(b:Array):void { }
+	public function primRun(b:Array):void {
+		if (!(b[0] is String)) return;
+
+	}
 
 	private function primForLoop(b:Array):void {
 		var list:Array = [];

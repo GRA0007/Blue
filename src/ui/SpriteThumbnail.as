@@ -29,6 +29,7 @@ package ui {
 	import ui.media.MediaInfo;
 	import ui.parts.LibraryPart;
 	import uiwidgets.*;
+	import flash.filters.DropShadowFilter;
 
 public class SpriteThumbnail extends Sprite {
 
@@ -80,6 +81,13 @@ public class SpriteThumbnail extends Sprite {
 
 		addDetailsButton();
 		updateThumbnail();
+		var shadow:DropShadowFilter = new DropShadowFilter();
+shadow.distance = 1;
+shadow.alpha=0.3;
+shadow.blurX=6;
+shadow.blurY=6;
+shadow.angle = 70;
+        this.filters=[shadow];
 	}
 
 	public static function strings():Array {
@@ -88,9 +96,19 @@ public class SpriteThumbnail extends Sprite {
 	private function addDetailsButton():void {
 		detailsButton = new IconButton(showSpriteDetails, 'spriteInfo');
 		detailsButton.x = detailsButton.y = -2;
+		detailsButton.x=frameW-20;
+		detailsButton.y=frameH-30;
 		detailsButton.isMomentary = true;
 		detailsButton.visible = false;
 		addChild(detailsButton);
+		var shadow:DropShadowFilter = new DropShadowFilter();
+shadow.distance = 1;
+shadow.alpha=0.3;
+shadow.blurX=6;
+shadow.blurY=6;
+shadow.angle = 70;
+//shadow.inset=flag;
+        detailsButton.filters=[shadow];
 	}
 
 	private function addFrame():void {
@@ -100,7 +118,7 @@ public class SpriteThumbnail extends Sprite {
 		var g:Graphics = frame.graphics;
 		g.lineStyle(NaN);
 		g.beginFill(0xFFFFFF);
-		g.drawRoundRect(0, 0, frameW, frameH, 12, 12);
+		g.drawRoundRect(0, 0, frameW, frameH, 0, 0);
 		g.endFill();
 		addChild(frame);
 	}
@@ -111,7 +129,7 @@ public class SpriteThumbnail extends Sprite {
 		var h:int = targetObj.isStage ? stageFrameH : frameH;
 		g.lineStyle(3, CSS.overColor, 1, true);
 		g.beginFill(CSS.itemSelectedColor);
-		g.drawRoundRect(0, 0, frameW, h, 12, 12);
+		g.drawRoundRect(0, 0, frameW, h, 0, 0);
 		g.endFill();
 		selectedFrame.visible = false;
 		addChild(selectedFrame);
@@ -123,7 +141,7 @@ public class SpriteThumbnail extends Sprite {
 		var g:Graphics = highlightFrame.graphics;
 		var h:int = targetObj.isStage ? stageFrameH : frameH;
 		g.lineStyle(2, highlightColor, 1, true);
-		g.drawRoundRect(1, 1, frameW - 1, h - 1, 12, 12);
+		g.drawRoundRect(1, 1, frameW - 1, h - 1, 0, 0);
 		highlightFrame.visible = false;
 		addChild(highlightFrame);
 	}
@@ -134,14 +152,24 @@ public class SpriteThumbnail extends Sprite {
 	}
 
 	public function select(flag:Boolean):void {
+		var shadow:DropShadowFilter = new DropShadowFilter();
+shadow.distance = 1;
+shadow.alpha=0.3;
+shadow.blurX=6;
+shadow.blurY=6;
+shadow.angle = 70;
+shadow.inner=flag;
+        this.filters=[shadow];
 		if (selectedFrame.visible == flag) return;
 		selectedFrame.visible = flag;
 		detailsButton.visible = flag && !targetObj.isStage;
+
 	}
 
 	public function showHighlight(flag:Boolean):void {
 		// Display a highlight if flag is true (e.g. to show broadcast senders/receivers).
 		highlightFrame.visible = flag;
+
 	}
 
 	public function showInfo(flag:Boolean):void {
