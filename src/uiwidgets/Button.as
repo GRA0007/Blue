@@ -129,7 +129,10 @@ return shadow;
 		graphics.drawRoundRect(0, 0, minW, minH, 3);
 		graphics.endFill();
 	}
-
+	public function withTextColor(txtColor:int):Button{
+		this.textColor=txtColor;
+		return this;
+	}
 	public function setEventAction(newEventAction:Function):Function {
 		var oldEventAction:Function = eventAction;
 		eventAction = newEventAction;
@@ -140,7 +143,7 @@ return shadow;
 		f.blurX = f.blurY = 1;
 		f.highlightAlpha = 0.6;
 		f.shadowAlpha = 0.6;
-		this.filters = [f].concat(filters || []);
+		//this.filters = [f].concat(filters || []);
 		//this.filters[this.filters.length]=f;
 	}
 	private function mouseOver(evt:MouseEvent):void {
@@ -156,14 +159,14 @@ return shadow;
 	}else{
 		this.filters=[];
 		if (labelOrIcon is TextField) {
-			TweenMax.to(labelOrIcon, 0.2, {hexColors:{textColor:this.textColor}});
+			TweenMax.to(labelOrIcon, 0.6, {hexColors:{textColor:this.textColor}});
 			//(labelOrIcon as TextField).textColor=textColor;
 		}
 	}
 	}
 
 	private function mouseOut(evt:MouseEvent):void {
-		setColor(CSS.titleBarColors)
+		//setColor(CSS.titleBarColors)
 		//setColor(0x4285f4);
 		if(raised){
 			if(this.filters.length<1){
@@ -175,7 +178,7 @@ return shadow;
 	}else{
 		this.filters=[];
 		if (labelOrIcon is TextField) {
-			TweenMax.to(labelOrIcon, 0.2, {hexColors:{textColor:0x424242}});
+			TweenMax.to(labelOrIcon, 0.6, {hexColors:{textColor:0x424242}});
 			//(labelOrIcon as TextField).textColor=0x424242;
 		}
 	}
@@ -192,7 +195,7 @@ return shadow;
 		}
 		graphics.clear();
 		graphics.beginFill(0,0);
-		graphics.drawRoundRect(0, 0, this.height, this.width, 3);
+		graphics.drawRoundRect(0, 0, this.width, this.height, 3);
 		graphics.endFill();
 	}
 	return this;

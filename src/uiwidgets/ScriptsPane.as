@@ -73,8 +73,8 @@ public class ScriptsPane extends ScrollFrameContents {
 		const c2:int = alpha | 0xC8C8C8;
 		texture = new BitmapData(23, 23, true, 0xFFFFFF);
 		for(var i:int=0;i<23;i++){
-			texture.setPixel(i, 11, c1);
-			texture.setPixel(11,i, c1);
+			texture.setPixel(i, 11, CSS.borderColor);
+			texture.setPixel(11,i, CSS.borderColor);
 		}
 		/*texture.setPixel(11, 0, c1);
 		texture.setPixel(10, 1, c1);
