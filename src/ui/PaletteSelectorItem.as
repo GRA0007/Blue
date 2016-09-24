@@ -27,19 +27,32 @@ package ui {
 	import flash.display.*;
 	import flash.events.MouseEvent;
 	import flash.text.*;
+	import com.greensock.TweenLite;
 
 public class PaletteSelectorItem extends Sprite {
 
 	public var categoryID:int;
 	public var label:TextField;
 	public var isSelected:Boolean;
-
+	public var colorBar:Shape;
 	private var color:uint;
+	public var colorBarW:int=7;
 
 	public function PaletteSelectorItem(id: int, s:String, c:uint) {
 		categoryID = id;
 		addLabel(s);
 		color = c;
+		colorBar=new Shape();
+		var g:Graphics = colorBar.graphics;
+
+
+
+        g.clear();
+        g.beginFill(color);//0x2196F3);
+		g.drawRect(0, 0, colorBarW,label.height+2);
+		addChild(colorBar);
+		colorBar.x=8;
+		addChild(label);
 		setSelected(false);
 		addEventListener(MouseEvent.MOUSE_OVER, mouseOver);
 		addEventListener(MouseEvent.MOUSE_OUT, mouseOut);
@@ -53,7 +66,15 @@ public class PaletteSelectorItem extends Sprite {
 		label.text = s;
 		addChild(label);
 	}
+	public function renderColorBar(){
+		var g:Graphics = colorBar.graphics;
 
+
+
+        g.clear();
+        g.beginFill(color);//0x2196F3);
+g.drawRect(0, 0, colorBarW,label.height+2);
+	}
 	public function setSelected(flag:Boolean):void {
 		var w:int = 100;
 		var h:int = label.height + 2;
@@ -69,9 +90,12 @@ public class PaletteSelectorItem extends Sprite {
 		g.beginFill(0xFF00, 0); // invisible, but mouse sensitive
 		g.drawRect(0, 0, w, h);
 		g.endFill();
-		g.beginFill(color);
-		g.drawRect(tabInset, 1, isSelected ? w - tabInset - 1 : tabW, h - 2);
-		g.endFill();
+		renderColorBar();
+
+		TweenLite.to(this,0.5, {colorBarW:flag? w - tabInset - 1:7, onUpdate:renderColorBar});
+		//g.beginFill(color);
+		//g.drawRect(tabInset, 1, isSelected ? w - tabInset - 1 : tabW, h - 2);
+		//g.endFill();
 	}
 
 	private function mouseOver(event:MouseEvent):void {

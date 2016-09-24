@@ -71,8 +71,12 @@ public class ScriptsPane extends ScrollFrameContents {
 		const bgColor:int = alpha | 0xD7D7D7;
 		const c1:int = alpha | 0xCBCBCB;
 		const c2:int = alpha | 0xC8C8C8;
-		texture = new BitmapData(23, 23, true, bgColor);
-		texture.setPixel(11, 0, c1);
+		texture = new BitmapData(23, 23, true, 0xFFFFFF);
+		for(var i:int=0;i<23;i++){
+			texture.setPixel(i, 11, c1);
+			texture.setPixel(11,i, c1);
+		}
+		/*texture.setPixel(11, 0, c1);
 		texture.setPixel(10, 1, c1);
 		texture.setPixel(11, 1, c2);
 		texture.setPixel(12, 1, c1);
@@ -81,7 +85,7 @@ public class ScriptsPane extends ScrollFrameContents {
 		texture.setPixel(1, 10, c1);
 		texture.setPixel(1, 11, c2);
 		texture.setPixel(1, 12, c1);
-		texture.setPixel(2, 11, c1);
+		texture.setPixel(2, 11, c1);*/
 	}
 
 	public function viewScriptsFor(obj:ScratchObj):void {

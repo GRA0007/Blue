@@ -45,6 +45,7 @@ public class CSS {
 	public static const panelColor:int = 0xF2F2F2;
 	public static const itemSelectedColor:int = 0xD0D0D0;
 	public static const borderColor:int =0xF5F5F5;// 0xD0D1D2;
+	public static const seamColor:int=CSS.borderColor - 0x141414;
 	public static const textColor:int = 0x424242; // 0x6C6D6F
 	public static const buttonLabelColor:int = textColor;
 	public static const buttonLabelOverColor:int = 0xFBA939;

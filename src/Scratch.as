@@ -72,6 +72,10 @@ import util.*;
 
 import watchers.ListWatcher;
 import flash.filters.DropShadowFilter;
+import com.greensock.TweenLite;
+import com.greensock.plugins.TweenPlugin;
+import com.greensock.plugins.DropShadowFilterPlugin;
+import com.greensock.plugins.HexColorsPlugin;
 public class Scratch extends Sprite {
 	// Version
 	public static const versionString:String = '1.4β';
@@ -141,6 +145,10 @@ public class Scratch extends Sprite {
 	public var logger:Log = new Log(16);
 
 	public function Scratch() {
+
+		TweenPlugin.activate([DropShadowFilterPlugin]); //activation is permanent in the SWF, so this line only needs to be run once.
+
+		//TweenLite.to(mc, 1, {dropShadowFilter:{blurX:5, blurY:5, distance:5, alpha:0.6}});
 		SVGTool.setStage(stage);
 		loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
 		app = this;

@@ -23,6 +23,9 @@ import flash.events.MouseEvent;
 import flash.geom.Matrix;
 import flash.text.*;
 import flash.filters.DropShadowFilter;
+import flash.filters.BevelFilter;
+import com.greensock.TweenLite;
+import com.greensock.TweenMax;
 
 
 public class Button extends Sprite {
@@ -39,6 +42,7 @@ public class Button extends Sprite {
 	public var state:int=0;
 	public var raised:Boolean=true;
 	public var textColor:int = 0x2962FF;
+	public var raiseY:Number=1;
 
 	public function Button(label:String, action:Function = null, compact:Boolean = false, tipName:String = null,raised:Boolean = true) {
 		this.action = action;
@@ -57,7 +61,7 @@ shadow.distance = 1;
 shadow.alpha=0.3;
 shadow.blurX=6;
 shadow.blurY=6;
-shadow.angle = 70;
+shadow.angle = 90;
         this.filters=[shadow];
 		this.setRaised(raised);
 	}
@@ -67,7 +71,7 @@ shadow.distance = 1+e;
 shadow.alpha=0.3;
 shadow.blurX=e*2+2;
 shadow.blurY=e*2+2;
-shadow.angle = 70;
+shadow.angle = 90;
 return shadow;
 	}
 
@@ -119,6 +123,8 @@ return shadow;
 		if(!raised){
 
 		graphics.beginFill(0,0);
+	}else{
+		//graphics.beginFill(0x888AF3);
 	}
 		graphics.drawRoundRect(0, 0, minW, minH, 3);
 		graphics.endFill();
@@ -129,16 +135,29 @@ return shadow;
 		eventAction = newEventAction;
 		return oldEventAction;
 	}
-
+	public function addBevel():void{
+		var f:BevelFilter = new BevelFilter(1);
+		f.blurX = f.blurY = 1;
+		f.highlightAlpha = 0.6;
+		f.shadowAlpha = 0.6;
+		this.filters = [f].concat(filters || []);
+		//this.filters[this.filters.length]=f;
+	}
 	private function mouseOver(evt:MouseEvent):void {
 		//setColor(CSS.overColor)
 		//setColor(0x4285f4);
 		if(raised){
+			if(this.filters.length<1){
         this.filters=[dropShadow(2)];
+		addBevel();
+	}else{
+		TweenMax.to(this, 0.2, {dropShadowFilter:{distance:4,blurX:8,blurY:8}});
+	}
 	}else{
 		this.filters=[];
 		if (labelOrIcon is TextField) {
-			(labelOrIcon as TextField).textColor=textColor;
+			TweenMax.to(labelOrIcon, 0.2, {hexColors:{textColor:this.textColor}});
+			//(labelOrIcon as TextField).textColor=textColor;
 		}
 	}
 	}
@@ -147,11 +166,17 @@ return shadow;
 		setColor(CSS.titleBarColors)
 		//setColor(0x4285f4);
 		if(raised){
+			if(this.filters.length<1){
 		this.filters=[dropShadow(1)];
+		addBevel();
+	}else{
+		TweenMax.to(this, 0.2, {dropShadowFilter:{distance:1,blurX:2,blurY:2}});
+	}
 	}else{
 		this.filters=[];
 		if (labelOrIcon is TextField) {
-			(labelOrIcon as TextField).textColor=0x424242;
+			TweenMax.to(labelOrIcon, 0.2, {hexColors:{textColor:0x424242}});
+			//(labelOrIcon as TextField).textColor=0x424242;
 		}
 	}
 	}
@@ -159,6 +184,7 @@ return shadow;
 		this.raised=raised;
 		if(raised){
 		this.filters=[dropShadow(1)];
+		addBevel();
 	}else{
 		this.filters=[];
 		if (labelOrIcon is TextField) {

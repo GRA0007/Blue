@@ -62,7 +62,7 @@ public class ScriptsPart extends UIPart {
 		addChild(selector = new PaletteSelector(app));
 
 		var palette:BlockPalette = new BlockPalette();
-		palette.color = CSS.tabColor;
+		palette.color = CSS.white;//CSS.tabColor;
 		paletteFrame = new ScrollFrame();
 		paletteFrame.allowHorizontalScrollbar = false;
 		paletteFrame.setContents(palette);
@@ -205,10 +205,10 @@ shadow.angle = 70;
 		var darkerBorder:int = CSS.borderColor - 0x141414;
 		var lighterBorder:int = 0xF2F2F2;
 		if (!app.isMicroworld) {
-			g.lineStyle(1, darkerBorder, 1, true);
+			/*g.lineStyle(1, darkerBorder, 1, true);
 			hLine(g, paletteFrame.x + 8, lineY, paletteW - 20);
 			g.lineStyle(1, lighterBorder, 1, true);
-			hLine(g, paletteFrame.x + 8, lineY + 1, paletteW - 20);
+			hLine(g, paletteFrame.x + 8, lineY + 1, paletteW - 20);*/
 		}
 
 		g.lineStyle(1, darkerBorder, 1, true);

@@ -180,7 +180,7 @@ public class BlockShape extends Shape {
 	private function blockShapeFilters():Array {
 		// filters for command and reporter Block outlines
 		var f:BevelFilter = new BevelFilter(1);
-		f.blurX = f.blurY = 3;
+		f.blurX = f.blurY = 2;
 		f.highlightAlpha = 0.3;
 		f.shadowAlpha = 0.6;
 		return [f];

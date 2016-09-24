@@ -47,7 +47,7 @@ public class ScrollFrame extends Sprite implements DragClient {
 	private const decayFactor:Number = 0.95;	// velocity decay (make zero to stop instantly)
 	private const stopThreshold:Number = 0.4;	// stop when velocity is below threshold
 	private const cornerRadius:int = 0;
-	private const useFrame:Boolean = true;//false;
+	private const useFrame:Boolean = false;//false;
 
 	private var scrollbarThickness:int = 9;
 

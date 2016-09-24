@@ -31,7 +31,7 @@ public class LinesPart extends UIPart {
 		var g:Graphics = shape.graphics;
 		g.clear();
         g.clear();
-		g.lineStyle(1, 0x9E9E9E);
+		g.lineStyle(1, CSS.seamColor);//0x9E9E9E);
 
 			g.moveTo(app.stagePart.x*0+app.stagePart.width, 0);
 			g.lineTo(app.stagePart.x*0+app.stagePart.width, h);
