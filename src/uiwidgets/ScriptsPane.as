@@ -71,8 +71,12 @@ public class ScriptsPane extends ScrollFrameContents {
 		const bgColor:int = alpha | 0xD7D7D7;
 		const c1:int = alpha | 0xCBCBCB;
 		const c2:int = alpha | 0xC8C8C8;
-		texture = new BitmapData(23, 23, true, bgColor);
-		texture.setPixel(11, 0, c1);
+		texture = new BitmapData(23, 23, true, 0xFFFFFF);
+		for(var i:int=0;i<23;i++){
+			texture.setPixel(i, 11, CSS.borderColor);
+			texture.setPixel(11,i, CSS.borderColor);
+		}
+		/*texture.setPixel(11, 0, c1);
 		texture.setPixel(10, 1, c1);
 		texture.setPixel(11, 1, c2);
 		texture.setPixel(12, 1, c1);
@@ -81,7 +85,7 @@ public class ScriptsPane extends ScrollFrameContents {
 		texture.setPixel(1, 10, c1);
 		texture.setPixel(1, 11, c2);
 		texture.setPixel(1, 12, c1);
-		texture.setPixel(2, 11, c1);
+		texture.setPixel(2, 11, c1);*/
 	}
 
 	public function viewScriptsFor(obj:ScratchObj):void {
@@ -129,6 +133,16 @@ public class ScriptsPane extends ScrollFrameContents {
 	}
 
 	public function prepareToDrag(b:Block):void {
+		if (b.parent is Block){
+			Block(b.parent).base.color=0x00FF00;
+			if (Block(b.parent).substacks.indexOf(b)>-1){
+				Block(b.parent).base.color=0xFF0000;
+			 	Block(b.parent).substacks[Block(b.parent).substacks.indexOf(b)]=null;
+			 	Block(b.parent).fixArgLayout();
+				//Block(b.parent).base.redraw();
+			}
+			Block(b.parent).base.redraw();
+		}
 		findTargetsFor(b);
 		nearestTarget = null;
 		b.scaleX = b.scaleY = scaleX;
@@ -201,6 +215,9 @@ public class ScriptsPane extends ScrollFrameContents {
 			if (b.base.canHaveSubstack1() && !b.subStack1) {
 				updateHeight();
 			}
+			if (b.base.substacks.length>0) {
+				//updateHeight();
+			}
 		}
 		else {
 			nearestTarget = null;
@@ -220,6 +237,11 @@ public class ScriptsPane extends ScrollFrameContents {
 	}
 
 	private function blockDropped(b:Block):void {
+		if(b.parent!=null){
+			if(b.parent is Block){
+				Block(b.parent).removeBlock(b);
+			}
+		}
 		if (nearestTarget == null) {
 			b.cacheAsBitmap = true;
 		} else {
@@ -249,6 +271,9 @@ public class ScriptsPane extends ScrollFrameContents {
 				case INSERT_WRAP:
 					targetCmd.insertBlockAround(b);
 					break;
+				}
+				if(nearestTarget[2]<0){
+					targetCmd.insertBlockSubSpecial(-1-nearestTarget[2],b);
 				}
 			}
 		}
@@ -318,6 +343,17 @@ return true; // xxx disable this check for now; it was causing confusion at Scra
 			}
 			if (target.subStack1 != null) findCommandTargetsIn(target.subStack1, endsWithTerminal);
 			if (target.subStack2 != null) findCommandTargetsIn(target.subStack2, endsWithTerminal);
+
+			if (target.substacks.length>0) {
+
+				for(var jim:int =0;jim<target.substacks.length;jim++){
+					if(!endsWithTerminal || target.substacks[jim] == null){
+						p = target.localToGlobal(new Point(15, target.base.substackYs[jim]));
+						possibleTargets.push([p, target, -1-jim]);
+					}
+					if (target.substacks[jim] != null) findCommandTargetsIn(target.substacks[jim], endsWithTerminal);
+				}
+			}
 			target = target.nextBlock;
 		}
 	}
@@ -342,6 +378,13 @@ return true; // xxx disable this check for now; it was causing confusion at Scra
 			}
 			if (b.subStack1 != null) findReporterTargetsIn(b.subStack1);
 			if (b.subStack2 != null) findReporterTargetsIn(b.subStack2);
+			if (b.substacks.length>0) {
+
+				for(var jim:int =0;jim<b.substacks.length;jim++){
+
+					if (b.substacks[jim] != null) findReporterTargetsIn(b.substacks[jim]);
+				}
+			}
 			b = b.nextBlock;
 		}
 	}

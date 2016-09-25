@@ -31,16 +31,26 @@ public class Variable {
 	public var value:*;
 	public var watcher:*;
 	public var isPersistent:Boolean;
+	public var color:Number;
 
 	public function Variable(vName:String, initialValue:*) {
 		name = vName;
 		value = initialValue;
+		color=0xEE7D16;
+
 	}
 
 	public function writeJSON(json:util.JSON):void {
 		json.writeKeyValue('name', name);
 		json.writeKeyValue('value', value);
+		json.writeKeyValue('x', this.watcher.x);
+		json.writeKeyValue('y', this.watcher.y);
+		json.writeKeyValue('color', this.color);
 		json.writeKeyValue('isPersistent', isPersistent);
+	}
+	public function setBKColor(color:Number):void{
+		this.color=color;
+		this.watcher.updateForVarColor();
 	}
 
 }}

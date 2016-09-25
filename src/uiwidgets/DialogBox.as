@@ -87,7 +87,7 @@ public class DialogBox extends Sprite {
 		if (context) d.updateContext(context);
 		d.showOnStage(stage ? stage : Scratch.app.stage);
 	}
-	
+
 	public static function close(title:String, msg:String = null, widget:DisplayObject = null, button:String = "OK", stage:Stage = null, okFunction:Function = null, cancelFunction:Function = null, context:Dictionary = null,inverted:Boolean = false):void {
 		var d:DialogBox = new DialogBox(okFunction, cancelFunction);
 		d.leftJustify = false;
@@ -191,10 +191,11 @@ public class DialogBox extends Sprite {
 			if (action != null) action();
 		}
 		var b:Button = new Button(Translator.map(label), doAction);
+		b.setRaised(false);
 		addChild(b);
 		buttons.push(b);
 	}
-	
+
 	public function addInvertedButton(label:String, action:Function):void {
 		function doAction():void {
 			remove();

@@ -485,7 +485,19 @@ public class GestureHandler {
 		if (obj is Block) {
 			var b:Block = Block(obj);
 			b.saveOriginalState();
-			if (b.parent is Block) Block(b.parent).removeBlock(b);
+			if (b.parent is Block){
+				//Block(b.parent).base.color=0x00FF00;
+				if (Block(b.parent).substacks.indexOf(b)>-1){
+					//Block(b.parent).base.color=0xFF0000;
+				 	Block(b.parent).substacks[Block(b.parent).substacks.indexOf(b)]=null;
+				 	Block(b.parent).fixArgLayout();
+					Block(b.parent).fixStackLayout();
+					//Block(b.parent).base.redraw();
+				}else{
+					Block(b.parent).removeBlock(b);
+				}
+				Block(b.parent).base.redraw();
+			}
 			if (b.parent is MultiBlockArg) MultiBlockArg(b.parent).removeBlock(b);
 			if (b.parent != null) b.parent.removeChild(b);
 			app.scriptsPane.prepareToDrag(b);

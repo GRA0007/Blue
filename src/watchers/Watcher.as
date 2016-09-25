@@ -121,7 +121,9 @@ public class Watcher extends Sprite implements DragClient {
 		setColor(Specs.variableColor);
 		setLabel((target.isStage) ? varName : (target.objName + ": " + varName));
 	}
-
+	public function updateForVarColor():void{
+		setColor(this.target.lookupVar(this.param).color);
+	}
 	public function changeVarName(varName:String):void {
 		if (cmd != "getVar:") return;
 		param = varName;

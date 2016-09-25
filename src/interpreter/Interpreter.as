@@ -71,6 +71,7 @@ import primitives.*;
 import scratch.*;
 
 import sound.*;
+import flash.text.*;
 
 public class Interpreter {
 
@@ -470,6 +471,7 @@ public class Interpreter {
 		primTable["whenKeyPressed"]		= primNoop;
 		primTable["whenClicked"]		= primNoop;
 		primTable["whenSceneStarts"]	= primNoop;
+		//primTable["run:"]	= primRun;
 		specialTable["wait:elapsed:from:"]	= primWait;
 		specialTable["doForever"]			= function(b:*):* { startCmdList(this.subStack1, true); };
 		specialTable["doRepeat"]			= primRepeat;
@@ -546,15 +548,18 @@ public class Interpreter {
 		primTable[Specs.SET_VAR]		= primVarSet;
 		primTable[Specs.CHANGE_VAR]		= primVarChange;
 		specialTable[Specs.GET_PARAM]	= primGetParam;
+		specialTable[Specs.GET_STACK]	= primGetStack;
 		specialTable[Specs.GET_LOOP]	= primGetLoop;
 		specialTable["doDefineVars"]	= primDefineVars;
 		primTable["getDefinedVars"]		= primGetDefinedVars;
 		primTable["setDefinedVars"]		= primSetDefinedVars;
-//		primTable["varSet:colorTo:"]	= primVarSetColor;
+		primTable["move:toX:y:"]		=primVarSetXY;
+		primTable["varSet:colorTo:"]	= primVarSetColor;
 		specialTable["getCloud"]		= primGetCloud;
 		specialTable["cloudSet"]		= primSetCloud;
 		specialTable["cloudChange"]		= primChangeCloud;
-
+		primTable["cookieGetVariable"]=primCookieGet;
+		primTable["cookieSetVariable"]=primCookieSet;
 		// cloud lists
 		specialTable["cloudAdd"]		= primCloudAdd;
 		specialTable["cloudDelete"]		= primCloudDelete;
@@ -594,6 +599,10 @@ public class Interpreter {
 	}
 
 	public function primNoop(b:Array):void { }
+	public function primRun(b:Array):void {
+		if (!(b[0] is String)) return;
+
+	}
 
 	private function primForLoop(b:Array):void {
 		var list:Array = [];
@@ -666,8 +675,8 @@ public class Interpreter {
 		var type:String = b[0];
 		if (type == 'all') { app.runtime.stopAll(); yield = true }
 		if (type == 'all and press green flag') {
-			app.runtime.stopAll(); 
-			app.runtime.startGreenFlags(); 
+			app.runtime.stopAll();
+			app.runtime.startGreenFlags();
 		}
 		if (type == 'this script') primReturn([]);
 		if (type == 'other scripts in sprite') stopThreadsFor(activeThread.target, true);
@@ -751,8 +760,10 @@ public class Interpreter {
 		// Lookup the procedure and cache for future use
 		var obj:ScratchObj = activeThread.target;
 		var insideLoop:* = null;
+		var insideStacks:Array=[];
 		var spec:String = block.spec;
 		if (block.type.indexOf("c") >= 0) insideLoop = block.subStack1;
+		if (block.substacks.length>0 ) insideStacks = block.substacks;
 		var proc:Block = obj.procCache[spec];
 		if (!proc) {
 			proc = obj.lookupProcedure(spec);
@@ -777,6 +788,16 @@ public class Interpreter {
 			}
 		}
 		activeThread.args = b;
+		activeThread.stackArgs = insideStacks;
+		var stackCounter:TextField=new TextField();
+		stackCounter.autoSize = TextFieldAutoSize.LEFT;
+		stackCounter.selectable = false;
+		stackCounter.background = false;
+		stackCounter.defaultTextFormat = CSS.normalTextFormat;
+		stackCounter.textColor = CSS.white;
+		stackCounter.text=block.substacks.length+"";
+		//block.addChild(stackCounter);
+
 		activeThread.loopBlock = insideLoop;
 		activeThread.pushStateForBlock(report0Block);
 		startCmdList(proc);
@@ -821,6 +842,25 @@ public class Interpreter {
 		}
 		activeThread.values.push(v.value);
 	}
+	private function primCookieGet(b:Array):String {
+
+		//activeThread.popState();
+		var v:SharedObject = SharedObject.getLocal(b[0]);
+		if (v == null) {
+			return '';
+		}
+		if (v.data.val == null) {
+			return '';
+		}
+		return v.data.val;
+	}
+	private function primCookieSet(b:Array):void {
+
+		//activeThread.popState();
+		var v:SharedObject = SharedObject.getLocal(b[0]);
+		v.data.val=b[1]
+	}
+
 
 	protected function primVarSet(b:Array):Variable {
 		var v:Variable = activeThread.target.varCache[b[0]];
@@ -832,21 +872,33 @@ public class Interpreter {
 		v.value = b[1];
 		return v;
 	}
-	
-/*	protected function primVarSetColor(b:Block):Variable
+	protected function primVarSetXY(b:Array):Variable {
+		var v:Variable = activeThread.target.varCache[b[0]];
+		if (!v) {
+			v = activeThread.target.varCache[b.spec] = activeThread.target.lookupOrCreateVar(b[0]);
+			if (!v) return null;
+		}
+
+		v.watcher.x = b[1];
+		v.watcher.y = b[2];
+		return v;
+	}
+
+	protected function primVarSetColor(b:Array):Variable
       {
-         var v:Variable = activeThread.target.varCache[arg(b, 0)];
+         var v:Variable = activeThread.target.varCache[b[0]];
          if(!v)
          {
-            v = activeThread.target.varCache[b.spec] = activeThread.target.lookupOrCreateVar(arg(b, 0));
+            v = activeThread.target.varCache[b.spec] = activeThread.target.lookupOrCreateVar(b[0]);
             if(!v)
             {
                return null;
             }
          }
-         v.color = arg(b, 1);
+         //v.color = arg(b, 1);
+		 v.setBKColor(b[1]);
          return v;
-      }*/
+      }
 
 	protected function primVarChange(b:Array):Variable {
 		var name:String = b[0];
@@ -876,6 +928,26 @@ public class Interpreter {
 			return;
 		}
 		activeThread.values.push(activeThread.args[block.parameterIndex]);
+	}
+	private function primGetStack(b:Array):void {
+		var block:Block = activeThread.block;
+
+		activeThread.popState();
+		if (block.stackIndex<0) {
+			/*var proc:Block = block.topBlock();
+			if (proc.parameterNames) block.parameterIndex = proc.parameterNames.indexOf(block.spec);
+			if (block.parameterIndex < 0) {
+				activeThread.values.push(0);
+				return;
+			}*/
+		}
+		if (block.nextBlock) activeThread.pushStateForBlock(block.nextBlock);
+		if (activeThread.stackArgs!=null){
+			if (activeThread.stackArgs[block.stackIndex]!=null){
+				activeThread.pushStateForBlock(activeThread.stackArgs[block.stackIndex]);
+			}
+		}
+		activeThread.firstTime = true;
 	}
 
 	private function primDefineVars(b:Array):void {
@@ -1039,7 +1111,7 @@ public class Interpreter {
 		}
 		doYield();
 	}
-	
+
 	private function primCloudGetItem(b:Array):void {
 		if (activeThread.firstTime) {
 			var request:URLRequest = new URLRequest((cloudServerUrl + "listgetitem/" + escape(encodeURIComponent((b[0]).toString())) + "/" + escape(encodeURIComponent((b[1]).toString()))));
@@ -1056,7 +1128,7 @@ public class Interpreter {
 		}
 		doYield();
 	}
-	
+
 	private function primCloudLength(b:Array):void {
 		if (activeThread.firstTime) {
 			var request:URLRequest = new URLRequest((cloudServerUrl + "listlength/" + escape(encodeURIComponent((b[0]).toString()))));
@@ -1073,7 +1145,7 @@ public class Interpreter {
 		}
 		doYield();
 	}
-	
+
 	private function primCloudContains(b:Array):void {
 		if (activeThread.firstTime) {
 			var request:URLRequest = new URLRequest((cloudServerUrl + "listcontains/" + escape(encodeURIComponent((b[0]).toString())) + "/" + escape(encodeURIComponent((b[1]).toString()))));

@@ -71,7 +71,11 @@ import uiwidgets.*;
 import util.*;
 
 import watchers.ListWatcher;
-
+import flash.filters.DropShadowFilter;
+import com.greensock.TweenLite;
+import com.greensock.plugins.TweenPlugin;
+import com.greensock.plugins.DropShadowFilterPlugin;
+import com.greensock.plugins.HexColorsPlugin;
 public class Scratch extends Sprite {
 	// Version
 	public static const versionString:String = '1.4β';
@@ -91,9 +95,10 @@ public class Scratch extends Sprite {
 	public var ignoreResize:Boolean = false; // If true, temporarily ignore resize events.
 	public var isExtensionDevMode:Boolean = false; // If true, run in extension development mode (as on ScratchX)
 	public var isMicroworld:Boolean = false;
+    public var tabsAndPane:Sprite=new Sprite();
 
 	public var presentationScale:Number;
-	
+
 	// Runtime
 	public var runtime:ScratchRuntime;
 	public var interp:Interpreter;
@@ -107,7 +112,7 @@ public class Scratch extends Sprite {
 	public var loadInProgress:Boolean;
 	public var debugOps:Boolean = false;
 	public var debugOpCmd:String = '';
-	
+
 	public var MaxCloneCount:int = 300;
 
 	protected var autostart:Boolean;
@@ -129,6 +134,7 @@ public class Scratch extends Sprite {
 	// UI Parts
 	public var libraryPart:LibraryPart;
 	protected var topBarPart:TopBarPart;
+    public var linesPart:LinesPart;
 	public var stagePart:StagePart;
 	private var tabsPart:TabsPart;
 	protected var scriptsPart:ScriptsPart;
@@ -139,6 +145,10 @@ public class Scratch extends Sprite {
 	public var logger:Log = new Log(16);
 
 	public function Scratch() {
+
+		TweenPlugin.activate([DropShadowFilterPlugin]); //activation is permanent in the SWF, so this line only needs to be run once.
+
+		//TweenLite.to(mc, 1, {dropShadowFilter:{blurX:5, blurY:5, distance:5, alpha:0.6}});
 		SVGTool.setStage(stage);
 		loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
 		app = this;
@@ -224,6 +234,14 @@ public class Scratch extends Sprite {
 		//Analyze.countMissingAssets();
 
 		handleStartupParameters();
+		var shadow:DropShadowFilter = new DropShadowFilter();
+shadow.distance = 2;
+shadow.alpha=0.3;
+shadow.blurX=6;
+shadow.blurY=6;
+shadow.angle = 70;
+        //tabsAndPane.filters=[shadow];
+        //this.add(TabsAndPane);
 	}
 
 	protected function handleStartupParameters():void {
@@ -651,12 +669,17 @@ public class Scratch extends Sprite {
 		for each (var o:ScratchObj in stagePane.allObjects()) o.applyFilters();
 
 		if (lp) fixLoadProgressLayout();
+
+		fixLayout();
+		libraryPart.refresh();
+		tabsPart.refresh();
+		stagePane.applyFilters();
 		stagePane.updateCostume();
 		SCRATCH::allow3d {
 			if (isIn3D) render3D.onStageResize();
 		}
 	}
-	
+
 	public function isInPresentationMode() {
 		return stagePart.isInPresentationMode();
 	}
@@ -737,6 +760,9 @@ public class Scratch extends Sprite {
 		Transition.step(null);
 		stagePart.step();
 		libraryPart.step();
+		if(this.getChildIndex(libraryPart)<this.getChildIndex(stagePart) && libraryPart.parent==this){
+			this.addChild(libraryPart);
+		}
 		scriptsPart.step();
 		imagesPart.step();
 	}
@@ -777,26 +803,36 @@ public class Scratch extends Sprite {
 		if (isShowing(imagesPart)) imagesPart.editor.shutdown();
 		if (isShowing(soundsPart)) soundsPart.editor.shutdown();
 		hide(scriptsPart);
+        //if(scriptsPart.parent) scriptsPart.parent.
 		hide(imagesPart);
 		hide(soundsPart);
 		if (!editMode) return;
 		if (tabName == 'images') {
-			show(imagesPart);
+			//show(imagesPart);
+            tabsAndPane.addChild(imagesPart);
 			imagesPart.refresh();
 		} else if (tabName == 'sounds') {
 			soundsPart.refresh();
-			show(soundsPart);
+			//show(soundsPart);
+            tabsAndPane.addChild(soundsPart);
 		} else if (tabName && (tabName.length > 0)) {
 			tabName = 'scripts';
 			scriptsPart.updatePalette();
 			scriptsPane.viewScriptsFor(viewedObject);
 			scriptsPart.updateSpriteWatermark();
-			show(scriptsPart);
+            tabsAndPane.addChild(scriptsPart);
+			//show(scriptsPart);
 		}
-		show(tabsPart);
+
+        tabsAndPane.addChild(tabsPart);
+		//show(tabsPart);
 		show(stagePart); // put stage in front
+		if(this.getChildIndex(libraryPart)<this.getChildIndex(stagePart) && libraryPart.parent==this){
+			this.addChild(libraryPart);
+		}
 		tabsPart.selectTab(tabName);
 		lastTab = tabName;
+        show(tabsAndPane);
 		if (saveNeeded) setSaveNeeded(true); // save project when switching tabs, if needed (but NOT while loading!)
 	}
 
@@ -819,13 +855,22 @@ public class Scratch extends Sprite {
 		stagePart = getStagePart();
 		libraryPart = getLibraryPart();
 		tabsPart = new TabsPart(this);
+        linesPart=new LinesPart(this);
 		initScriptsPart();
 		initImagesPart();
 		soundsPart = new SoundsPart(this);
+        addChild(linesPart);
 		addChild(topBarPart);
 		addChild(stagePart);
 		addChild(libraryPart);
-		addChild(tabsPart);
+
+		tabsAndPane.addChild(tabsPart);
+        tabsAndPane.addChild(scriptsPart);
+		if(this.getChildIndex(libraryPart)<this.getChildIndex(stagePart) && libraryPart.parent==this){
+			this.addChild(libraryPart);
+		}
+		drawBG();
+        //addChild(tabsAndPane);
 	}
 
 	protected function getStagePart():StagePart {
@@ -856,16 +901,21 @@ public class Scratch extends Sprite {
 			setTab(lastTab);
 			stagePart.hidePlayButton();
 			runtime.edgeTriggersEnabled = true;
+			addChildAt(linesPart, 0);
 		} else {
 			addChildAt(playerBG, 0); // behind everything
 			playerBG.visible = false;
 			hide(topBarPart);
 			hide(libraryPart);
 			hide(tabsPart);
+			hide(linesPart);
 			setTab(null); // hides scripts, images, and sounds
 		}
 		stagePane.updateListWatchers();
 		show(stagePart); // put stage in front
+		if(this.getChildIndex(libraryPart)<this.getChildIndex(stagePart) && libraryPart.parent==this){
+			this.addChild(libraryPart);
+		}
 		fixLayout();
 		stagePart.refresh();
 	}
@@ -883,27 +933,30 @@ public class Scratch extends Sprite {
 	}
 
 	public function onResize(e:Event):void {
+
 		if (!ignoreResize) fixLayout();
+		drawBG();
 	}
 
 	public function fixLayout():void {
+
 		var w:int = stage.stageWidth;
 		var h:int = stage.stageHeight - 1; // fix to show bottom border...
 
 		w = Math.ceil(w / scaleX);
 		h = Math.ceil(h / scaleY);
-
+		//this.graphics.
 		updateLayout(w, h);
 	}
-	
+
 	public function updateRecordingTools(t:Number):void {
 		stagePart.updateRecordingTools(t);
 	}
-	
+
 	public function removeRecordingTools():void {
 		stagePart.removeRecordingTools();
 	}
-	
+
 	public function refreshStagePart():void {
 		stagePart.refresh();
 	}
@@ -928,10 +981,11 @@ public class Scratch extends Sprite {
 			stagePart.x = 5;
 			stagePart.y = isMicroworld ? 5 : topBarPart.bottom() + 5;
 			fixLoadProgressLayout();
+			addChildAt(linesPart, 0);
 		} else {
 			drawBG();
 			var pad:int = (w > 550) ? 16 : 0; // add padding for full-screen mode
-			var scale:Number = Math.min((w - extraW - pad) / 480, (h - extraH - pad) / 360);
+			var scale:Number = Math.min((w - extraW - pad) / 480, (h - extraH - pad-16) / 360);
 			scale = Math.max(0.01, scale);
 			var scaledW:int = Math.floor((scale * 480) / 4) * 4; // round down to a multiple of 4
 			scale = scaledW / 480;
@@ -940,15 +994,16 @@ public class Scratch extends Sprite {
 			var playerH:Number = (scale * 360) + extraH;
 			stagePart.setWidthHeight(playerW, playerH, scale);
 			stagePart.x = int((w - playerW) / 2);
-			stagePart.y = int((h - playerH) / 2);
+			stagePart.y = int((h - playerH-16) / 2);
 			fixLoadProgressLayout();
+			hide(linesPart);
 			return;
 		}
 		libraryPart.x = stagePart.x;
-		libraryPart.y = stagePart.bottom() + 18;
-		libraryPart.setWidthHeight(stagePart.w, h - libraryPart.y);
+		libraryPart.y = stagePart.bottom() + 16+1;
+		libraryPart.setWidthHeight(stagePart.w, h - libraryPart.y-5);
 
-		tabsPart.x = stagePart.right() + 5;
+		tabsPart.x = stagePart.right() + 1;
 		if (!isMicroworld) {
 			tabsPart.y = topBarPart.bottom() + 5;
 			tabsPart.fixLayout();
@@ -957,13 +1012,17 @@ public class Scratch extends Sprite {
 			tabsPart.visible = false;
 
 		// the content area shows the part associated with the currently selected tab:
-		var contentY:int = tabsPart.y + 27;
+		var contentY:int = tabsPart.y + tabsPart.height;
 		if (!isMicroworld)
 			w -= tipsWidth();
-		updateContentArea(tabsPart.x, contentY, w - tabsPart.x - 6, h - contentY - 5, h);
+        linesPart.x=5;
+        linesPart.y=tabsPart.y;
+        linesPart.setWidthHeight(w-10,h-tabsPart.y-5);
+		updateContentArea(tabsPart.x, contentY, w - tabsPart.x - 6, h - contentY - 6, h);
 	}
 
 	protected function updateContentArea(contentX:int, contentY:int, contentW:int, contentH:int, fullH:int):void {
+
 		imagesPart.x = soundsPart.x = scriptsPart.x = contentX;
 		imagesPart.y = soundsPart.y = scriptsPart.y = contentY;
 		imagesPart.setWidthHeight(contentW, contentH);
@@ -979,6 +1038,7 @@ public class Scratch extends Sprite {
 		SCRATCH::allow3d {
 			if (isIn3D) render3D.onStageResize();
 		}
+		drawBG();
 	}
 
 	private function drawBG():void {
@@ -986,6 +1046,10 @@ public class Scratch extends Sprite {
 		g.clear();
 		g.beginFill(0);
 		g.drawRect(0, 0, stage.stageWidth, stage.stageHeight);
+		this.graphics.clear();
+		this.graphics.beginFill(0x2196F3);
+		//this.graphics.drawRect(0, 0, 100, 100);
+		this.graphics.drawRect(0, 0, this.width, this.height);
 	}
 
 	private var modalOverlay:Sprite;
@@ -1063,7 +1127,7 @@ public class Scratch extends Sprite {
 
 		m.showOnStage(stage, b.x, topBarPart.bottom() - 1);
 	}
-	
+
 	public function stopVideo(b:*):void {
 		runtime.stopVideo();
 	}
@@ -1152,7 +1216,7 @@ public class Scratch extends Sprite {
 			'\nCopyright © 2012 MIT Media Laboratory' +
 			'\nAll rights reserved.', stage);
 	}
-	
+
 	public function secretDevLogoMenu():void {
 		var m:Menu = new Menu(null, 'Dev', CSS.topBarColor_default, 28);
 		m.addItem('About', aboutDev);
@@ -1161,11 +1225,11 @@ public class Scratch extends Sprite {
 		m.addItem('Change dev password', devChangePass);
 		m.showOnStage(stage, 1, 10);
 	}
-	
+
 	public function aboutDev(b:*):void {
 		DialogBox.notify('About Developer Mode', '\nComing soon...', stage)
 	}
-	
+
 	public function devChangePass(b:*):void {
 		DialogBox.notify('Change Password', '\nComing soon...', stage)
 	}
@@ -1201,7 +1265,7 @@ public class Scratch extends Sprite {
 			}
 		}
 	}*/
-	
+
 	//DIALOG FUNCTIONS (for primatives)
 /*	public function primCustomDialog(param1:Function, param2:Function, param3:Function, param4:Function, param5:Function, param6:Function, param7:Function, param8:Function, param9:Function):String {
 		var d:DialogBox = new DialogBox();
@@ -1217,7 +1281,7 @@ public class Scratch extends Sprite {
 		d.showOnStage(stage);
 		return "WIP";
 	}*/
-	
+
 	public function confirmCloneCountChange(param1:int):void {
 		function confirmChange():void {
 			MaxCloneCount = (param1 - 2);
@@ -1229,7 +1293,7 @@ public class Scratch extends Sprite {
 		d.addButton('Decline', d.cancel);
 		d.showOnStage(stage);
 	}
-	
+
 	public function devMode() : void
 		{
 		var babyCheck:Function = null;
@@ -1267,7 +1331,7 @@ public class Scratch extends Sprite {
 			DialogBox.notify('Developer Mode', '\nThe password "' + Password + '" is incorrect.', stage);
 		}
 	}
-	
+
 	protected function createNewProjectAndThen(callback:Function = null):void {
 		function clearProject():void {
 			startNewProject('', '');
@@ -1375,7 +1439,7 @@ public class Scratch extends Sprite {
 		interp.turboMode = true;
 		stagePart.refresh();
 	}
-	
+
 	public function toggleSingleSteppingFast():void {
 		interp.singleSteppingFast = true;
 		interp.singleSteppingSlow = false;
@@ -1389,10 +1453,10 @@ public class Scratch extends Sprite {
 		interp.turboMode = false;
 		stagePart.refresh();
 	}
-	
+
 	public function toggleSingleSteppingStop():void {
 		interp.singleSteppingFast = false;
-		interp.singleSteppingSlow = false;	
+		interp.singleSteppingSlow = false;
 		interp.turboMode = false;
 		stagePart.refresh();
 	}
@@ -1403,7 +1467,7 @@ public class Scratch extends Sprite {
 		interp.turboMode = true;
 		stagePart.refresh();
 	}
-	
+
 	public function deactivateTurboMode():void {
 		interp.turboMode = false;
 		stagePart.refresh();
