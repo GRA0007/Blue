@@ -111,6 +111,11 @@ public class BlockArg extends Sprite {
 			argValue = 0;
 		} else if (type == 's') {
 			base = new BlockShape(BlockShape.RectShape, c);
+		}else if (type == 'f') {
+			base = new BlockShape(BlockShape.RectShape, c);
+		}else if (type == 'k') {
+			base = new BlockShape(BlockShape.CmdShape, c);
+			base.setWidthAndTopHeight(40, 30);
 		} else {
 			// custom type; subclass is responsible for adding
 			// the desired children, setting width and height,
@@ -139,8 +144,21 @@ public class BlockArg extends Sprite {
 			addChild(menuIcon);
 		}
 
-		if (editable || numberType || (type.charAt(0) == 'm')) { // add a string field
+		if ((editable || numberType || (type.charAt(0) == 'm') )&& !(type == 'f')) { // add a string field
 			field = makeTextField();
+			if ((type == 'm') && !editable) field.textColor = 0xFFFFFF;
+			else base.setWidthAndTopHeight(30, Block.argTextFormat.size + 5); // 14 for normal arg font
+			field.text = numberType ? '10' : '';
+			if (numberType) field.restrict = '0-9e.\\-'; // restrict to numeric characters
+			if (editable) {
+				base.setColor(0xFFFFFF); // if editable, set color to white
+				isEditable = true;
+			}
+			field.addEventListener(FocusEvent.FOCUS_OUT, stopEditing);
+			addChild(field);
+			textChanged(null);
+		}else if(type == 'f'){
+			field = makeTextArea();
 			if ((type == 'm') && !editable) field.textColor = 0xFFFFFF;
 			else base.setWidthAndTopHeight(30, Block.argTextFormat.size + 5); // 14 for normal arg font
 			field.text = numberType ? '10' : '';
@@ -220,6 +238,19 @@ public class BlockArg extends Sprite {
 		tf.addEventListener(Event.CHANGE, textChanged);
 		return tf;
 	}
+	protected function makeTextArea():TextField {
+		var tf:TextField = new TextField();
+		var offsets:Array = argTextInsets(type);
+		tf.x = offsets[0];
+		tf.y = offsets[1];
+		tf.multiline = true;
+		//tf.wordWrap = true;
+		tf.autoSize = TextFieldAutoSize.LEFT;
+		tf.defaultTextFormat = Block.argTextFormat;
+		tf.selectable = false;
+		tf.addEventListener(Event.CHANGE, textChanged);
+		return tf;
+	}
 
 	protected function argTextInsets(type:String = ''):Array {
 		if (type == 'b') return [5, 0];
@@ -247,6 +278,9 @@ public class BlockArg extends Sprite {
 		var w:int = Math.max(14, field.textWidth + 6 + padding);
 		if (menuIcon) menuIcon.x = w - menuIcon.width - 3;
 		base.setWidth(w);
+		if(type== 'f'){
+			base.setWidthAndTopHeight(w,Math.max(Block.argTextFormat.size + 5, field.textHeight+5));
+		}
 		base.redraw();
 		if (parent is Block) Block(parent).fixExpressionLayout();
 		if (parent is MultiBlockArg) MultiBlockArg(parent).fixLayout();

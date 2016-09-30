@@ -73,6 +73,7 @@ public class Block extends Sprite {
 	public var args:Array = [];
 	public var defaultArgValues:Array = [];
 	public var parameterIndex:int = -1;	// cache of parameter index, used by GET_PARAM block
+	public var stackIndex:int=-1;
 	public var parameterNames:Array;	// used by procedure definition hats; null for other blocks
 	public var warpProcFlag:Boolean;	// used by procedure definition hats to indicate warp speed
 	public var procedureType:*;   // used by procedure definition hats: " ","r", or "b"
@@ -94,11 +95,12 @@ public class Block extends Sprite {
 	public var nextBlock:Block;
 	public var subStack1:Block;
 	public var subStack2:Block;
-
+	public var substacks:Array=[];
+	public var stackCounter:TextField=new TextField();
 	public var base:BlockShape;
 
 	private var suppressLayout:Boolean; // used to avoid extra layouts during block initialization
-	private var labelsAndArgs:Array = [];
+	public var labelsAndArgs:Array = [];
 	private var argTypes:Array = [];
 	private var elseLabel:TextField;
 
@@ -115,6 +117,11 @@ public class Block extends Sprite {
 	private var originalParent:DisplayObjectContainer, originalRole:int, originalIndex:int, originalPosition:Point;
 
 	public function Block(spec:String, type:String = " ", color:int = 0xD00000, op:* = "", defaultArgs:Array = null) {
+		stackCounter.autoSize = TextFieldAutoSize.LEFT;
+		stackCounter.selectable = false;
+		stackCounter.background = false;
+		stackCounter.defaultTextFormat = CSS.normalTextFormat;
+		stackCounter.textColor = CSS.white;
 		this.spec = Translator.map(spec);
 		this.type = type;
 		this.op = op;
@@ -132,7 +139,13 @@ public class Block extends Sprite {
 
 		var shape:int;
 		if ((type == " ") || (type == "") || (type == "w")) {
-			base = new BlockShape(BlockShape.CmdShape, color);
+			//if(defaultArgs==null){
+base = new BlockShape(BlockShape.CmdShape, color);
+			//}else{
+			//base = new BlockShape(BlockShape.CmdShape, color);
+
+			//base.setCrazyShape(defaultArgs,BlockShape.CmdShape, color);
+		//}
 			indentTop = 3;
 		} else if (type == "b" || type == "ob") {
 			base = new BlockShape(type == "ob" ? BlockShape.BooleanOutlineShape : BlockShape.BooleanShape, color);
@@ -180,6 +193,35 @@ public class Block extends Sprite {
 		}
 		addChildAt(base, 0);
 		setSpec(this.spec, defaultArgs);
+		if ((type == " ") || (type == "") || (type == "w")) {
+			if(labelsAndArgs.length<1){
+
+			}else{
+			removeChild(base);
+			base = new BlockShape(BlockShape.CmdShape, color);
+			base.owner=this;
+			base.setCrazyShape(labelsAndArgs,BlockShape.CmdShape, color);
+			addChildAt(base, 0);
+			base.redraw();
+		}
+		if ((type == "o ") || (type == "o")) {
+			if(labelsAndArgs.length<1){
+
+			}else{
+			removeChild(base);
+			base = new BlockShape(BlockShape.CmdOutlineShape, color);
+			base.filters = []; // no bezel
+			base.owner=this;
+			base.setCrazyShape(labelsAndArgs,BlockShape.CmdOutlineShape, color);
+			addChildAt(base, 0);
+			base.redraw();
+		}
+	}
+		//this.addChild(stackCounter);
+		stackCounter.x=0;
+		stackCounter.y=5;
+	}
+
 
 		addEventListener(FocusEvent.KEY_FOCUS_CHANGE, focusChange);
 	}
@@ -278,21 +320,85 @@ public class Block extends Sprite {
 		argTextFormat = new TextFormat(font, argSize, 0x505050, false);
 		Block.vOffset = vOffset;
 	}
-
+	public function updateSpecialStacks():void{
+		//fixArgLayout();
+		while(base.substacks.length>this.substacks.length){
+			this.substacks[this.substacks.length]=null;
+		}
+	}
 	private function declarationBlock():Block {
 		// Create a block representing a procedure declaration to be embedded in a
 		// procedure definition header block. For each formal parameter, embed a
 		// reporter for that parameter.
-		var b:Block = new Block(spec, "o" + procedureType, Specs.procedureColor, 'proc_declaration');
+		var b:Block = new Block(spec, "" + procedureType, Specs.procedureColor, 'proc_declaration');
+
+
+		b.base.setCrazyShape(b.labelsAndArgs,(procedureType==''||procedureType==' ')?BlockShape.CmdOutlineShape:(procedureType=='r')?BlockShape.NumberOutlineShape:(procedureType=='b')?BlockShape.BooleanOutlineShape:BlockShape.CmdOutlineShape, Specs.procedureColor);
+		b.base.redraw();
 		if (!parameterNames) parameterNames = [];
+		var argNum:int=0;
+		var argsNoLabels:Array=[];
+		for(var joe:int=0;joe<b.labelsAndArgs.length;joe++){
+			if((b.labelsAndArgs[joe] is BlockArg)){
+
+				argsNoLabels[argNum]=b.labelsAndArgs[joe];
+				argNum++;
+			}
+		}
+		var sNNum:int=0;
+		var stackNames:Array=[];
+		b.collectArgs();
 		for (var i:int = 0; i < parameterNames.length; i++) {
 			var argType:String = (typeof(defaultArgValues[i]) == 'boolean') ? 'b' : 'r';
 			var pBlock:Block = new Block(parameterNames[i], argType, Specs.parameterColor, Specs.GET_PARAM);
 			pBlock.parameterIndex = i;
-			b.setArg(i, pBlock);
+
+			if (i < b.args.length){
+			var oldArg:BlockArg = b.args[i];
+			//if (newArg is Block) {
+				//labelsAndArgs[labelsAndArgs.indexOf(oldArg)] = newArg;
+				//args[i] = newArg;
+				//removeChild(oldArg);
+				//addChild(newArg);
+			//} else {
+			//	oldArg.setArgValue(newArg);
+			//}
+			if((argsNoLabels[i] is BlockArg) && (BlockArg(argsNoLabels[i]).type == 'k')){
+
+				//pBlock=new Block(parameterNames[i], ' ', Specs.procedureColor, Specs.GET_LOOP);
+				//pBlock.stackIndex=i;
+
+			}
+			if(!((oldArg is BlockArg) && (BlockArg(oldArg).type == 'k'))){
+				b.setArg(i, pBlock);
+			}else{
+				stackNames[sNNum]=parameterNames[i];
+				sNNum++;
+			}
+			//if(((oldArg is BlockArg) && (BlockArg(oldArg).type == 'k'))){
+			//	stackNames[sNNum]=parameterNames[i];
+			//	sNNum++;
+
+			//}
+		}
+
 		}
 		b.fixArgLayout();
-		if (procedureType == "c") b.insertBlockSub1(new Block('substack', '', Specs.procedureColor, Specs.GET_LOOP));
+		var sNum:int=0;
+		for(var joe:int=0;joe<b.labelsAndArgs.length;joe++){
+			if((b.labelsAndArgs[joe] is BlockArg) && (BlockArg(b.labelsAndArgs[joe]).type == 'k')){
+				var nameForStack:String="STACK"+"_"+joe;
+				if(stackNames.length>sNum){
+					nameForStack=stackNames[sNum];
+				}
+				b.addChild(b.substacks[sNum]=new Block(nameForStack, ' ', Specs.parameterColor, Specs.GET_STACK));
+				b.substacks[sNum].stackIndex=sNum;
+				b.substacks[sNum].x=15;
+				sNum++;
+			}
+		}
+		b.fixArgLayout();
+		//if (procedureType == "c") b.insertBlockSub1(new Block("stack", '', Specs.procedureColor, Specs.GET_LOOP));
 		return b;
 	}
 
@@ -305,7 +411,7 @@ public class Block extends Sprite {
 	}
 
 	public function isEmbeddedParameter():Boolean {
-		if (!(op == Specs.GET_PARAM || op == Specs.GET_LOOP) || !(parent is Block)) return false;
+		if (!(op == Specs.GET_PARAM || op == Specs.GET_LOOP|| op == Specs.GET_STACK) || !(parent is Block)) return false;
 		return Block(parent).op == 'proc_declaration';
 	}
 
@@ -509,6 +615,13 @@ public class Block extends Sprite {
 	}
 
 	public function fixArgLayout():void {
+		for(var jim:int =0;jim<substacks.length;jim++){
+			if(substacks[jim] != null){
+				if(substacks[jim].parent == null){
+					substacks[jim]=null;
+				}
+			}
+		}
 		var item:DisplayObject, i:int;
 		if (suppressLayout) return;
 		var x:int = indentLeft - indentAjustmentFor(labelsAndArgs[0]);
@@ -540,6 +653,25 @@ public class Block extends Sprite {
 		base.redraw();
 		fixElseLabel();
 		collectArgs();
+		if ((type == " ") || (type == "") || (type == "w")) {
+			//if(defaultArgs==null){
+			base.substacks=this.substacks;
+			base.args=labelsAndArgs;
+			base.redraw();
+			//}else{
+			//base = new BlockShape(BlockShape.CmdShape, color);
+
+			//base.setCrazyShape(defaultArgs,BlockShape.CmdShape, color);
+		//}
+			indentTop = 3;
+		}
+		var sC:int=0;
+		for(var jim:int =0;jim<substacks.length;jim++){
+			if(substacks[jim] != null){
+				sC+=1;
+			}
+		}
+		stackCounter.text=this.substacks.length+","+sC;
 	}
 
 	private function indentAjustmentFor(item:*):int {
@@ -576,6 +708,33 @@ public class Block extends Sprite {
 				b.base.redraw();
 				b.fixElseLabel();
 			}
+			if (b.base.substacks.length>0) {
+				b.base.substacks=this.substacks;
+				this.fixArgLayout();
+				if (base.substacks.length>0) {
+
+					for(var jim:int =0;jim<substacks.length;jim++){
+						if(substacks[jim]!= null){
+							substacks[jim].fixStackLayout();
+
+						}
+					}
+				}
+				this.fixArgLayout();
+				if (base.substacks.length>0) {
+
+					for(var jim:int =0;jim<substacks.length;jim++){
+						if(substacks[jim]!= null){
+
+							substacks[jim].x = BlockShape.SubstackInset;
+							substacks[jim].y = b.base.substackYs[jim];
+						}
+					}
+				}
+
+
+				b.base.redraw();
+			}
 			if (b.nextBlock != null) {
 				b.nextBlock.x = 0;
 				b.nextBlock.y = b.base.nextBlockY();
@@ -610,6 +769,7 @@ public class Block extends Sprite {
 		dup.defaultArgValues = defaultArgValues;
 		dup.warpProcFlag = warpProcFlag;
 		dup.procedureType = procedureType;
+		dup.stackIndex=stackIndex;
 		if (forClone) {
 			dup.copyArgsForClone(args);
 		} else {
@@ -621,9 +781,20 @@ public class Block extends Sprite {
 				}
 			}
 		}
+		for(var jim:int =0;jim<substacks.length;jim++){
+			if(substacks[jim] != null){
+				dup.insertBlockSubSpecial(jim,substacks[jim].duplicate(forClone, forStage));
+				//dup.addChild(dup.substacks[jim]);
+			}else{
+				substacks[jim]=null;
+			}
+		}
 		if (nextBlock != null) dup.addChild(dup.nextBlock = nextBlock.duplicate(forClone, forStage));
 		if (subStack1 != null) dup.addChild(dup.subStack1 = subStack1.duplicate(forClone, forStage));
 		if (subStack2 != null) dup.addChild(dup.subStack2 = subStack2.duplicate(forClone, forStage));
+		dup.base.redraw();
+		dup.fixArgLayout();
+
 		if (!forClone) {
 			dup.x = x;
 			dup.y = y;
@@ -672,7 +843,7 @@ public class Block extends Sprite {
 		for each (var arg:DisplayObject in args) addChild(arg); // fix for cloned proc bug xxx
 	}
 
-	private function collectArgs():void {
+	public function collectArgs():void {
 		var i:int;
 		args = [];
 		if (isRequester && requestState == 2) {
@@ -687,6 +858,9 @@ public class Block extends Sprite {
 
 	public function removeBlock(b:Block):void {
 		if (b.parent == this) removeChild(b);
+		if(substacks.indexOf(b)>-1){
+			substacks[substacks.indexOf(b)]=null;
+		}
 		if (b == nextBlock) {
 			nextBlock = null;
 		}
@@ -744,6 +918,23 @@ public class Block extends Sprite {
 
 		addChild(b);
 		subStack1 = b;
+		if (old != null) b.appendBlock(old);
+		topBlock().fixStackLayout();
+	}
+	public function insertBlockSubSpecial(pos:int,b:Block):void {
+		var old:Block = substacks[pos];
+		if (old != null) old.parent.removeChild(old);
+		var oldPar:*=null;
+		if (b != null)if (b.parent != null) oldPar=b.parent;
+		if (b != null)if (b.parent != null) b.parent.removeChild(b);
+		if(oldPar!=null){
+			if((oldPar is Block)){
+				oldPar.fixStackLayout();
+			}
+		}
+		addChild(b);
+		substacks[pos] = b;
+		this.fixArgLayout();
 		if (old != null) b.appendBlock(old);
 		topBlock().fixStackLayout();
 	}
@@ -829,6 +1020,8 @@ public class Block extends Sprite {
 			if (argSpec == "m") return new BlockArg("m", c, s.slice(3) == "var" || s.slice(3) == "list", s.slice(3));
 			if (argSpec == "n") return new BlockArg("n", c, true);
 			if (argSpec == "s") return new BlockArg("s", c, true);
+			if (argSpec == "f") return new BlockArg("f", c, true);
+			if (argSpec == "k") return new BlockArg("k", c, true);
 			if (argSpec == "q") return new MultiBlockArg("q", c);
 		} else if (s.length >= 2 && s.charAt(0) == "@") { // icon spec
 			var icon:* = Specs.IconNamed(s.slice(1));

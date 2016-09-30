@@ -41,6 +41,7 @@ import translation.Translator;
 import ui.media.*;
 
 import uiwidgets.*;
+import flash.filters.DropShadowFilter;
 
 public class ImagesPart extends UIPart {
 
@@ -88,6 +89,13 @@ public class ImagesPart extends UIPart {
 		addFlipButtons();
 		addCenterButton();
 		updateTranslation();
+		var shadow:DropShadowFilter = new DropShadowFilter();
+shadow.distance = 2;
+shadow.alpha=0.3;
+shadow.blurX=6;
+shadow.blurY=6;
+shadow.angle = 70;
+//this.filters=[shadow];
 	}
 
 	protected function addEditor(isSVG:Boolean):void {

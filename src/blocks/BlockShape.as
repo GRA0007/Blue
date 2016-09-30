@@ -25,6 +25,7 @@
 package blocks {
 	import flash.display.*;
 	import flash.filters.*;
+	import flash.text.*;
 
 public class BlockShape extends Shape {
 
@@ -69,14 +70,30 @@ public class BlockShape extends Shape {
 	public var topH:int;
 	private var substack1H:int = EmptySubstackH;
 	private var substack2H:int = EmptySubstackH;
+	public var substackHs:Array=[];
+	public var substackYs:Array=[];
+	public var substacks:Array=[];
 	private var drawFunction:Function = drawRectShape;
 	private var redrawNeeded:Boolean = true;
+	public var args:Array=[];
+	public var owner:Block=null;
+
 
 	public function BlockShape(shape:int = 1, color:int = 0xFFFFFF) {
 		this.color = color;
 		this.shape = shape;
 		setShape(shape);
 		filters = blockShapeFilters();
+
+	}
+
+
+	public function setCrazyShape(args:Array,shape:int = 1, color:int = 0xFFFFFF):void {
+		this.color = color;
+		this.shape = shape;
+		this.args=args;
+		setSpecialShape(shape,args);
+		//filters = blockShapeFilters();
 	}
 
 	public function setWidthAndTopHeight(newW:int, newTopH:int, doRedraw:Boolean = false):void {
@@ -163,7 +180,7 @@ public class BlockShape extends Shape {
 	private function blockShapeFilters():Array {
 		// filters for command and reporter Block outlines
 		var f:BevelFilter = new BevelFilter(1);
-		f.blurX = f.blurY = 3;
+		f.blurX = f.blurY = 2;
 		f.highlightAlpha = 0.3;
 		f.shadowAlpha = 0.6;
 		return [f];
@@ -260,6 +277,190 @@ public class BlockShape extends Shape {
 		case ProcHatShape:			drawFunction = drawProcHatShape; break;
 		}
 	}
+	protected function setSpecialShape(shape:int,args:Array):void {
+		this.shape = shape;
+		drawFunction = drawSpecialShape;
+	}
+	private function drawSpecialShape(g:Graphics):void {
+		if(owner!=null){
+			this.substacks=owner.substacks;
+		}
+		var leftX:int = 0 + (shape == BlockShape.BooleanShape ? 14 : shape == BlockShape.LoopShape ? 10 : 6);
+	   var nextX:int = 0+ (shape == BlockShape.BooleanShape ? 14 : shape == BlockShape.LoopShape ? 10 : 6);
+	   var nextY:int = 0 + 5;
+	   var maxH:int = 20;
+	   var maxW:int=0;
+	   var preWasStack:Boolean=false;
+	   var rowHeights:Array=[20];
+	   var rowI:int=0;
+	   var rowY:int=0;
+	   substackYs=[];
+	   for each (var o:DisplayObject in this.args) {
+		   if ((o is BlockArg) && (BlockArg(o).type == 'k') && (!preWasStack)) {
+
+			   nextX=leftX+0;
+			   //nextY+=24;
+		   }
+		   if ((o is BlockArg) && (BlockArg(o).type == 'k') && (preWasStack)) {
+			   //rowY=rowY+BottomBarH;
+			  nextX=leftX+0;
+			  //nextY+=24;
+		  }
+		  if ((o is BlockArg) && (BlockArg(o).type == 'k')) {
+
+			 nextX=leftX+0;
+			 rowY=rowY+rowHeights[rowI];
+			 rowI++;
+			 substackYs[substackYs.length]=rowY;
+			 var sSH:int=EmptySubstackH;
+			 if(substacks.length>=substackYs.length){
+
+				 if(owner!=null){
+					 if(owner.substacks[substackYs.length-1]!=null){
+						 if(substacks[substackYs.length-1].parent!=owner){
+							 owner.substacks[substackYs.length-1]=null;
+							 substacks[substackYs.length-1]=null;
+						 }
+					 }
+
+				}
+				 if(substacks[substackYs.length-1]!=null){
+					 if(owner!=null){
+			 			owner.substacks[substackYs.length-1].y=substackYs[substackYs.length-1];
+						owner.substacks[substackYs.length-1].x=15;
+			 		}
+					substacks[substackYs.length-1].y=substackYs[substackYs.length-1];
+
+					 sSH=substacks[substackYs.length-1].height;
+				 }
+
+			 }else{
+				 substacks[substackYs.length-1]=null;
+			 }
+			 substackHs[substackYs.length-1]=sSH;
+			 rowHeights[rowI]=Math.max(sSH, EmptySubstackH);
+			 rowY=rowY+rowHeights[rowI];
+			 rowI++;
+			rowHeights[rowI]=DividerH;
+
+			 //nextY+=24;
+		 }else{
+			 rowHeights[rowI]=Math.max(o.height+6,rowHeights[rowI]);
+		 }
+		   //o.x = nextX;
+
+		   //o.y = nextY + int((20 - o.height) / 2) + ((o is TextField) ? 1 : 1);
+		   nextX += o.width + 4;
+		   maxW=Math.max(maxW, nextX);
+		   maxH=Math.max(rowY, maxH);
+		   if ((o is BlockArg) && (BlockArg(o).type == 's')) nextX -= 2;
+		   if ((o is BlockArg) && (BlockArg(o).type == 'k')) {
+			   if(o.parent!=null) o.parent.removeChild(o);
+			   nextX=leftX+0;
+			   nextY+=24;
+				preWasStack=true;
+		   }else{
+			   preWasStack=false;
+		   }
+	   }
+	   if (preWasStack) {
+
+		   maxH=maxH+6;
+	   }
+	   preWasStack=false;
+	   leftX = 0 + (shape == BlockShape.BooleanShape ? maxH/2+5 : shape == BlockShape.LoopShape ? 10 :  shape == BlockShape.CmdShape ?6:maxH/2);
+	   nextX= leftX+0;
+	   nextY= 0 + 5;
+	   rowI=0;
+	   rowY=0;
+	   var fild:Boolean=false;
+	   var heightTot:int=10;
+	   this.w = Math.max(40, maxW +leftX);
+	   if(this.shape==BlockShape.CmdOutlineShape){
+	   g.endFill(); // do not fill
+	   g.lineStyle(2, 0xFFFFFF, 0.2);
+   }
+	   drawTop(g);
+
+	   for each (var o:DisplayObject in this.args) {
+		   if ((o is BlockArg) && (BlockArg(o).type == 'k') && (!preWasStack)) {
+
+			   nextX=leftX+0;
+			   //nextY+=24;
+		   }
+		   if ((o is BlockArg) && (BlockArg(o).type == 'k') && (preWasStack)) {
+			   //rowY=rowY+BottomBarH;
+			  nextX=leftX+0;
+			  //nextY+=24;
+		  }
+		  if ((o is BlockArg) && (BlockArg(o).type == 'k')) {
+			 drawRightAndBottom(g, rowY+rowHeights[rowI], true, SubstackInset);
+			 nextX=leftX+0;
+			 rowY=rowY+rowHeights[rowI];
+
+			 rowI++;
+			 //rowHeights[rowI]=Math.max(h, EmptySubstackH);
+			 o.y = rowY + int((rowHeights[rowI] - o.height) / 2) + ((o is TextField) ? 1 : 1);
+
+			 rowY=rowY+rowHeights[rowI];
+			 heightTot=rowY;
+			 drawArm(g, rowY);
+			 rowI++;
+			 fild=false;
+			//rowHeights[rowI]=20;
+
+			 //nextY+=24;
+		 }else{
+			 if(!fild){
+			 //g.drawRect(15, rowY, maxW-15, rowHeights[rowI]);
+			 heightTot=rowY+rowHeights[rowI];
+			 fild=true;
+		 	}
+			 o.y = rowY + int((rowHeights[rowI] - o.height) / 2) + ((o is TextField) ? 0 : 0);
+			 if ((o is BlockArg) && (!BlockArg(o).numberType)) o.y += 1;
+
+			 //rowHeights[rowI]=Math.max(o.height+6,rowHeights[rowI]);
+		 }
+		   o.x = nextX;
+		   if((o is BlockArg)){
+			   if((BlockArg(o).type == 'k')){
+
+			    }else{
+			   	 nextX += o.width + 4;
+			    }
+	   		}else{
+				nextX += o.width + 4;
+			}
+
+		   if ((o is BlockArg) && (BlockArg(o).type == 's')) nextX -= 2;
+		   if ((o is BlockArg) && (BlockArg(o).type == 'k')) {
+				preWasStack=true;
+		   }else{
+			   preWasStack=false;
+		   }
+	   }
+
+	   var blockW:int = Math.max(40, maxW + leftX - 0-12);
+	   //g.drawRect(0, 0, 15, heightTot+(preWasStack?24:0));
+	   if(preWasStack){
+		   drawRightAndBottom(g, heightTot + BottomBarH, true);
+		   //g.drawRect(15, heightTot+12, maxW-15, 12);
+	   }else{
+		   drawRightAndBottom(g, heightTot , true);
+	   }
+	   if(this.shape==BlockShape.CmdOutlineShape){
+	   g.lineTo(0, CornerInset);
+   }
+   if(this.shape==BlockShape.BooleanOutlineShape){
+g.clear();
+drawBooleanOutlineShape(g);
+   }
+   if(this.shape==BlockShape.NumberOutlineShape){
+g.clear();
+drawNumberOutlineShape(g);
+   }
+
+	 }
 
 	private function drawRectShape(g:Graphics):void { g.drawRect(0, 0, w, topH) }
 

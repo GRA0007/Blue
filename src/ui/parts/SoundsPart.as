@@ -35,7 +35,7 @@ package ui.parts {
 	import translation.Translator;
 	import ui.media.*;
 	import uiwidgets.*;
-
+import flash.filters.DropShadowFilter;
 public class SoundsPart extends UIPart {
 
 	public var editor:SoundEditor;
@@ -67,6 +67,13 @@ public class SoundsPart extends UIPart {
 		addUndoButtons();
 		app.stage.addEventListener(KeyboardEvent.KEY_DOWN, editor.keyDown);
 		updateTranslation();
+		var shadow:DropShadowFilter = new DropShadowFilter();
+shadow.distance = 2;
+shadow.alpha=0.3;
+shadow.blurX=6;
+shadow.blurY=6;
+shadow.angle = 70;
+//this.filters=[shadow];
 	}
 
 	public static function strings():Array {
@@ -135,12 +142,12 @@ public class SoundsPart extends UIPart {
 		g.clear();
 
 		g.lineStyle(0.5, CSS.borderColor, 1, true);
-		g.beginFill(CSS.tabColor);
+		g.beginFill(CSS.borderColor);
 		g.drawRect(0, 0, w, h);
 		g.endFill();
 
 		g.lineStyle(0.5, CSS.borderColor, 1, true);
-		g.beginFill(CSS.panelColor);
+		g.beginFill(CSS.borderColor);
 		g.drawRect(columnWidth + 1, 5, w - columnWidth - 6, h - 10);
 		g.endFill();
 

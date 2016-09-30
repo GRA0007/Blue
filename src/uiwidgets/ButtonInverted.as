@@ -87,7 +87,7 @@ public class ButtonInverted extends Sprite {
 			graphics.beginGradientFill(GradientType.LINEAR, CSS.titleBarColors, [100, 100], [0x00, 0xFF], matr);
 		}
 		else graphics.beginFill(color);
-		graphics.drawRoundRect(0, 0, minW, minH, 12);
+		graphics.drawRoundRect(0, 0, minW, minH, 4);
 		graphics.endFill();
 	}
 
