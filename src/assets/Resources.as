@@ -31,7 +31,7 @@ public class Resources {
 		}
 		return new resourceClass();
 	}
-	
+
 	public static function createDO(resourceName:String):DisplayObject {
 		var resourceClass:Class = Resources[resourceName];
 		if (!resourceClass) {
@@ -78,6 +78,8 @@ public class Resources {
 	[Embed(source='fonts/OCRAEXT.ttf', fontName='OCR', embedAsCFF = 'false', advancedAntiAliasing = 'true')] private static const Font8:Class;
 	[Embed(source='fonts/Bubble-Bath.ttf', fontName='Bubbles', embedAsCFF = 'false', advancedAntiAliasing = 'true')] private static const Font9:Class;
 	[Embed(source='fonts/Good-Dog.ttf', fontName='Good Dog', embedAsCFF = 'false', advancedAntiAliasing = 'true')] private static const Font10:Class;
+	[Embed(source='fonts/NotoSans-Regular.ttf', fontName='NotoSans', embedAsCFF = 'false', advancedAntiAliasing = 'true',fontWeight= "normal")] private static const Font11:Class;
+	[Embed(source='fonts/NotoSans-Bold.ttf', fontName='NotoSans', embedAsCFF = 'false', advancedAntiAliasing = 'true',fontWeight= "bold")] private static const Font12:Class;
 
 	// Block Icons (2x resolution to look better when scaled)
 	[Embed(source='blocks/flagIcon.png')] private static const flagIcon:Class;
@@ -337,7 +339,7 @@ public class Resources {
 	[Embed(source='UI/paint/bitmapStampOn.png')] private static const bitmapStampOn:Class;
 	[Embed(source='UI/paint/bitmapTextOff.png')] private static const bitmapTextOff:Class;
 	[Embed(source='UI/paint/bitmapTextOn.png')] private static const bitmapTextOn:Class;
-	
+
 	//Recording
 	[Embed(source='StopArrow.png')] private static const stopArrow:Class;
 	[Embed(source='VideoShare.svg')] private static const videoShare:Class;

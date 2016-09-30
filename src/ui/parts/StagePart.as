@@ -34,6 +34,7 @@ package ui.parts {
 	import scratch.*;
 	import translation.Translator;
 	import uiwidgets.*;
+    import flash.filters.DropShadowFilter;
 
 public class StagePart extends UIPart {
 
@@ -55,7 +56,7 @@ public class StagePart extends UIPart {
 	private var stopButton:IconButton;
 	private var fullscreenButton:IconButton;
 	private var stageSizeButton:Sprite;
-	
+
 	//video recording tools
 	private var stopRecordingButton:IconButton;
 	private var recordingIndicator:Shape;
@@ -86,8 +87,15 @@ public class StagePart extends UIPart {
 		addStageSizeButton();
 		fixLayout();
 		addEventListener(MouseEvent.MOUSE_WHEEL, mouseWheel);
+		var shadow:DropShadowFilter = new DropShadowFilter();
+shadow.distance = 2;
+shadow.alpha=0.3;
+shadow.blurX=6;
+shadow.blurY=6;
+shadow.angle = 70;
+        //this.filters=[shadow];
 	}
-	
+
 	public static function strings():Array {
 		return [
 			'by', 'shared', 'unshared', 'Turbo Mode',
@@ -154,7 +162,7 @@ public class StagePart extends UIPart {
 		videoProgressBar.visible = (app.runtime.ready==ReadyLabel.COUNTDOWN || app.runtime.recording) && app.editMode;
 		recordingTime.visible = (app.runtime.ready==ReadyLabel.COUNTDOWN || app.runtime.recording) && app.editMode;
 		recordingIndicator.visible = app.runtime.recording && app.editMode;
-		
+
 		if (app.editMode) {
 			fullscreenButton.setOn(false);
 			drawStageSizeButton();
@@ -172,9 +180,17 @@ public class StagePart extends UIPart {
 
 		var g:Graphics = outline.graphics;
 		g.clear();
-		drawTopBar(g, topBarColors, getTopBarPath(w - 1, topBarHeight), w, topBarHeight, CSS.borderColor);
-		g.lineStyle(1, CSS.borderColor, 1, true);
+		//drawTopBar(g, topBarColors, getTopBarPath(w - 1, topBarHeight), w, topBarHeight, CSS.borderColor);
+        g.clear();
+        g.beginFill(CSS.grey100);
+
+g.drawRect(0,0,w,h);
+g.lineStyle(1, CSS.borderColor, 1, true);
 		g.drawRect(0, topBarHeight - 1, w - 1, h - topBarHeight);
+		g.beginFill(CSS.grey100);
+		g.lineStyle(1, CSS.borderColor, 1, true);
+g.drawRect(0,h-1,w-1,16);
+
 
 		versionInfo.visible = !fullscreenButton.isOn();
 	}
@@ -200,7 +216,7 @@ public class StagePart extends UIPart {
 
 		// version info (only used on old website player)
 		versionInfo.x = fullscreenButton.x + 1;
-		versionInfo.y = 27;
+
 
 		projectTitle.setWidth(runButton.x - projectTitle.x - 15);
 
@@ -212,9 +228,9 @@ public class StagePart extends UIPart {
 		yReadout.x = left + 60;
 
 		var top:int = h + 1;
-		xReadout.y = yReadout.y = top;
-		xLabel.y = yLabel.y = top - 2;
-		
+		xReadout.y = yReadout.y = top-1;
+		xLabel.y = yLabel.y = top - 3;
+		versionInfo.y = yLabel.y+2;
 		//recording tools
 		stopRecordingButton.x=2;
 		stopRecordingButton.y=top+2;
@@ -225,18 +241,19 @@ public class StagePart extends UIPart {
 		videoProgressBar.x = recordingTime.x+42;
 		videoProgressBar.y=top+3;
 
-		stageSizeButton.x = w - 4;
-		stageSizeButton.y = h + 2;
+		stageSizeButton.x = w - 4-5;
+		stageSizeButton.y = h -1;
 
 		if (playButton) playButton.scaleX = playButton.scaleY = app.stagePane.scaleX;
+		//redraw();
 	}
-	
+
 	private var lastTime:int=0;
-	
+
 	private function addRecordingTools():void {
 		stopRecordingButton = new IconButton(app.stopVideo, 'stopVideo');
 		addChild(stopRecordingButton);
-		
+
 		videoProgressBar = new Shape();
 		var slotColor:int = CSS.overColor;
 		var slotColor2:int = 0xBBBDBF;
@@ -249,10 +266,10 @@ public class StagePart extends UIPart {
 		g.drawRoundRect(0, .5, 300, 9,9,9);
 		g.endFill();
 		addChild(videoProgressBar);
-		
+
 		const versionFormat:TextFormat = new TextFormat(CSS.font, 11, CSS.textColor);
 		addChild(recordingTime = makeLabel(" 0 secs",versionFormat));
-		
+
 		recordingIndicator = new Shape();
 		var k:Graphics = recordingIndicator.graphics;
 		k.clear();
@@ -261,25 +278,25 @@ public class StagePart extends UIPart {
 		k.endFill();
 		addChild(recordingIndicator);
 	}
-	
+
 	private function resetTime():void {
 		updateRecordingTools(0);
-		
+
 		removeChild(stopRecordingButton);
-		
+
 		stopRecordingButton = new IconButton(app.stopVideo, 'stopVideo');
 		addChild(stopRecordingButton);
-		
+
 		fixLayout();
 	}
-	
+
 	public function removeRecordingTools():void {
 		stopRecordingButton.visible=false;
 		videoProgressBar.visible=false;
 		recordingTime.visible=false;
 		recordingIndicator.visible=false;
 	}
-	
+
 	public function updateRecordingTools(time:Number = -1.0):void {
 		if (time<0) {
 			time = Number(lastTime);
@@ -305,7 +322,7 @@ public class StagePart extends UIPart {
 		}
 		g.drawRoundRect(0, .5, barWidth, 9,9,9);
 		g.endFill();
-		
+
 		if (lastTime!=int(time)) {
 			var timeString:String = "";
 			if (int(time)<10) {
@@ -325,9 +342,9 @@ public class StagePart extends UIPart {
 			}
 		}
 	}
-	
+
 	private function addTitleAndInfo():void {
-		var fmt:TextFormat = app.isOffline ? new TextFormat(CSS.font, 16, CSS.textColor) : CSS.projectTitleFormat;
+		var fmt:TextFormat = app.isOffline ? new TextFormat(CSS.font, 16,  0x909090) : CSS.projectTitleFormat;
 		projectTitle = getProjectTitle(fmt);
 		addChild(projectTitle);
 
@@ -436,7 +453,11 @@ public class StagePart extends UIPart {
 	private function addFullScreenButton():void {
 		function toggleFullscreen(b:IconButton):void {
 			app.setPresentationMode(b.isOn());
+			fixLayout();
 			drawOutline();
+			fixLayout();
+			app.toggleSmallStage();
+			app.toggleSmallStage();
 		}
 		fullscreenButton = new IconButton(toggleFullscreen, 'fullscreen');
 		fullscreenButton.disableMouseover();
@@ -458,26 +479,26 @@ public class StagePart extends UIPart {
 		g.clear();
 
 		// draw tab
-		g.lineStyle(1, CSS.borderColor);
+		/*g.lineStyle(1, CSS.borderColor);
 		g.beginFill(CSS.tabColor);
 		g.moveTo(10, 0);
 		g.lineTo(3, 0);
 		g.lineTo(0, 3);
 		g.lineTo(0, 13);
 		g.lineTo(3, 15);
-		g.lineTo(10, 15);
+		g.lineTo(10, 15);*/
 
 		// draw arrow
 		g.lineStyle();
 		g.beginFill(CSS.arrowColor);
 		if (app.stageIsContracted) {
 			g.moveTo(3, 3.5);
-			g.lineTo(9, 7.5);
-			g.lineTo(3, 12);
+			g.lineTo(10, 8.5);
+			g.lineTo(3, 14);
 		} else {
-			g.moveTo(8, 3.5);
-			g.lineTo(2, 7.5);
-			g.lineTo(8, 12);
+			g.moveTo(9, 3.5);
+			g.lineTo(2, 8.5);
+			g.lineTo(9, 14);
 		}
 		g.endFill();
 	}

@@ -64,12 +64,17 @@ public class BlockIO {
 	}
 
 	private static function blockToArray(b:Block):Array {
+		if(b==null){
+			return  null;
+		}
 		// Return an array structure for this block.
 		var result:Array = [b.op];
 		if (b.op == Specs.GET_VAR) return [Specs.GET_VAR, b.spec];		// variable reporter
 		if (b.op == Specs.GET_LIST) return [Specs.GET_LIST, b.spec];	// list reporter
 		if (b.op == Specs.GET_PARAM) return [Specs.GET_PARAM, b.spec, b.type]; // parameter reporter
 		if (b.op == Specs.GET_LOOP) return [Specs.GET_LOOP, b.spec, b.type]; // inside of custom c block
+		if (b.op == Specs.GET_STACK) return [Specs.GET_STACK, b.spec, b.stackIndex]; // inside of custom c block
+
 		if (b.op == Specs.PROCEDURE_DEF)								// procedure definition
 			return [Specs.PROCEDURE_DEF, b.spec, b.parameterNames, b.defaultArgValues, b.warpProcFlag, b.procedureType];
 		if (b.op == Specs.CALL) {
@@ -96,6 +101,18 @@ public class BlockIO {
 		}
 		if (b.base.canHaveSubstack1()) result.push(stackToArray(b.subStack1));
 		if (b.base.canHaveSubstack2()) result.push(stackToArray(b.subStack2));
+		for(var jim:int =0;jim<b.substacks.length;jim++){
+if(b.substacks[jim]!=null){
+				if(b.substacks[jim].parent ==b){
+					result.push(stackToArray(b.substacks[jim]));
+				}else{
+					result.push([]);
+				}
+			}else{
+				result.push([]);
+			}
+
+		}
 		return result;
 	}
 
@@ -136,8 +153,13 @@ public class BlockIO {
 			}
 			b.setArg(i, a);
 		}
-		if (substacks[0] && (b.base.canHaveSubstack1())) b.insertBlockSub1(substacks[0]);
-		if (substacks[1] && (b.base.canHaveSubstack2())) b.insertBlockSub2(substacks[1]);
+		b.fixArgLayout();
+		var startNum:int=0;
+		if (substacks[0] && (b.base.canHaveSubstack1())) {b.insertBlockSub1(substacks[0]);startNum++;};
+		if (substacks[1] && (b.base.canHaveSubstack2())) {b.insertBlockSub2(substacks[1]);startNum++;};
+		for(var i:int=startNum;i<substacks.length;i++){
+			if (substacks[i] && (true)) b.insertBlockSubSpecial(i-startNum,substacks[i]);
+		}
 		// if hadSpriteRef is true, don't call fixMouseEdgeRefs() to avoid converting references
 		// to sprites named 'mouse' or 'edge' to '_mouse_' or '_edge_'.
 		if (!hadSpriteRef) fixMouseEdgeRefs(b);
@@ -184,6 +206,7 @@ public class BlockIO {
 		for (var i:int = 1 + numArgs; i < cmd.length; i++) {
 			var a:* = cmd[i];
 			if (a == null) result.push(null); // null indicates an empty stack
+			if (a.length<1) result.push(null); // null indicates an empty stack
 			else result.push(arrayToStack(a));
 		}
 		return result;
@@ -211,6 +234,11 @@ public class BlockIO {
 		case Specs.GET_PARAM:
 			var paramType:String = (cmd.length >= 3) ? cmd[2] : 'r';
 			return new Block(cmd[1], paramType, Specs.parameterColor, Specs.GET_PARAM);
+		case Specs.GET_STACK:
+			var stackIx:int = (cmd.length >= 3) ? cmd[2] : 0;
+			b=new Block(cmd[1], '', Specs.parameterColor, Specs.GET_STACK);
+			b.stackIndex=stackIx;
+			return b;
 		case Specs.GET_LOOP:
 			return new Block(cmd[1], '', Specs.parameterColor, Specs.GET_LOOP);
 		case 'changeVariable':

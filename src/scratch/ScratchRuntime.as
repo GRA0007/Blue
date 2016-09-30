@@ -83,10 +83,10 @@ public class ScratchRuntime {
 	protected var saveAfterInstall:Boolean;
 
 	[Embed(source='../assets/pop.wav', mimeType='application/octet-stream')] protected static var Pop:Class;
-	[Embed(source='../assets/TeraA.svg', mimeType='application/octet-stream')] protected static var TeraA:Class;
-	[Embed(source='../assets/TeraB.svg', mimeType='application/octet-stream')] protected static var TeraB:Class;
-	[Embed(source='../assets/TeraC.svg', mimeType='application/octet-stream')] protected static var TeraC:Class;
-	[Embed(source='../assets/TeraD.svg', mimeType='application/octet-stream')] protected static var TeraD:Class;
+	[Embed(source='../assets/BlobA.svg', mimeType='application/octet-stream')] protected static var TeraA:Class;
+	[Embed(source='../assets/BlobB.svg', mimeType='application/octet-stream')] protected static var TeraB:Class;
+	[Embed(source='../assets/BlobC.svg', mimeType='application/octet-stream')] protected static var TeraC:Class;
+	[Embed(source='../assets/BlobD.svg', mimeType='application/octet-stream')] protected static var TeraD:Class;
 
 	public function ScratchRuntime(app:Scratch, interp:Interpreter) {
 		this.app = app;
@@ -179,7 +179,7 @@ public class ScratchRuntime {
 		processEdgeTriggeredHats();
 		interp.stepThreads();
 		app.stagePane.commitPenStrokes();
-		
+
 		if (ready==ReadyLabel.COUNTDOWN || ready==ReadyLabel.READY) {
 			app.stagePane.countdown(count);
 		}
@@ -194,7 +194,7 @@ public class ScratchRuntime {
 	private var videoPosition:int;
 	private var videoSeconds:Number;
 	private var videoAlreadyDone:int;
-	
+
 	private var projectSound:Boolean;
 	private var micSound:Boolean;
 	private var showCursor:Boolean;
@@ -203,14 +203,14 @@ public class ScratchRuntime {
 	private var videoWidth:int;
 	private var videoHeight:int;
 	public var ready:int=ReadyLabel.NOT_READY;
-	
+
 	private var micBytes:ByteArray;
 	private var micPosition:int = 0;
 	private var mic:Microphone;
 	private var micReady:Boolean;
-	
+
 	private var timeout:int;
-	
+
 	private function saveFrame():void {
 		saveSound();
 		var t:Number = getTimer()*.001-videoSeconds;
@@ -289,7 +289,7 @@ public class ScratchRuntime {
 			videoFrames.push(f);
 		}
 	}
-	
+
 	private function saveSound():void {
 		var floats:Array = [];
 		if (micSound && micBytes.length>0) {
@@ -330,17 +330,17 @@ public class ScratchRuntime {
 		videoSounds.push(combinedStream);
 		combinedStream = null;
 	}
-	
-	private function micSampleDataHandler(event:SampleDataEvent):void 
-	{ 
-	    while(event.data.bytesAvailable) 
+
+	private function micSampleDataHandler(event:SampleDataEvent):void
+	{
+	    while(event.data.bytesAvailable)
 	    {
-	        var sample:Number = event.data.readFloat(); 
-	        micBytes.writeFloat(sample);  
+	        var sample:Number = event.data.readFloat();
 	        micBytes.writeFloat(sample);
-	    } 
-	} 
-	
+	        micBytes.writeFloat(sample);
+	    }
+	}
+
 	public function startVideo(editor:RecordingSpecEditor):void {
 		projectSound = editor.soundFlag();
 		micSound = editor.microphoneFlag();
@@ -352,10 +352,10 @@ public class ScratchRuntime {
 		}
 		micReady = true;
 		if (micSound) {
-			mic = Microphone.getMicrophone(); 
+			mic = Microphone.getMicrophone();
 			mic.setSilenceLevel(0);
-			mic.gain = editor.getMicVolume(); 
-			mic.rate = 44; 
+			mic.gain = editor.getMicVolume();
+			mic.rate = 44;
 			micReady=false;
 		}
 		if (fullEditor) {
@@ -387,7 +387,7 @@ public class ScratchRuntime {
 		baFlvEncoder.start();
 		waitAndStart();
 	}
-	
+
 	public function exportToVideo():void {
 		var specEditor:RecordingSpecEditor = new RecordingSpecEditor();
 		function startCountdown():void {
@@ -395,7 +395,7 @@ public class ScratchRuntime {
 		}
 		DialogBox.close("Record Project Video",null,specEditor,"Start",app.stage,startCountdown);
 	}
-	
+
 	public function stopVideo():void {
 		if (recording) videoTimer.dispatchEvent(new TimerEvent(TimerEvent.TIMER));
 		else if (ready==ReadyLabel.COUNTDOWN || ReadyLabel.READY) {
@@ -404,7 +404,7 @@ public class ScratchRuntime {
 			app.stagePane.countdown(0);
 		}
 	}
-	
+
 	public function finishVideoExport(event:TimerEvent):void {
 		stopRecording();
 		stopAll();
@@ -413,7 +413,7 @@ public class ScratchRuntime {
 		clearTimeout(timeout);
 		timeout = setTimeout(saveRecording,1);
 	}
-	
+
 	public function waitAndStart():void {
 		if (!micReady && !mic.hasEventListener(StatusEvent.STATUS)) {
 			micBytes = new ByteArray();
@@ -445,7 +445,7 @@ public class ScratchRuntime {
     	videoTimer.addEventListener(TimerEvent.TIMER, finishVideoExport);
     	videoTimer.start();
 	}
-	
+
 	public function stopRecording():void {
 		recording = false;
 		videoTimer.stop();
@@ -479,7 +479,7 @@ public class ScratchRuntime {
 				videoSounds[videoPosition]=null;
 				videoPosition++;
 			}
-			if (app.lp) app.lp.setProgress(Math.min((videoPosition-videoAlreadyDone) / (videoFrames.length-videoAlreadyDone), 1)); 
+			if (app.lp) app.lp.setProgress(Math.min((videoPosition-videoAlreadyDone) / (videoFrames.length-videoAlreadyDone), 1));
 			clearTimeout(timeout);
 			timeout = setTimeout(saveRecording, 1);
 			return;
@@ -512,7 +512,7 @@ public class ScratchRuntime {
 		}
 		DialogBox.close("Video Finished!","To save, click the button below.",null,"Save and Download",app.stage,saveFile,releaseVideo,null,true);
 	}
-	
+
 	private function roundToTens(x:Number):Number {
 		return int((x)*10)/10.;
 	}
@@ -787,7 +787,7 @@ public class ScratchRuntime {
 		var newStage:ScratchStage = new ScratchStage();
         var sprite:ScratchSprite = new ScratchSprite('Sprite1');
         var costume1:ScratchCostume = new ScratchCostume(Translator.map('costume1'), new TeraA());
-        var costume2:ScratchCostume = new ScratchCostume(Translator.map('costume2'), new TeraB(), 63, 83); // Fixes odd issue with TeraB.svg...
+        var costume2:ScratchCostume = new ScratchCostume(Translator.map('costume2'), new TeraB()); // Fixes odd issue with TeraB.svg...
         var costume3:ScratchCostume = new ScratchCostume(Translator.map('costume3'), new TeraC());
         var costume4:ScratchCostume = new ScratchCostume(Translator.map('costume4'), new TeraD());
         sprite.costumes = [costume1, costume2, costume3, costume4];

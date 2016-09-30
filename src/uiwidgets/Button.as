@@ -22,20 +22,29 @@ import flash.display.*;
 import flash.events.MouseEvent;
 import flash.geom.Matrix;
 import flash.text.*;
+import flash.filters.DropShadowFilter;
+import flash.filters.BevelFilter;
+import com.greensock.TweenLite;
+import com.greensock.TweenMax;
+
 
 public class Button extends Sprite {
 
 	private var labelOrIcon:DisplayObject;
-	private var color:* = CSS.titleBarColors;
+	private var color:* = CSS.white;//CSS.titleBarColors;
 	private var minWidth:int = 50;
-	private var paddingX:Number = 5.5;
+	private var paddingX:Number = 5;
 	private var compact:Boolean;
 
 	private var action:Function; // takes no arguments
 	private var eventAction:Function; // like action, but takes the event as an argument
 	private var tipName:String;
+	public var state:int=0;
+	public var raised:Boolean=true;
+	public var textColor:int = 0x2962FF;
+	public var raiseY:Number=1;
 
-	public function Button(label:String, action:Function = null, compact:Boolean = false, tipName:String = null) {
+	public function Button(label:String, action:Function = null, compact:Boolean = false, tipName:String = null,raised:Boolean = true) {
 		this.action = action;
 		this.compact = compact;
 		this.tipName = tipName;
@@ -45,7 +54,25 @@ public class Button extends Sprite {
 		addEventListener(MouseEvent.MOUSE_OUT, mouseOut);
 		addEventListener(MouseEvent.MOUSE_DOWN, mouseDown);
 		addEventListener(MouseEvent.MOUSE_UP, mouseUp);
-		setColor(CSS.titleBarColors);
+		setColor(CSS.white);//titleBarColors);
+		//setColor(0x4285f4);
+		var shadow:DropShadowFilter = new DropShadowFilter();
+shadow.distance = 1;
+shadow.alpha=0.3;
+shadow.blurX=6;
+shadow.blurY=6;
+shadow.angle = 90;
+        this.filters=[shadow];
+		this.setRaised(raised);
+	}
+	public function dropShadow(e:Number):DropShadowFilter{
+		var shadow:DropShadowFilter = new DropShadowFilter();
+shadow.distance = 1+e;
+shadow.alpha=0.3;
+shadow.blurX=e*2+2;
+shadow.blurY=e*2+2;
+shadow.angle = 90;
+return shadow;
 	}
 
 	public function setLabel(s:String):void {
@@ -76,7 +103,7 @@ public class Button extends Sprite {
 		if (labelOrIcon != null) {
 			if (labelOrIcon is TextField) {
 				minW = Math.max(minWidth, labelOrIcon.width + paddingX * 2);
-				minH = compact ? 20 : 25;
+				minH = compact ? 20 : 26;
 			} else {
 				minW = Math.max(minWidth, labelOrIcon.width + 12);
 				minH = Math.max(minH, labelOrIcon.height + 11);
@@ -86,36 +113,101 @@ public class Button extends Sprite {
 		}
 		// outline
 		graphics.clear();
-		graphics.lineStyle(0.5, CSS.borderColor, 1, true);
+		//graphics.lineStyle(0.5, CSS.borderColor, 1, true);
 		if (color is Array) {
 			var matr:Matrix = new Matrix();
 			matr.createGradientBox(minW, minH, Math.PI / 2, 0, 0);
-			graphics.beginGradientFill(GradientType.LINEAR, CSS.titleBarColors, [100, 100], [0x00, 0xFF], matr);
+			graphics.beginGradientFill(GradientType.LINEAR, [0xFFFFFF,0xFFFFFF], [100, 100], [0x00, 0xFF], matr);
 		}
-		else graphics.beginFill(color);
-		graphics.drawRoundRect(0, 0, minW, minH, 12);
+		else {graphics.beginFill(color);}
+		if(!raised){
+
+		graphics.beginFill(0,0);
+	}else{
+		//graphics.beginFill(0x888AF3);
+	}
+		graphics.drawRoundRect(0, 0, minW, minH, 3);
 		graphics.endFill();
 	}
-
+	public function withTextColor(txtColor:int):Button{
+		this.textColor=txtColor;
+		return this;
+	}
 	public function setEventAction(newEventAction:Function):Function {
 		var oldEventAction:Function = eventAction;
 		eventAction = newEventAction;
 		return oldEventAction;
 	}
-
+	public function addBevel():void{
+		var f:BevelFilter = new BevelFilter(1);
+		f.blurX = f.blurY = 1;
+		f.highlightAlpha = 0.6;
+		f.shadowAlpha = 0.6;
+		//this.filters = [f].concat(filters || []);
+		//this.filters[this.filters.length]=f;
+	}
 	private function mouseOver(evt:MouseEvent):void {
-		setColor(CSS.overColor)
+		//setColor(CSS.overColor)
+		//setColor(0x4285f4);
+		if(raised){
+			if(this.filters.length<1){
+        this.filters=[dropShadow(2)];
+		addBevel();
+	}else{
+		TweenMax.to(this, 0.2, {dropShadowFilter:{distance:4,blurX:8,blurY:8}});
+	}
+	}else{
+		this.filters=[];
+		if (labelOrIcon is TextField) {
+			TweenMax.to(labelOrIcon, 0.6, {hexColors:{textColor:this.textColor}});
+			//(labelOrIcon as TextField).textColor=textColor;
+		}
+	}
 	}
 
 	private function mouseOut(evt:MouseEvent):void {
-		setColor(CSS.titleBarColors)
+		//setColor(CSS.titleBarColors)
+		//setColor(0x4285f4);
+		if(raised){
+			if(this.filters.length<1){
+		this.filters=[dropShadow(1)];
+		addBevel();
+	}else{
+		TweenMax.to(this, 0.2, {dropShadowFilter:{distance:1,blurX:2,blurY:2}});
+	}
+	}else{
+		this.filters=[];
+		if (labelOrIcon is TextField) {
+			TweenMax.to(labelOrIcon, 0.6, {hexColors:{textColor:0x424242}});
+			//(labelOrIcon as TextField).textColor=0x424242;
+		}
+	}
+	}
+	public function setRaised(raised:Boolean):Button{
+		this.raised=raised;
+		if(raised){
+		this.filters=[dropShadow(1)];
+		addBevel();
+	}else{
+		this.filters=[];
+		if (labelOrIcon is TextField) {
+			(labelOrIcon as TextField).textColor=0x424242;
+		}
+		graphics.clear();
+		graphics.beginFill(0,0);
+		graphics.drawRoundRect(0, 0, this.width, this.height, 3);
+		graphics.endFill();
+	}
+	return this;
 	}
 
 	private function mouseDown(evt:MouseEvent):void {
+		//setColor(0x4285f4);
 		Menu.removeMenusFrom(stage)
 	}
 
 	private function mouseUp(evt:MouseEvent):void {
+		setColor(CSS.titleBarColors);
 		if (action != null) action();
 		if (eventAction != null) eventAction(evt);
 		evt.stopImmediatePropagation();
@@ -129,6 +221,8 @@ public class Button extends Sprite {
 		color = c;
 		if (labelOrIcon is TextField) {
 			(labelOrIcon as TextField).textColor = (c == CSS.overColor) ? CSS.white : CSS.buttonLabelColor;
+			//(labelOrIcon as TextField).textColor = textColor;//(state) ? CSS.white : CSS.buttonLabelColor;
+
 		}
 		setMinWidthHeight(5, 5);
 	}
@@ -138,8 +232,12 @@ public class Button extends Sprite {
 		label.autoSize = TextFieldAutoSize.LEFT;
 		label.selectable = false;
 		label.background = false;
-		label.defaultTextFormat = CSS.normalTextFormat;
-		label.textColor = CSS.buttonLabelColor;
+		var tF:TextFormat=new TextFormat(CSS.font, 12, textColor);
+		tF.bold=true;
+		label.defaultTextFormat = tF;//CSS.normalTextFormat;
+		//label.defaultTextFormat.bold=true;
+
+		label.textColor=0x424242;// = textColor;//CSS.buttonLabelColor;
 		label.text = s;
 		labelOrIcon = label;
 		setMinWidthHeight(0, 0);

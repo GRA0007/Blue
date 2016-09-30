@@ -41,6 +41,7 @@ public class Specs {
 	public static const CALL_C:String = "callc";
 	public static const PROCEDURE_DEF:String = "procDef";
 	public static const GET_PARAM:String = "getParam";
+	public static const GET_STACK:String = "getStack";
 	public static const GET_LOOP:String = "getLoop";
 
 	public static const motionCategory:int = 1;
@@ -153,7 +154,7 @@ public class Specs {
 		["y position",							"r", 1, "ypos"],
 		["direction",							"r", 1, "heading"],
 		["rotation style",						"r", 1, "rotationStyle"],
-		
+
 		// stage motion
 		["EXPERIMENTAL (WIP)",					"h", 101, "experimentfakeprim"],
 		["scroll right %n",						" ", 101, "scrollRight",		10],
@@ -285,6 +286,8 @@ public class Specs {
 		["wait until %b",						" ", 6, "doWaitUntil"],
 		["repeat until %b",						"c", 6, "doUntil"],
 		["-"],
+		["run %f",						" ", 6, "run:",	"say(\"hi\")"],
+		["-"],
 		["stop %m.stop",						"f", 6, "stopScripts", "all"],
 		["-"],
 		["when I start as a clone",				"h", 6, "whenCloned"],
@@ -310,6 +313,8 @@ public class Specs {
 		["all at once",							"c", 106, "warpSpeed"],
 		["wait until %b",						" ", 106, "doWaitUntil"],
 		["repeat until %b",						"c", 106, "doUntil"],
+		["-"],
+		["run %f",						" ", 106, "run:",	"say(\"hi\")"],
 		["-"],
 		["stop %m.stop",						"f", 106, "stopScripts", "all"],
 		["-"],
@@ -380,6 +385,7 @@ public class Specs {
 		["username",							"r", 107, "getUserName"],
 
 		// operators
+	//	["%k + %k",								" ", 8, "teststack",					null, null],
 		["%n + %n",								"r", 8, "+",					"", ""],
 		["%n - %n",								"r", 8, "-",					"", ""],
 		["%n * %n",								"r", 8, "*",					"", ""],
@@ -468,7 +474,7 @@ public class Specs {
 		["item %d.listItem of ☁ list %s",					"r", 32, "cloudGetItem"],
 		["length of ☁ list %s",								"r", 32, "cloudLength"],
 		["☁ list %s contains %s",							"b", 32, "cloudContains"],
-		
+
 		//System 13
 		["save %s to file %s",					" ", 13, "save:toFile:", "hello world", "file.txt"],
 		["-"],
@@ -484,7 +490,7 @@ public class Specs {
 		["read line %n of url %s",				"R", 13, "readLine:ofUrl:", "1", "http://www/google.com"],
 		["-"],
 		["internet connection?",				"b", 13, "internetConnection"],
-		
+
 		//Program 15
 		["%m.screenMode mode",					" ", 15, ":mode", "fullscreen"],
 		["fullscreen mode?",					"b", 15, "fullscreenMode"],
@@ -501,7 +507,7 @@ public class Specs {
 		["-"],
 		["set max. clone count to %n",			" ", 15, "setMaxCloneCount",	"300"],
 		["max. clone count",					"r", 15, "maxCloneCount"],
-		
+
 		//Dialogs 14
 		["dialog notify with title %s and message %s", " ", 14, "dialogNotify", "Well Done!", "Congratulations, you won!"],
 		["dialog confirm with title %s and message %s", "b", 14, "dialogConfirm", "Are you sure?", "Are you sure you would like to continue?"],
@@ -520,8 +526,8 @@ public class Specs {
 		["buttons %s %s %s %s",					"r", 14, "customDialogButtons", "OK", "Cancel"],
 		["-"],
 		["close all dialogs",					" ", 14, "customDialogCloseAll"],
-		
-		
+
+
 		//Strings 16
 		["join %s %s",							"r", 16, "concatenate:with:",	"hello ", "world"],
 		["letter %n of %s",						"r", 16, "letter:of:",			1, "world"],
@@ -538,7 +544,7 @@ public class Specs {
 		["-"],
 		["ascii for %s",						"r", 16, "asciiFor:",			"A"],
 		["ascii %n as string",					"r", 16, "ascii:asString",		"65"],
-		
+
 		//Websockets 17
 		["connect to ip %s port %s",			" ", 17, "websocketConnect",	"127.0.0.0", "80"],
 		["disconnect",							" ", 17, "websocketDisconnect"],
@@ -546,7 +552,7 @@ public class Specs {
 		["-"],
 		["send %s",								" ", 17, "websocketSend",		""],
 		["when I recieve %s",					"h", 17, "websocketRecieve",	""],
-		
+
 		//Color 18
 		["color at pixel x: %n y: %n",			"r", 18, "colorAtPixel",		0, 0],
 		["color %c",							"r", 18, "colorColorInput"],

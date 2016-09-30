@@ -36,6 +36,7 @@ package uiwidgets {
 	import flash.display.*;
 	import flash.events.*;
 	import flash.filters.GlowFilter;
+	import flash.filters.DropShadowFilter;
 	import util.DragClient;
 
 public class ScrollFrame extends Sprite implements DragClient {
@@ -46,7 +47,7 @@ public class ScrollFrame extends Sprite implements DragClient {
 	private const decayFactor:Number = 0.95;	// velocity decay (make zero to stop instantly)
 	private const stopThreshold:Number = 0.4;	// stop when velocity is below threshold
 	private const cornerRadius:int = 0;
-	private const useFrame:Boolean = false;
+	private const useFrame:Boolean = false;//false;
 
 	private var scrollbarThickness:int = 9;
 
@@ -92,11 +93,14 @@ public class ScrollFrame extends Sprite implements DragClient {
 		// Adds a shadow on top and left to make contents appear inset.
 		shadowFrame = new Shape();
 		addChild(shadowFrame);
-		var f:GlowFilter = new GlowFilter(0x0F0F0F);
-		f.blurX = f.blurY = 5;
-		f.alpha = 0.2;
-		f.inner = true;
+		var f:DropShadowFilter = new DropShadowFilter(0x00000000);
+		f.distance = 1;
+		f.alpha=0.3;
+		f.blurX=2;
+		f.blurY=3;
+		f.angle = 70;
 		f.knockout = true;
+		f.inner=true;
 		shadowFrame.filters = [f];
 	}
 

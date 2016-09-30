@@ -31,6 +31,7 @@ import translation.Translator;
 import ui.media.*;
 import ui.SpriteThumbnail;
 import uiwidgets.*;
+import flash.filters.DropShadowFilter;
 
 public class LibraryPart extends UIPart {
 
@@ -92,6 +93,13 @@ public class LibraryPart extends UIPart {
 		spriteDetails.visible = false;
 
 		updateTranslation();
+		var shadow:DropShadowFilter = new DropShadowFilter();
+shadow.distance = 2;
+shadow.alpha=0.3;
+shadow.blurX=6;
+shadow.blurY=6;
+shadow.angle = 70;
+        //this.filters=[shadow];
 	}
 
 	public static function strings():Array {
@@ -126,20 +134,26 @@ public class LibraryPart extends UIPart {
 	}
 
 	public function setWidthHeight(w:int, h:int):void {
+    //h=h-4;
 		this.w = w;
 		this.h = h;
 		var g:Graphics = shape.graphics;
 		g.clear();
-		drawTopBar(g, CSS.titleBarColors, getTopBarPath(w,CSS.titleBarH), w, CSS.titleBarH);
+        g.clear();
 		g.lineStyle(1, CSS.borderColor, 1, true);
-		g.drawRect(0, CSS.titleBarH, w, h - CSS.titleBarH);
+        g.beginFill(CSS.grey100);//0xE6E8E8);
+
+g.drawRect(0,0,w-1,CSS.titleBarH-1);
+		//drawTopBar(g, CSS.titleBarColors, getTopBarPath(w,CSS.titleBarH), w, CSS.titleBarH);
+		g.lineStyle(1, CSS.borderColor, 1, true);
+		g.drawRect(0, CSS.titleBarH-1, w-1, h - CSS.titleBarH);
 		g.lineStyle(1, CSS.borderColor);
 		if (!app.isMicroworld) {
 			g.moveTo(stageAreaWidth, 0);
 			g.lineTo(stageAreaWidth, h);
 			g.lineStyle();
 			g.beginFill(CSS.tabColor);
-			g.drawRect(1, CSS.titleBarH + 1, stageAreaWidth - 1, h - CSS.titleBarH - 1);
+			g.drawRect(1, CSS.titleBarH + 1, stageAreaWidth - 1, h - CSS.titleBarH-1 );
 			g.endFill();
 		}
 		fixLayout();
@@ -291,7 +305,7 @@ public class LibraryPart extends UIPart {
 
 	private function addSpritesArea():void {
 		spritesPane = new ScrollFrameContents();
-		spritesPane.color = bgColor;
+		spritesPane.color = CSS.white;//bgColor;
 		spritesPane.hExtra = spritesPane.vExtra = 0;
 		spritesFrame = new ScrollFrame();
 		spritesFrame.setContents(spritesPane);
@@ -444,7 +458,7 @@ public class LibraryPart extends UIPart {
 		app.selectSprite(app.stagePane);
 		app.setSaveNeeded(true);
 	}
-	
+
 	// More info
 /*	private function showMoreInfo(param1:IconButton):* {
 		var _loc4_:SpriteThumbnail = null;
